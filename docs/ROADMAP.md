@@ -14,7 +14,7 @@ The immediate release is not the full v1 described below. The first user is the 
 | Persistence | Postgres, Qdrant, Vault, Keycloak, and workers are self-managed Kubernetes workloads with persistent storage. Bedrock is the only managed platform AI service; customer EventBridge/SQS are ingestion integrations, not managed platform dependencies. |
 | Backup/recovery | Velero stores Kubernetes metadata and EBS volume snapshots in a dedicated encrypted `ap-south-1` S3 bucket. Native Postgres, Qdrant, and Vault backups also go there; scheduled restore drills prove recovery. S3 is backup-only. |
 | Connections | Both live AWS and clearly-labelled simulated AWS connections. Floci plus deterministic fixtures cover normal, anomaly, authorization, throttling, and partial-failure paths. |
-| Identity | Self-hosted Keycloak. Verified `sub` identifies a user; Postgres `users`, `tenants`, and `memberships` resolve the tenant and role. One active tenant per request. |
+| Identity | Self-hosted Keycloak. Verified `sub` identifies a user; Postgres `users`, `tenants`, and `memberships` resolve the tenant and role. A user may access only tenants to which the operator assigned membership, and therefore only those tenants' cloud accounts. One active tenant is resolved server-side per request; clients cannot choose or override it. |
 | User access | Invite-only beta. The operator provisions Keycloak users and memberships; public self-signup is disabled. |
 | Onboarding | A Keycloak-authenticated `cloud-compass` CLI generates pinned OpenTofu config, validates it, and supports explicit user-run apply. A GitHub App may create a user-approved PR later; only installation IDs are tenant-scoped. |
 | AWS access | Read-only only. The CLI sends the newly-created least-privilege connector key to tenant Vault once; neither the backend nor CLI retrieves stored AWS secrets or keeps tenant GitHub PATs. |
@@ -363,7 +363,7 @@ Exit gate:
 Deliverables:
 
 - Secure ingest/retrieve/history with the shared identity middleware.
-- Add document parsing, metadata, deduplication, lifecycle, limits, and citation IDs.
+- Post-beta only: add document parsing, metadata, deduplication, lifecycle, limits, and citation IDs. The personal beta has no tenant document-upload or arbitrary-ingest path.
 - Implement LangGraph nodes: classify intent → plan → retrieve context → execute tools → synthesize → reflect.
 - Stream responses over SSE and expose tool progress safely.
 - Require grounded citations for cloud facts and KB claims; state uncertainty and partial provider failures.

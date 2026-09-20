@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LLM chat architecture — quick reference</title><link rel="stylesheet" href="../assets/styles.css"></head><body><main>
+<div class="kicker">Cloud Compass reference</div><h1>LLM chat architecture</h1>
+<p class="lede">A chat UI is a coordinated loop, not just a textbox connected to a model.</p>
+<div class="card"><strong>1. User message</strong><br>Browser sends text plus conversation ID to your backend.</div>
+<div class="card"><strong>2. Authenticate and scope</strong><br>Verify identity; resolve <code>tenant_id</code> and role server-side. Never trust tenant IDs in the body.</div>
+<div class="card"><strong>3. Retrieve context</strong><br>Fetch tenant-scoped cloud facts, runbook text, and conversation history. Retrieved facts are fresher than model memory.</div>
+<div class="card"><strong>4. Let the model choose</strong><br>The model predicts either a direct response or a structured tool call such as <code>cost.get_costs</code>.</div>
+<div class="card"><strong>5. Execute safely</strong><br>Backend validates the tool, tenant, role, arguments, timeout, and read-only policy; then calls AWS/MCP.</div>
+<div class="card"><strong>6. Synthesize and stream</strong><br>Send text and evidence incrementally to the UI. Render tool activity and citations distinctly from prose.</div>
+<h2>Trust boundaries</h2><p>Model output is untrusted text. Tool wrappers enforce authorization. Database queries, vector collections, and Vault paths must all be tenant-scoped.</p>
+<h2>Vocabulary</h2><p><strong>Token:</strong> a small text unit. <strong>Context window:</strong> tokens available for one request. <strong>Embedding:</strong> a vector used to find related text. <strong>Grounding:</strong> supplying evidence to constrain an answer. <strong>Tool calling:</strong> structured model-selected actions executed by your server.</p>
+<footer>See <a href="../lessons/0001-llm-as-chat-ui.html">Lesson 1</a> and the <a href="../MISSION.md">mission</a>.</footer></main></body></html>

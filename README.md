@@ -6,7 +6,7 @@
   </a>
 </p>
 
-Multi-tenant, multi-cloud (AWS, Azure, GCP) **cloud operations platform** that unifies six domains — **Cost, FinOps, Inventory, Security, SCA, and Compliance** — behind a single agent + dashboard.
+Cloud Compass is a tenant-isolated **cloud operations cockpit for AWS, Azure, and GCP**. It brings spend, inventory, security exposure, software risk, and compliance into one explainable dashboard and chat experience, powered by RAG-grounded context, a LangGraph agent, and **read-only MCP tools**.
 
 > Previously known as *Cloud Cost Compass*. Rebranded and re-scoped to a true cloud operations compass, not just cost.
 

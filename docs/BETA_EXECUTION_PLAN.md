@@ -40,15 +40,30 @@ This is a 12-week plan at 20 focused hours per week. A later milestone may not p
 
 | ID | Task | Depends on | Verification / acceptance evidence | Status | Owner | Evidence / update |
 |---|---|---|---|---|---|---|
-| B0.1 | Keep `ROADMAP.md`, this plan, and locked decisions D13–D23 mutually consistent. | — | Documentation review confirms no conflicting beta scope or identity statement. | `[ ]` | — | — |
-| B0.2 | Define beta telemetry: activated tenant, successful connection, weekly active tenant, time-to-first-signal, event lag, and failed onboarding. | B0.1 | Event schema and privacy-safe metric definitions are versioned; no secrets or raw tenant payloads in telemetry. | `[ ]` | — | — |
-| B0.3 | Define a release checklist for Kind, EKS, simulated AWS, and live personal AWS. | B0.2 | Checklist has executable commands and pass/fail evidence fields; used in B9.5 and B10.5. | `[ ]` | — | — |
+| B0.1 | Keep `ROADMAP.md`, this plan, and locked decisions D13–D23 mutually consistent. | — | Documentation review confirms no conflicting beta scope or identity statement. | `[x]` | agent | Owner confirmed no tenant document upload/arbitrary ingest. Identity is tenant isolation: a verified user can access only the AWS accounts of the tenant to which the operator assigned membership; tenant/role are never caller-controlled. Stale post-beta document-ingest wording was labelled accordingly. |
+| B0.2 | Define beta telemetry: activated tenant, successful connection, weekly active tenant, time-to-first-signal, event lag, and failed onboarding. | B0.1 | Event schema and privacy-safe metric definitions are versioned; no secrets or raw tenant payloads in telemetry. | `[x]` | agent | Owner approved an active-status flag and the privacy/retention proposal; the versioned schema and metric definitions below are the source of truth. |
+| B0.3 | Define a release checklist for Kind, EKS, simulated AWS, and live personal AWS. | B0.2 | Checklist has executable commands and pass/fail evidence fields; used in B9.5 and B10.5. | `[x]` | agent | Owner confirmed Kind-first promotion, owner approval, immediate EKS rollback, a tagged dedicated resource for the sole controlled live event, and dated Markdown evidence. See `docs/RELEASE_CHECKLIST.md` and `docs/releases/README.md`. |
+
+#### B0 telemetry contract — v1
+
+Telemetry is an operational, tenant-isolated measurement stream; it is not a source of cloud-infrastructure content. Each record contains only `schema_version`, pseudonymous `tenant_id` and, where necessary, `user_id`, `event_name`, `occurred_at`, `status`, bounded duration fields, connection/source kind, and a controlled error category. It must never include credentials, tokens, raw AWS event payloads, resource names/ARNs, chat prompts/responses, or provider error bodies.
+
+| Metric | v1 definition |
+|---|---|
+| `tenant_active` | A tenant-level boolean status flag. It becomes true after a connection is `active` and at least one cost, inventory, finding, or event signal is successfully visible; it is cleared when the tenant is disabled or deleted. |
+| Successful connection | A connection validation that authenticates using the submitted read-only connector secret, discovers its intended AWS account, and reaches the `active` state. |
+| Weekly active tenant | Defined for the external-beta scorecard only: a tenant with an authenticated, successful foreground dashboard, API, or chat interaction in a rolling seven-day window. It is not collected as a decision metric during the owner-only alpha. |
+| Time to first signal | Elapsed time from the authenticated CLI setup-session start to the first successful visible cost, inventory, finding, or event signal. |
+| Event lag | Two durations: AWS source-event time to accepted EKS-worker time, and accepted-worker time to UI-visible time. Missing source timestamps are categorized rather than inferred. |
+| Failed onboarding | A setup session ending in a terminal failed state or expiring without an active connection; record only a controlled failure category and stage. |
+
+Raw telemetry records are retained for 30 days. Monthly aggregate metrics are retained for 13 months. Access is limited to the tenant's authorized users for tenant-level operational views and to the operator for privacy-safe beta aggregates.
 
 ### B1 — Contracts, identity, and authorization
 
 | ID | Task | Depends on | Verification / acceptance evidence | Status | Owner | Evidence / update |
 |---|---|---|---|---|---|---|
-| B1.1 | Create versioned Pydantic schemas for `UserIdentity`, `TenantContext`, role, connection, provider result, event, citation, and API error envelopes. | B0.1 | Contract tests and generated/hand-maintained matching TypeScript types pass. | `[ ]` | — | — |
+| B1.1 | Create versioned Pydantic schemas for `UserIdentity`, `TenantContext`, role, connection, provider result, event, citation, and API error envelopes. | B0.1 | Contract tests and generated/hand-maintained matching TypeScript types pass. | `[~]` | agent | Added `contracts/python/cloud_compass_contracts/v1.py`, matching `app/src/contracts/v1.ts`, and contract tests. Python syntax and `git diff --check` pass. Test execution awaits Pydantic/pytest installation: this workspace lacks them, Docker access is denied, and PyPI DNS is unavailable. |
 | B1.2 | Define the browser HTTP adapter separately from internal MCP transport, including pagination, filters, freshness, partial failure, and citations. | B1.1 | OpenAPI/API contract examples cover costs, inventory, findings, connections, chat, and events. | `[ ]` | — | — |
 | B1.3 | Reconcile Keycloak realm, client ID, roles, redirect URIs, localhost Kind URL, and EKS HTTPS URL. Disable public self-signup and define operator-only invite/user/membership provisioning. | B1.1 | Browser login/logout succeeds in Kind; public registration is unavailable; operator provisioning and role claims are covered by an automated test. | `[ ]` | — | — |
 | B1.4 | Add JWT verification (JWKS cache, issuer, audience, expiry) shared by browser-facing services. | B1.3 | Valid, expired, wrong-issuer, and wrong-audience tests pass. | `[ ]` | — | — |

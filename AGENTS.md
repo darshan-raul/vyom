@@ -1,6 +1,6 @@
 # Cloud Compass — Agent Guide
 
-Multi-tenant, multi-cloud (AWS + Azure + GCP) cloud operations platform: MCP + RAG + Agent + Refine (shadcn/ui).
+Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainable dashboard and chat experience for spend, inventory, security exposure, software risk, and compliance, powered by RAG + LangGraph + read-only MCP tools.
 
 **Product:** Cloud Compass (formerly Cloud Cost Compass).
 **Stack:** Refine + shadcn/ui + Vite + TypeScript (UI), LangGraph/LangChain + Amazon Bedrock (agent/RAG inference), FastMCP (tools), Qdrant (RAG vectors), PostgreSQL (state), native cloud SDKs (boto3, azure-mgmt, google-cloud-*).
@@ -55,7 +55,7 @@ Multi-tenant, multi-cloud (AWS + Azure + GCP) cloud operations platform: MCP + R
 | D12 | Provider delivery order | **AWS first, then GCP, then Azure**; finish each provider release gate before production work on the next | All-cloud horizontal delivery (delays usable vertical releases) |
 | D13 | Three-month beta | **AWS-only personal-alpha cockpit**: live/simulated connections, daily cost, inventory/change detection, Security Hub findings, weekly digest, and grounded read-only chat | Completing all seven domains or any GCP/Azure work before users have an AWS cockpit |
 | D14 | Beta infrastructure | **Kind locally and EKS in a dedicated Cloud Compass AWS account** | Docker Compose, a shared monitored/platform account, or delaying Kubernetes |
-| D15 | Tenant identity | **Keycloak `sub` identifies a user; Postgres memberships resolve tenant and role**; one active tenant per request in v1 | Treating `sub` as tenant ID or trusting a tenant claim/header/tool argument |
+| D15 | Tenant identity | **Keycloak `sub` identifies a user; Postgres memberships resolve tenant and role**. A user may access only tenants to which the operator assigned membership, and only those tenants' cloud accounts; one active tenant is server-resolved per request in v1 | Treating `sub` as tenant ID or trusting a tenant claim/header/tool argument |
 | D16 | Live change ingestion | **CloudTrail management events and Security Hub findings → EventBridge → SQS → EKS worker**, with IRSA, DLQ, idempotency, and daily reconciliation | Polling only or a public webhook ingestion endpoint |
 | D17 | Cost freshness | **Daily persisted Cost Explorer history**; do not describe billing data as real-time | Event-driven or real-time cost claims |
 | D18 | Initial AWS inventory | **EC2, EBS, S3, RDS, Lambda, ELB/ALB/NLB, ECR, VPC/subnets/security groups/route tables, CloudTrail configuration, and Route 53 hosted zones/records** | Broad ECS/EKS discovery or packet/log analytics in the beta |
@@ -128,6 +128,7 @@ Multi-tenant, multi-cloud (AWS + Azure + GCP) cloud operations platform: MCP + R
 | F1.21 | Lock self-managed EKS persistence topology | `[x]` | agent | D32; RDS is excluded from the beta |
 | F1.22 | Lock Velero/S3 backup and native state recovery | `[x]` | agent | D33; backup storage is the documented recovery-only exception |
 | F1.23 | Create target AWS beta infrastructure diagram and README preview | `[x]` | agent | Archify HTML + README PNG cover client, EKS, agent, MCP, RAG, Bedrock, events, state, and recovery |
+| F1.24 | Clarify Cloud Compass product tagline | `[x]` | agent | Describe the tenant-isolated cloud operations cockpit and its explainable, read-only workflow |
 
 ### Phase 2 — Security + FinOps
 
@@ -226,6 +227,16 @@ Multi-tenant, multi-cloud (AWS + Azure + GCP) cloud operations platform: MCP + R
 | 2026-09-19 19:04 | F1.22 | `[~] → [x]` | Locked D33: Velero/S3 plus native state backups and restore drills |
 | 2026-09-19 19:35 | F1.23 | `[ ] → [~]` | Started the target AWS beta infrastructure diagram and README preview |
 | 2026-09-19 19:35 | F1.23 | `[~] → [x]` | Added the Archify diagram HTML and a reviewed README PNG preview |
+| 2026-09-19 19:39 | F1.24 | `[ ] → [~]` | Started clarifying the product tagline in README and agent guidance |
+| 2026-09-19 19:39 | F1.24 | `[~] → [x]` | Updated the tagline to explain the cockpit, users' questions, and read-only MCP boundary |
+| 2026-09-20 08:48 | B0.1 | `[ ] → [~]` | Started beta-document consistency review; awaiting owner confirmation of scope and identity statements |
+| 2026-09-20 08:48 | B0.2 | `[ ] → [~]` | Started privacy-safe beta telemetry definition; awaiting owner measurement and retention decisions |
+| 2026-09-20 08:52 | B0.1 | `[~] → [x]` | Confirmed beta scope and tenant-isolation interpretation; labelled tenant document ingest as post-beta only |
+| 2026-09-20 08:52 | B0.2 | `[~] → [x]` | Added v1 privacy-safe telemetry contract with active-tenant flag, timing/failure metrics, and 30-day/13-month retention |
+| 2026-09-20 08:54 | B0.3 | `[ ] → [~]` | Started defining executable Kind, EKS, simulated-AWS, and live-AWS release gates; awaiting owner choices |
+| 2026-09-20 08:54 | B0.3 | `[~] → [x]` | Added Kind-first release checklist, owner-controlled EKS/live gates, immediate rollback policy, and dated evidence template |
+| 2026-09-20 08:58 | B1.1 | `[ ] → [~]` | Started versioned identity, provider, event, citation, and API-error contract implementation |
+| 2026-09-20 09:00 | B1.1 | `[~] → [~]` | Added v1 Python/TypeScript contracts and tests; verification awaits unavailable Python dependencies because network and Docker are unavailable |
 
 > When you (the agent) start a new task, **append a row** here with the timestamp, the `F<n>.<m>` item, the new status, and a one-line summary. When the task completes, append a second row flipping the status to `[x]`.
 
@@ -306,7 +317,7 @@ Browser → Envoy Gateway → Refine + shadcn/ui (8080) + LangGraph agent (SSE)
 ## 11. RAG
 
 - `tenant_id` scoped chunking and retrieval.
-- Sources: cloud billing docs (scraped) + tenant-uploaded cost/runbook/SBOM reports + provider hardening guides + CVE corpus.
+- Beta sources: tenant-scoped live/simulated AWS tool results and curated Cloud Compass runbook text only. Tenant-uploaded cost/runbook/SBOM reports and other arbitrary document ingest are post-beta work.
 - Embeddings: selected in-region Bedrock embedding model under D27; collection dimension and migration are versioned with the chosen model.
 - Chunking: 512-char fixed, 50-char overlap.
 - Collections: `rag-{tid}`, `kb-{tid}-security`, `kb-{tid}-compliance`, `cve-{tid}`.
