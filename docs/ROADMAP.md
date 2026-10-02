@@ -1,39 +1,41 @@
-# Cloud Compass — Current-State Inventory and Delivery Roadmap
+# Vyom — Current-State Inventory and Delivery Roadmap
 
 > Status date: 2026-09-19
+> Inference inventory updated 2026-10-03: B1.8 adapter refactor; see [`INFERENCE.md`](INFERENCE.md). Other inventory rows retain the original snapshot date.
 > Delivery order: **AWS first, then GCP, then Azure**.  
 > This is the execution roadmap. Existing `F1.x`/`F2.x`/`F3.x` tracker IDs remain useful as domain-backlog references, but their original all-cloud-at-once ordering is superseded by the release sequence below.
 
-## Three-month personal AWS beta (locked)
+## AWS + Kubernetes first-release beta
 
-The immediate release is not the full v1 described below. The first user is the project owner, using a personal AWS account as a tenant account. The goal is a reliable read-only AWS operations cockpit that answers: **what changed, what costs more, and what needs attention?** It must be useful weekly before any GCP or Azure production work begins.
+The first user is the project owner, using a personal AWS account as a tenant account. The goal is a reliable read-only operations cockpit that answers: **what changed, what costs more, and what needs attention?** On 2026-10-03 the owner expanded the first release to Kubernetes inventory, topology, health/events, and configuration posture across EKS, AKS, GKE, and self-managed clusters. The original three-month AWS-only estimate needs rebaselining. GCP/Azure cloud-provider parity follows AWS; their Kubernetes clusters use the common Kubernetes API connector first.
 
 | Area | Beta commitment |
 |---|---|
-| Environments | Kind is the reproducible local/CI target; EKS runs only in `ap-south-1` in a dedicated Cloud Compass platform AWS account. The personal AWS account is monitored separately; its resources may be global or in other AWS regions. Public beta access uses the provisional base domain `cc.darshanraul.me` through HTTPS only. |
-| Persistence | Postgres, Qdrant, Vault, Keycloak, and workers are self-managed Kubernetes workloads with persistent storage. Bedrock is the only managed platform AI service; customer EventBridge/SQS are ingestion integrations, not managed platform dependencies. |
+| Environments | Kind is the reproducible local/CI target; EKS runs only in `ap-south-1` in a dedicated Vyom platform AWS account. The personal AWS account is monitored separately; its resources may be global or in other AWS regions. Public beta access uses the provisional base domain `cc.darshanraul.me` through HTTPS only. |
+| Persistence | Postgres, Qdrant, Vault, Keycloak, and workers are self-managed Kubernetes workloads with persistent storage. Bedrock supplies reasoning/embeddings; D34 permits optional external Jev classification via Vercel. Customer EventBridge/SQS are ingestion integrations, not managed persistence. |
 | Backup/recovery | Velero stores Kubernetes metadata and EBS volume snapshots in a dedicated encrypted `ap-south-1` S3 bucket. Native Postgres, Qdrant, and Vault backups also go there; scheduled restore drills prove recovery. S3 is backup-only. |
 | Connections | Both live AWS and clearly-labelled simulated AWS connections. Floci plus deterministic fixtures cover normal, anomaly, authorization, throttling, and partial-failure paths. |
 | Identity | Self-hosted Keycloak. Verified `sub` identifies a user; Postgres `users`, `tenants`, and `memberships` resolve the tenant and role. A user may access only tenants to which the operator assigned membership, and therefore only those tenants' cloud accounts. One active tenant is resolved server-side per request; clients cannot choose or override it. |
 | User access | Invite-only beta. The operator provisions Keycloak users and memberships; public self-signup is disabled. |
-| Onboarding | A Keycloak-authenticated `cloud-compass` CLI generates pinned OpenTofu config, validates it, and supports explicit user-run apply. A GitHub App may create a user-approved PR later; only installation IDs are tenant-scoped. |
+| Onboarding | A Keycloak-authenticated `vyom` CLI generates pinned OpenTofu config, validates it, and supports explicit user-run apply. A GitHub App may create a user-approved PR later; only installation IDs are tenant-scoped. |
 | AWS access | Read-only only. The CLI sends the newly-created least-privilege connector key to tenant Vault once; neither the backend nor CLI retrieves stored AWS secrets or keeps tenant GitHub PATs. |
 | Live reflection | CloudTrail management events and Security Hub findings flow through EventBridge → SQS → an EKS worker using IRSA, DLQ, and idempotent consumers. Daily snapshots reconcile missed events. |
 | Cost | Cost Explorer history and anomaly inputs are daily, persisted data. Billing is never represented as real-time. |
-| Inventory | EC2, EBS, S3, RDS, Lambda, load balancers, ECR, VPC/subnets/security groups/route tables, CloudTrail config, and Route 53 zones/records. ECS/EKS discovery is deferred. |
+| Inventory | EC2, EBS, S3, RDS, Lambda, load balancers, ECR, VPC/subnets/security groups/route tables, CloudTrail config, and Route 53 zones/records. EKS identity supports cluster correlation; ECS remains deferred. |
+| Kubernetes | Separate read-only Kubernetes API collection for EKS/AKS/GKE/self-managed clusters: onboarding, inventory, relationships, workload health/events, and bounded configuration posture. Tenant → cluster → namespace grants and separate cluster-wide permissions; optional outbound collector for private clusters. B11 remains pending implementation. |
 | Security | Security Hub where enabled, supplemented by read-only checks for public S3, permissive security groups, and CloudTrail health. |
-| Data lifecycle | 13 months normalized cost/inventory/finding history; 30 days raw event payloads; tenant-admin deletion requests complete within 30 days. All beta data remains in `ap-south-1`. |
-| AI | Bedrock only in `ap-south-1`, using configurable allowlisted in-region chat/embedding candidates with zero retention, no cross-region inference, and no invocation-content logging. The lowest-cost pair that passes the policy and grounded-answer evaluation is selected. Application prompts are minimized/redacted; tenant content is never used for Cloud Compass model training. |
-| Chat corpus | No tenant document uploads in beta. Chat uses only tenant-scoped live/simulated AWS tool results and curated Cloud Compass runbook text. |
-| Explicitly deferred | SCA, formal compliance/evidence, advanced FinOps recommendations/commitments, Slack automation, GCP, Azure, write remediation, full ECS/EKS discovery, and packet/log analytics. |
+| Data lifecycle | 13 months normalized cost/inventory/finding history; 30 days raw event payloads; tenant-admin deletion requests complete within 30 days. Platform storage remains in `ap-south-1`; D34 separately governs external request classification. |
+| AI | Bedrock reasoning/embeddings in `ap-south-1`, using configurable allowlisted in-region candidates with zero retention, no cross-region inference, and no invocation-content logging. Select the lowest-cost pair passing policy/grounding evaluation. Optional actual Jev intent classification through Vercel AI Gateway is the D34 external-processing exception, gated by B8.6. Application prompts are minimized/redacted; tenant content is never used for Vyom model training. |
+| Chat corpus | No tenant document uploads in beta. Chat uses only authorized AWS/Kubernetes tool results and curated Vyom runbook text. |
+| Explicitly deferred | SCA, formal compliance/evidence, advanced FinOps recommendations/commitments, Kubernetes historical metrics/cost allocation/rightsizing, Slack automation, GCP/Azure cloud-provider parity, write remediation, ECS discovery, and full logs/traces/packet analytics. |
 
 The beta exit gate is: the owner can log in to EKS, connect the personal account safely, see simulated and live data without ambiguity, observe an AWS change within minutes, review daily cost movement and Security Hub/direct findings, and receive cited answers from read-only chat. Closure additionally requires the locked scorecard: three active tenants, each onboarded in under 30 minutes; at least two users returning weekly for three consecutive weeks; and one actionable signal per user. The longer R0–R6 plan remains the post-beta path.
 
-The executable, task-level tracker for this beta is [`BETA_EXECUTION_PLAN.md`](BETA_EXECUTION_PLAN.md). Agents must update its task status and evidence at the same time as the invocation tracker in `AGENTS.md`; the R0–R6 sections below remain the long-term dependency and scope reference.
+The executable, task-level tracker for this beta is [`BETA_EXECUTION_PLAN.md`](BETA_EXECUTION_PLAN.md). Agents must update its task status and evidence at the same time as the invocation tracker in `AGENTS.md`; the R0–R6 sections below remain the long-term dependency and scope reference. Kubernetes B11.8 is now an additional prerequisite for the first-release B9.5 gate: authorized cluster onboarding, topology, health/events, configuration posture, denial/failure paths, and flavor-specific support evidence must pass. See [`KUBERNETES.md`](KUBERNETES.md) for staged coverage and allocation boundaries.
 
 ## 1. What “complete” means
 
-Cloud Compass reaches v1 completion when a tenant can onboard multiple AWS accounts, multiple GCP projects, and one Azure tenant; use all supported domains through the UI and agent; and receive tenant-isolated, cited, auditable results in a production-capable Kubernetes deployment.
+Vyom reaches v1 completion when a tenant can onboard multiple AWS accounts, multiple GCP projects, and one Azure tenant; use all supported domains through the UI and agent; and receive tenant-isolated, cited, auditable results in a production-capable Kubernetes deployment.
 
 The v1 domains are:
 
@@ -112,7 +114,7 @@ The v1 platform also includes OIDC authentication, tenant-scoped authorization, 
 |---|---|---|---|
 | FastAPI runtime | Partial | `/health`, `/retrieve`, `/ingest`, `/history` | No auth middleware, authorization, request limits, or structured error model |
 | Tenant isolation | Conflicting | Tenant-prefixed collections and tenant-filtered SQL are used | Tenant is trusted directly from `X-Tenant-Id`; this violates the security boundary |
-| Embeddings | Partial | Minimax HTTP client, 384 dimensions | Credential injection is not wired reliably; retry/backoff, batching limits, telemetry, and model contract tests are absent |
+| Embeddings | Partial | Bedrock Titan V2 codec, explicit model/allowlist/policy config, bounded calls, offline adapter tests; MiniMax runtime removed | Live regional access/policy, SDK-backed service tests, model evaluation and corpus migration remain B3.5/B8.5 |
 | Chunking | Partial | Fixed 512-character chunks with overlap | No token-aware parsing, document formats, metadata policy, deduplication, or reindexing |
 | Qdrant | Partial | Create/upsert/search for `rag-{tenant}` | No missing-collection behavior, collection lifecycle, payload indexes, migrations, backup, or KB/CVE collections |
 | Postgres metadata/history | Partial | Document metadata and chat-message read/write | No session ownership checks, pagination contract, deletion/retention, or transaction with vector ingestion |
@@ -125,6 +127,7 @@ The v1 platform also includes OIDC authentication, tenant-scoped authorization, 
 | LangGraph runtime | Missing | Architecture text and UI expectation only | No graph, model client, planner, tool registry, streaming endpoint, citations, safety policy, or evaluation suite |
 | Agent HTTP/SSE endpoint | Missing | nginx route points `/api/agent/` to MCP | MCP server has no `/chat` agent endpoint |
 | Grounding and citations | Missing | Product requirement only | Must link tool results and RAG chunks to answer claims |
+| Inference adapters and routing | Partial | Bedrock Converse adapter, typed route interface, opt-in actual Jev via Vercel evaluation API, offline API/failure tests | Authenticated LangGraph wiring, live gateway/vendor evidence and calibrated routing evaluation remain B8.2/B8.6 |
 
 ### 2.6 Data model and migrations
 
@@ -294,7 +297,7 @@ Exit gate:
 Deliverables:
 
 - Support many AWS accounts per tenant with connection status, account alias/ID, default region, enabled regions, and last validation time.
-- Deliver the `cloud-compass` CLI/OpenTofu onboarding path: authenticated tenant setup session, generated pinned configuration, explicit user-run apply, least-privilege read-only connector key sent once to tenant Vault, and credential validation. A GitHub App integration stores installation IDs only and can create an explicitly approved PR after the local path works.
+- Deliver the `vyom` CLI/OpenTofu onboarding path: authenticated tenant setup session, generated pinned configuration, explicit user-run apply, least-privilege read-only connector key sent once to tenant Vault, and credential validation. A GitHub App integration stores installation IDs only and can create an explicitly approved PR after the local path works.
 - Preserve an upgrade path to cross-account role assumption without changing domain contracts.
 - Add admin-only connection status to Settings; never return secret material to the browser.
 
@@ -335,7 +338,7 @@ Exit gate:
 Deliverables:
 
 - Implement `inventory.list_resources`, `inventory.get_tag_coverage`, and `inventory.get_unused_resources`.
-- Cover the initial AWS set: EC2, EBS, S3, RDS, Lambda, ELB/ALB/NLB, ECR, VPC/subnets/security groups/route tables, CloudTrail configuration, and Route 53 zones/records. Defer ECS/EKS discovery.
+- Cover the initial AWS set: EC2, EBS, S3, RDS, Lambda, ELB/ALB/NLB, ECR, VPC/subnets/security groups/route tables, CloudTrail configuration, and Route 53 zones/records. Defer ECS discovery; Kubernetes objects use the separate B11 connector with EKS identity correlation.
 - Normalize ARN/resource ID, name, service, type, account, region, tags, lifecycle state, first seen, and last seen.
 - Add scheduled snapshots, current-state reconciliation, tombstoning, and on-demand refresh. Add an EventBridge → SQS → EKS-worker path for CloudTrail management events, with IRSA, DLQ, idempotency, per-tenant routing, and observable lag.
 
@@ -404,7 +407,7 @@ Deliverables:
 
 - Add recommendation, utilization, savings estimate, reservation/commitment coverage, and acceptance-state models.
 - Implement rightsizing from Compute Optimizer/CloudWatch, reservation coverage/utilization, Savings Plans-aware reporting, and idle-resource detection.
-- Clearly distinguish provider recommendations from Cloud Compass heuristics.
+- Clearly distinguish provider recommendations from Vyom heuristics.
 - Implement all four `finops.*` tools with assumptions and lookback windows.
 
 Exit gate:
@@ -714,4 +717,4 @@ The numbered beta work breakdown in [`BETA_EXECUTION_PLAN.md`](BETA_EXECUTION_PL
 6. R1.1–R1.2: implement OpenTofu/CLI AWS onboarding, live/simulated connections, and the provider abstraction.
 7. R1.3–R1.7: complete the AWS personal-beta vertical release, including EventBridge/SQS change ingestion.
 
-Do not add more placeholder domain pages, advanced FinOps, SCA, compliance, Slack automation, or GCP/Azure provider code before these gates. The current highest-value milestone is a secure, reproducible, event-aware AWS personal-beta cockpit running end to end.
+Do not add more placeholder domain pages, advanced FinOps, SCA, formal compliance, Slack automation, or GCP/Azure cloud-provider code before these gates. The first-release milestone is a secure, reproducible, event-aware AWS cockpit with the B11 Kubernetes coverage and acceptance gate. AKS/GKE Kubernetes API coverage does not enable their cloud-provider billing/security adapters.

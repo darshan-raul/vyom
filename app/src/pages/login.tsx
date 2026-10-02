@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Cloud, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
+import { PRODUCT_NAME, EXECUTIVE_TAGLINE } from "@/lib/brand";
 import { useSession } from "@/auth/useSession";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -23,10 +24,11 @@ export function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Cloud className="h-6 w-6 text-primary" />
+            <span aria-hidden="true" className="text-2xl font-semibold text-primary">V</span>
           </div>
-          <CardTitle>Cloud Compass</CardTitle>
-          <CardDescription>Sign in with your organization&apos;s SSO.</CardDescription>
+          <CardTitle>{PRODUCT_NAME}</CardTitle>
+          <CardDescription>{EXECUTIVE_TAGLINE}</CardDescription>
+          <p className="text-sm text-muted-foreground">Sign in with your organization&apos;s SSO.</p>
         </CardHeader>
         <CardContent>
           <Button className="w-full" onClick={signIn}>

@@ -1,4 +1,4 @@
-# Cloud Compass contracts
+# Vyom contracts
 
 `python/cloud_compass_contracts/v1.py` is the versioned, provider-neutral
 Pydantic source for cross-service contracts. `app/src/contracts/v1.ts` is the

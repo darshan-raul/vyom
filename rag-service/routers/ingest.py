@@ -1,9 +1,10 @@
 import uuid
-import json
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from embed.minimax import embed_texts, chunk_text
+from embed.bedrock import embeddings
+from embed.text import chunk_text
+from inference.types import InferenceError
 from qdrant.client import upsert_chunk, ensure_collection
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
@@ -33,11 +34,16 @@ async def ingest(
     if not chunks:
         raise HTTPException(status_code=400, detail="content produced no chunks")
 
-    vectors = await embed_texts(chunks)
-    ensure_collection(x_tenant_id, dim=384)
+    try:
+        adapter = embeddings()
+        collection = adapter.settings.collection_name(x_tenant_id)
+        vectors = await adapter.embed_texts(chunks)
+        ensure_collection(x_tenant_id, settings=adapter.settings)
+    except InferenceError:
+        raise HTTPException(status_code=503, detail="Embedding inference is unavailable") from None
 
     for i, (chunk_text_value, vector) in enumerate(zip(chunks, vectors)):
-        chunk_id = f"{document_id}-{i}"
+        chunk_id = str(uuid.uuid5(uuid.UUID(document_id), str(i)))
         payload = {
             "chunk_text": chunk_text_value,
             "source": req.source,
@@ -45,7 +51,7 @@ async def ingest(
             "chunk_index": i,
             "document_id": document_id,
         }
-        upsert_chunk(x_tenant_id, chunk_id, vector, payload)
+        upsert_chunk(x_tenant_id, chunk_id, vector, payload, settings=adapter.settings)
 
     conn = _get_db()
     try:
@@ -55,7 +61,7 @@ async def ingest(
                 INSERT INTO rag_documents (id, tenant_id, source, source_type, chunk_count, qdrant_collection)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (document_id, x_tenant_id, req.source, req.source_type, len(chunks), f"rag-{x_tenant_id}"),
+                (document_id, x_tenant_id, req.source, req.source_type, len(chunks), collection),
             )
         conn.commit()
     finally:

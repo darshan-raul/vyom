@@ -3,7 +3,7 @@ set -e
 
 NAMESPACE="cloud-cost-compass"
 
-echo "=== Cloud Compass Local Setup ==="
+echo "=== Vyom Local Setup ==="
 
 echo "Creating Kind cluster..."
 kind create cluster --config infra/kind/kind-config.yaml --name cloud-cost-compass

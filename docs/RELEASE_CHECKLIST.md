@@ -1,4 +1,4 @@
-# Cloud Compass — Beta Release Checklist
+# Vyom — Beta Release Checklist
 
 This checklist governs promotion to the personal-alpha EKS environment and the later external beta. It is the release-control record required by B0.3; B2.5 and B3.4 must make the referenced build, smoke, immutable-image, and rollback paths fully automated before an EKS release can pass.
 
@@ -7,7 +7,7 @@ This checklist governs promotion to the personal-alpha EKS environment and the l
 1. A clean Kind build, test, and smoke pass is required before every EKS deployment.
 2. Only the project owner may approve an EKS deployment or a live personal-AWS verification. Record that approval in the release evidence.
 3. EKS releases use immutable image digests. A failed EKS health or smoke gate causes an immediate rollback to the previously recorded digest; fix-forward is allowed only in Kind.
-4. Live personal-AWS verification is read-only from Cloud Compass. The sole permitted controlled change is one made outside Cloud Compass to a dedicated resource tagged `cloud-compass:beta-test=true`, to prove the CloudTrail path.
+4. Live personal-AWS verification is read-only from Vyom. The sole permitted controlled change is one made outside Vyom to a dedicated resource tagged `cloud-compass:beta-test=true`, to prove the CloudTrail path.
 5. Never place credentials, tokens, raw cloud-event payloads, resource names/ARNs, or chat content in release evidence.
 
 ## Evidence record
@@ -64,10 +64,16 @@ Against EKS, run the deterministic fixture suite introduced by B2.6. It must dem
 
 ## Gate D — live personal-AWS proof
 
-Run only after Gates A–C pass and owner approval is recorded. Verify the personal AWS connection is active and Cloud Compass performs only its documented read-only AWS calls. Review cost freshness, inventory snapshot status, Security Hub/direct-check coverage, and cited chat output without copying tenant content into the evidence record.
+Run only after Gates A–C pass and owner approval is recorded. Verify the personal AWS connection is active and Vyom performs only its documented read-only AWS calls. Review cost freshness, inventory snapshot status, Security Hub/direct-check coverage, and cited chat output without copying tenant content into the evidence record.
 
 For the controlled CloudTrail proof, the owner changes only the dedicated resource tagged `cloud-compass:beta-test=true` using normal AWS tooling. Confirm the resulting management event reaches the EKS worker and UI within the currently documented latency. Record timestamps/durations and a redacted outcome, not the raw event or resource identifier.
 
+## Gate E — Kubernetes first-release proof
+
+B11.8 supplies the executable suite and dated evidence for this gate. It must cover read-only onboarding, inventory/topology, health/events, bounded configuration posture and cited diagnostics; role/tenant/cluster/namespace denial paths; separate cluster-wide grants; denied/stale/missing-API coverage; credential revocation; and lifecycle deletion. Private-collector enrollment, replay rejection and recovery must pass where offered.
+
+Use isolated Kind fixtures for deterministic checks and flavor-specific live evidence for EKS, AKS, GKE and self-managed support claims. Record API versions and capability limitations without raw manifests, secrets, resource names or tenant content. Azure/GCP billing parity and Kubernetes cost allocation are not part of this gate. Vyom's platform cluster is excluded unless explicitly onboarded as a monitored tenant cluster. B11 is currently pending; this checklist does not establish support by itself.
+
 ## Release decision
 
-The owner signs the evidence record `pass`, `fail and rolled back`, or `not applicable to this milestone`. A live-AWS gate may be `not applicable` only before B9; it is mandatory for B9.5 and later. An unresolved failure blocks promotion and creates a tracked remediation item.
+The owner signs the evidence record `pass`, `fail and rolled back`, or `not applicable to this milestone`. Live-AWS and Kubernetes gates may be `not applicable` only before their respective implementation milestones; both are mandatory for B9.5 and later. An unresolved failure blocks promotion and creates a tracked remediation item.

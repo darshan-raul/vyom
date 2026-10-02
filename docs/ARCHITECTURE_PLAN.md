@@ -1,5 +1,8 @@
 # Cloud Cost Compass — Architecture Plan
 
+> Archived design. Superseded by `ARCHITECTURE.md`, `ROADMAP.md`, and `INFERENCE.md`.
+> Historical MiniMax settings below are not runtime dependencies; the client was removed on 2026-10-03.
+
 ## Implemented Decisions
 
 | Requirement | Decision |

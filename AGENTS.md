@@ -1,11 +1,13 @@
-# Cloud Compass — Agent Guide
+# Vyom — Agent Guide
 
 Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainable dashboard and chat experience for spend, inventory, security exposure, software risk, and compliance, powered by RAG + LangGraph + read-only MCP tools.
 
-**Product:** Cloud Compass (formerly Cloud Cost Compass).
+**Product:** Vyom (formerly Cloud Compass; originally Cloud Cost Compass).
+**Tagline:** Vyom: Grounded intelligence for the modern cloud.
+**Positioning:** Tenant-isolated cloud operations. One explainable cockpit for spend, posture, and risk across AWS and Kubernetes.
 **Stack:** Refine + shadcn/ui + Vite + TypeScript (UI), LangGraph/LangChain + Amazon Bedrock (agent/RAG inference), FastMCP (tools), Qdrant (RAG vectors), PostgreSQL (state), native cloud SDKs (boto3, azure-mgmt, google-cloud-*).
 
-> Repo directory and K8s namespace still use the historical `cloud-cost-compass` name; the **product** name is **Cloud Compass** (K8s namespace: `cloud-cost-compass` for now — see Phase 1 tracker item **F1.7**). Image registry prefix is also `cloud-cost-compass/*`.
+> Existing deployment identifiers remain historical compatibility names: K8s namespace/image prefix `cloud-cost-compass`, Keycloak realm/client IDs, and Python contract package `cloud_compass_contracts`. Product branding is **Vyom** and the planned onboarding CLI is **`vyom`**. Repository/remotes remain owner-managed (D10); infrastructure identity changes need a coordinated migration (F1.7).
 
 ---
 
@@ -13,7 +15,7 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 
 > The execution order is now provider-sequential: **AWS → GCP → Azure**. The detailed current-state inventory, subphases, dependencies, and acceptance gates are in [`docs/ROADMAP.md`](docs/ROADMAP.md). Existing `F1.x`/`F2.x`/`F3.x` IDs remain domain-backlog references.
 
-> **Active execution tracker:** The three-month AWS personal beta is decomposed into numbered, verifiable tasks in [`docs/BETA_EXECUTION_PLAN.md`](docs/BETA_EXECUTION_PLAN.md). Every agent MUST select work from that tracker, respect its dependencies, and update its status plus evidence when the task is verified. It replaces vague “in progress” reporting for beta implementation; R0–R6 remains the post-beta roadmap.
+> **Active execution tracker:** The AWS + Kubernetes first-release beta is decomposed into numbered, verifiable tasks in [`docs/BETA_EXECUTION_PLAN.md`](docs/BETA_EXECUTION_PLAN.md). B11 expands the original three-month AWS-only estimate; dates require rebaselining. Every agent MUST select work from that tracker, respect its dependencies, and update its status plus evidence when the task is verified. R0–R6 remains the post-beta roadmap.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -53,27 +55,30 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 | D10 | Repo name | **Unchanged** — user will handle the rename | Rename to `cloud-compass` (we don't touch git remotes) |
 | D11 | UI framework | **Refine + shadcn/ui** (Vite + TypeScript) | Streamlit (weak tables/streaming/RBAC), Gradio (notebook feel), Next.js (heaviest), Appsmith/Tooljet (low-code, less flexible) |
 | D12 | Provider delivery order | **AWS first, then GCP, then Azure**; finish each provider release gate before production work on the next | All-cloud horizontal delivery (delays usable vertical releases) |
-| D13 | Three-month beta | **AWS-only personal-alpha cockpit**: live/simulated connections, daily cost, inventory/change detection, Security Hub findings, weekly digest, and grounded read-only chat | Completing all seven domains or any GCP/Azure work before users have an AWS cockpit |
-| D14 | Beta infrastructure | **Kind locally and EKS in a dedicated Cloud Compass AWS account** | Docker Compose, a shared monitored/platform account, or delaying Kubernetes |
+| D13 | First release | **AWS + Kubernetes personal-alpha cockpit**: live/simulated AWS, daily cost, inventory/change detection, Security Hub, weekly digest, grounded read-only chat, plus cluster/workload visibility, health/events, and configuration posture per D36. The original three-month estimate must be rebaselined for the expanded scope | Full Kubernetes cost/optimization/compliance/log analytics or GCP/Azure cloud-provider parity before a usable cockpit |
+| D14 | Beta infrastructure | **Kind locally and EKS in a dedicated Vyom AWS account** | Docker Compose, a shared monitored/platform account, or delaying Kubernetes |
 | D15 | Tenant identity | **Keycloak `sub` identifies a user; Postgres memberships resolve tenant and role**. A user may access only tenants to which the operator assigned membership, and only those tenants' cloud accounts; one active tenant is server-resolved per request in v1 | Treating `sub` as tenant ID or trusting a tenant claim/header/tool argument |
 | D16 | Live change ingestion | **CloudTrail management events and Security Hub findings → EventBridge → SQS → EKS worker**, with IRSA, DLQ, idempotency, and daily reconciliation | Polling only or a public webhook ingestion endpoint |
 | D17 | Cost freshness | **Daily persisted Cost Explorer history**; do not describe billing data as real-time | Event-driven or real-time cost claims |
-| D18 | Initial AWS inventory | **EC2, EBS, S3, RDS, Lambda, ELB/ALB/NLB, ECR, VPC/subnets/security groups/route tables, CloudTrail configuration, and Route 53 hosted zones/records** | Broad ECS/EKS discovery or packet/log analytics in the beta |
+| D18 | Initial AWS inventory | **EC2, EBS, S3, RDS, Lambda, ELB/ALB/NLB, ECR, VPC/subnets/security groups/route tables, CloudTrail configuration, and Route 53 hosted zones/records**, plus EKS cluster identity/correlation through D36's separate Kubernetes connector | ECS discovery, Kubernetes allocation/rightsizing, or packet/log analytics in the first release |
 | D19 | Security source | **Security Hub when enabled**, plus direct read-only public-S3, permissive-security-group, and CloudTrail-health checks | Reimplementing AWS's entire posture engine |
 | D20 | Test data | **Live AWS and clearly labelled Simulated AWS connections**; Floci and deterministic fixtures test adapters, events, anomalies, and failures | Using only a real account or treating simulated data as live |
-| D21 | Connection onboarding | **Tenant-authenticated `cloud-compass` CLI generates pinned OpenTofu configuration, validates, and supports user-run apply** | Browser secret entry or CloudFormation-first onboarding |
+| D21 | Connection onboarding | **Tenant-authenticated `vyom` CLI generates pinned OpenTofu configuration, validates, and supports user-run apply** | Browser secret entry or CloudFormation-first onboarding |
 | D22 | GitHub integration | **GitHub App installation IDs plus short-lived installation tokens**; no tenant PATs | Storing long-lived per-tenant GitHub tokens |
 | D23 | Connector secrets | **CLI submits only the newly-created least-privilege AWS read-only connector secret to tenant Vault; it never retrieves stored AWS secrets** | Backend/CLI handling broad administrator credentials |
 | D24 | Beta closure | **3 active tenants; <30-minute onboarding each; ≥2 weekly returning users for 3 consecutive weeks; ≥1 actionable signal per user** | Declaring success from a personal demo or feature completion alone |
 | D25 | Beta platform region | **`ap-south-1` only** for the EKS platform account; monitored AWS resources may remain global or in other regions | Multi-region platform deployment before beta evidence exists |
-| D26 | Beta data lifecycle | **13 months** normalized cost/inventory/finding history; **30 days** raw event payloads; tenant-admin deletion request completed within **30 days**; all beta data in `ap-south-1` | Indefinite retention, cross-region storage, or an undefined offboarding process |
-| D27 | AI data boundary | **Amazon Bedrock only in `ap-south-1`**, in-region inference, account/project zero-retention mode, no cross-region inference, and no invocation-content logging; tenant content is never used by Cloud Compass for model training | Minimax/external inference, default retention, cross-region profiles, or model training/fine-tuning on tenant content |
+| D26 | Beta data lifecycle | **13 months** normalized cost/inventory/finding history; **30 days** raw event payloads; tenant-admin deletion request completed within **30 days**; platform storage in `ap-south-1`. D34 separately governs external classification processing | Indefinite retention, cross-region storage, or an undefined offboarding process |
+| D27 | AI data boundary | **Reasoning and embeddings use Amazon Bedrock in `ap-south-1`**, in-region inference, account zero-retention mode, no cross-region inference, and no invocation-content logging; tenant content is never used by Vyom for model training. **D34 permits opt-in Jev intent classification through Vercel AI Gateway** with a separate data-handling gate | MiniMax, external reasoning/embedding fallback, default retention, cross-region profiles, or model training/fine-tuning on tenant content |
 | D28 | Bedrock model selection | **Configurable, allowlisted in-region Bedrock chat/embedding candidates**; select the lowest-cost pair that passes zero-retention compatibility and grounded-answer evaluation | Hard-coding a model before policy/quality checks or enabling an external-provider fallback |
 | D29 | Beta access domain | **`cc.darshanraul.me`** is the provisional HTTPS beta base domain; use app/auth subdomains with Route 53, ACM, and matching Keycloak redirect URIs before EKS exposure | Raw EKS endpoints, IP addresses, port forwards, or HTTP-only beta access |
 | D30 | Beta user access | **Invite-only**: the operator provisions Keycloak users and tenant memberships; public self-signup is disabled | Public registration before abuse prevention, support, and account-recovery workflows exist |
-| D31 | Beta chat corpus | **No tenant document uploads**. Chat is grounded only in tenant-scoped live/simulated AWS tool results and curated Cloud Compass runbook text | Uploading arbitrary tenant documents before malware scanning, prompt-injection controls, retention, and deletion workflows are mature |
-| D32 | Beta persistence topology | **Self-manage all platform workloads and stateful services inside EKS** (Postgres, Qdrant, Vault, Keycloak, workers). Bedrock is the only managed platform AI service; tenant EventBridge/SQS are ingestion integrations and excluded from this boundary | RDS or other managed platform data services |
+| D31 | Beta chat corpus | **No tenant document uploads**. Chat is grounded only in authorized AWS/Kubernetes tool results and curated Vyom runbook text | Uploading arbitrary tenant documents before malware scanning, prompt-injection controls, retention, and deletion workflows are mature |
+| D32 | Beta persistence topology | **Self-manage all platform workloads and stateful services inside EKS** (Postgres, Qdrant, Vault, Keycloak, workers). Bedrock supplies managed reasoning/embeddings; D34 adds optional external Jev classification via Vercel. Tenant EventBridge/SQS are ingestion integrations and excluded from the persistence boundary | RDS or other managed platform data services |
 | D33 | Beta backup/recovery | **Velero with a dedicated encrypted S3 bucket in `ap-south-1`** for Kubernetes objects and EBS snapshots, plus native Postgres/Qdrant/Vault backups and scheduled restore drills. S3 is backup-only, not a runtime platform data service | Same-cluster-only backups, Velero-only database recovery, or RDS |
+| D34 | Optional intent classifier | **Actual TypeSafe Jev through Vercel AI Gateway**, opt-in, behind a typed classifier interface. Narrow exception to D27/D32: only minimized/redacted request text for intent classification may leave AWS; never credentials, tenant/user identity, cloud tool results, or retrieved context. Failures, unknown categories, and insufficient confidence escalate to the Bedrock workflow. Authorization and calculations remain code. Gateway/provider geography, retention, and routing evaluation must pass B8.6 before activation. | Jev-like interface without actual integration or direct TypeSafe billing; owner selected actual Jev via Vercel on 2026-10-03 |
+| D35 | Product identity | **Vyom**; executive tagline **“Grounded intelligence for the modern cloud.”** Owner-supplied positioning and technical pitch live in README and `docs/BRAND.md`; future CLI command is `vyom`. Preserve deployed technical identifiers until a separately verified migration | Cloud Compass / Cloud Cost Compass product names; owner requested Vyom on 2026-10-03 |
+| D36 | Kubernetes coverage | **First release: EKS, AKS, GKE, and self-managed clusters through one Kubernetes connector**, read-only inventory/topology, workload/node health/events, and evidence-backed configuration posture. Server-side tenant → cluster → namespace grants; cluster-wide reads require a separate grant. Direct API collection first, optional outbound in-cluster collector for private networks. Later: existing monitoring integration, allocation without double counting, rightsizing, formal compliance/image/SBOM integration, and deeper diagnostics | Kubernetes discovery deferred from beta (superseded); treating cloud APIs as workload inventory; adding cloud billing parity solely for AKS/GKE |
 
 > All "Alternatives considered" entries are recorded here so future maintainers (and the agent) can revisit them. If a tradeoff is overturned, update this table AND the matching tracker item.
 
@@ -91,6 +96,7 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 | Compliance | `compliance.list_frameworks`, `compliance.get_control_status`, `compliance.generate_evidence` |
 | Alerts | `alerts.list_rules`, `alerts.create_rule`, `alerts.delete_rule`, `alerts.list_events`, `alerts.test_channel` |
 | Auth | `auth.whoami` |
+| Kubernetes (planned B11) | `kubernetes.list_clusters`, `kubernetes.list_resources`, `kubernetes.get_topology`, `kubernetes.get_health`, `kubernetes.list_events`, `kubernetes.list_findings` |
 
 ---
 
@@ -186,7 +192,7 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 
 ## 5. Agent Invocation Tracker
 
-> This is the running log of agent sessions working on Cloud Compass. Each entry is added by the agent when it starts and updates an item.
+> This is the running log of agent sessions working on Vyom. Historical entries retain the product name used at the time. Each entry is added by the agent when it starts and updates an item.
 > **Format:** `YYYY-MM-DD HH:MM | item | status change | summary`.
 >
 > **Mandatory beta tracking protocol:** For every task in `docs/BETA_EXECUTION_PLAN.md`, the responsible agent MUST (1) change that task from `[ ]` to `[~]` and append a start row here before implementation, (2) leave the task `[!]` with a concrete dependency/retry condition if blocked, and (3) change it to `[x]` only after recording its test, command, deployment check, or source evidence in the task's `Evidence / update` cell and appending a completion row here. Agents MUST NOT mark a parent epic complete while an in-scope child remains unfinished, or mark a task complete from a scaffold, undocumented manual check, or unverified claim.
@@ -237,6 +243,13 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 | 2026-09-20 08:54 | B0.3 | `[~] → [x]` | Added Kind-first release checklist, owner-controlled EKS/live gates, immediate rollback policy, and dated evidence template |
 | 2026-09-20 08:58 | B1.1 | `[ ] → [~]` | Started versioned identity, provider, event, citation, and API-error contract implementation |
 | 2026-09-20 09:00 | B1.1 | `[~] → [~]` | Added v1 Python/TypeScript contracts and tests; verification awaits unavailable Python dependencies because network and Docker are unavailable |
+| 2026-10-03 00:35 | B1.8 | `[ ] → [~]` | Started owner-authorized parallel inference refactor: Bedrock adapters, removal of MiniMax runtime, and actual Jev classification via Vercel AI Gateway |
+| 2026-10-03 00:55 | D34 (new) | `Bedrock-only → Bedrock + optional Jev classification` | Owner selected actual TypeSafe Jev through Vercel AI Gateway; reasoning/embeddings remain on in-region Bedrock and external classification has a separate B8.6 gate |
+| 2026-10-03 00:55 | B1.8 | `[~] → [x]` | Removed MiniMax runtime/configuration, added Bedrock/Jev adapters and versioned tenant vectors; 27 offline tests, Python syntax, Helm rendering, and diff checks passed; live activation/auth/migration remain pending |
+| 2026-10-03 00:56 | B0.4 | `[ ] → [~]` | Started product rename to Vyom with owner-provided tagline, AWS/Kubernetes positioning, and technical pitch |
+| 2026-10-03 00:57 | B0.5 | `[ ] → [~]` | Started owner-requested first-release Kubernetes scope expansion and staged tenant/namespace-safe delivery tasks |
+| 2026-10-03 01:12 | B0.4 | `[~] → [x]` | Applied Vyom copy to UI and active docs; exact-copy, title/package/UI reference and SVG checks passed; historical technical IDs retained; frontend build awaits missing dependencies |
+| 2026-10-03 01:12 | B0.5 | `[~] → [x]` | Aligned D13/D18/D31/D36, roadmap, architecture and release gate; defined eight pending B11 tasks; Kubernetes route included in 28 passing offline tests; original schedule requires rebaselining |
 
 > When you (the agent) start a new task, **append a row** here with the timestamp, the `F<n>.<m>` item, the new status, and a one-line summary. When the task completes, append a second row flipping the status to `[x]`.
 
@@ -250,6 +263,7 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 - Every Vault read for cloud creds MUST be scoped to `secret/tenants/{tenant_id}/providers/...`.
 - The MCP tool server MUST inject `tenant_id` and `role` from the verified token; it MUST NOT trust `tenant_id` from the request payload.
 - Role checks MUST happen in both the UI (page guard) and the MCP tool wrapper (server-side enforcement).
+- Kubernetes connections MUST belong to the resolved tenant; namespace grants and cluster-wide object grants MUST be resolved server-side before collection/tool execution. No request field or model output grants access. Cluster credentials use tenant/cluster-scoped Vault paths; never collect Secret data or literal environment values.
 
 ---
 
@@ -317,11 +331,11 @@ Browser → Envoy Gateway → Refine + shadcn/ui (8080) + LangGraph agent (SSE)
 ## 11. RAG
 
 - `tenant_id` scoped chunking and retrieval.
-- Beta sources: tenant-scoped live/simulated AWS tool results and curated Cloud Compass runbook text only. Tenant-uploaded cost/runbook/SBOM reports and other arbitrary document ingest are post-beta work.
+- Beta sources: authorized AWS/Kubernetes tool results and curated Vyom runbook text only. Tenant-uploaded cost/runbook/SBOM reports and other arbitrary document ingest are post-beta work.
 - Embeddings: selected in-region Bedrock embedding model under D27; collection dimension and migration are versioned with the chosen model.
 - Chunking: 512-char fixed, 50-char overlap.
-- Collections: `rag-{tid}`, `kb-{tid}-security`, `kb-{tid}-compliance`, `cve-{tid}`.
+- Bedrock RAG collections: `rag-{tid}-v1-{embedding_spec_hash}`; legacy `rag-{tid}` requires explicit re-embedding. Planned domain collections: `kb-{tid}-security`, `kb-{tid}-compliance`, `cve-{tid}`. See `docs/INFERENCE.md`.
 
 ## 12. Quality baseline
 
-The UI defines npm build and TypeScript-check scripts, but dependencies are not locked and no automated test suite exists yet. Python services have no tests, lint, or type-check configuration. FX.3 and roadmap R0.2 establish reproducible local and CI quality gates.
+The UI defines npm build and TypeScript-check scripts, but dependencies are not locked and no browser test suite exists yet. Python contract tests exist but still await dependencies; the RAG inference refactor has 28 passing offline tests (`scripts/test-inference.py`). Service-wide lint/typecheck, dependency-backed tests, and reproducible local/CI gates remain FX.3 and roadmap R0.2 work.

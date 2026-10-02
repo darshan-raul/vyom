@@ -41,14 +41,6 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ .Release.Name }}-streamlit-config
-        env:
-        - name: MINIMAX_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: rendered-secrets
-              key: MINIMAX_API_KEY
-        - name: MINIMAX_API_BASE
-          value: "https://api.minimax.chat"
         volumeMounts:
         - name: rendered-secrets
           mountPath: /etc/secrets

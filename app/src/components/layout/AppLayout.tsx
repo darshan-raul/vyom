@@ -11,7 +11,6 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  Cloud,
 } from "lucide-react";
 import { useSession } from "@/auth/useSession";
 import { hasRole, type Role } from "@/lib/roles";
@@ -22,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 interface NavItem {
   to: string;
@@ -62,8 +62,8 @@ export function AppLayout() {
     <div className="flex h-full">
       <aside className="hidden md:flex w-64 flex-col border-r bg-card">
         <div className="flex items-center gap-2 p-4 border-b">
-          <Cloud className="h-6 w-6 text-primary" />
-          <div className="font-semibold">Cloud Compass</div>
+          <span aria-hidden="true" className="text-xl font-semibold text-primary">V</span>
+          <div className="font-semibold">{PRODUCT_NAME}</div>
         </div>
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {NAV.filter((n) => hasRole(session, n.minRole)).map((n) => (

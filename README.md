@@ -1,18 +1,16 @@
-# Cloud Compass
+# Vyom
 
-<p align="center">
-  <a href="docs/diagrams/aws-beta-infrastructure.html">
-    <img src="docs/diagrams/aws-beta-infrastructure.png" alt="Cloud Compass target AWS personal-beta infrastructure" width="1200">
-  </a>
-</p>
+**Grounded intelligence for the modern cloud.**
 
-Cloud Compass is a tenant-isolated **cloud operations cockpit for AWS, Azure, and GCP**. It brings spend, inventory, security exposure, software risk, and compliance into one explainable dashboard and chat experience, powered by RAG-grounded context, a LangGraph agent, and **read-only MCP tools**.
+Tenant-isolated cloud operations. One explainable cockpit for spend, posture, and risk across AWS and Kubernetes.
 
-> Previously known as *Cloud Cost Compass*. Rebranded and re-scoped to a true cloud operations compass, not just cost.
+Vyom turns scattered cloud telemetry into deterministic, RAG-grounded insight—orchestrated by LangGraph agents and secure MCP tooling.
+
+> Formerly **Cloud Compass**, originally **Cloud Cost Compass**. The first-release scope now includes AWS and Kubernetes visibility, health, and configuration posture; cluster collection remains pending implementation. Historical metrics, Kubernetes cost allocation/rightsizing, and cloud billing/security parity for GCP and Azure follow later. See [Kubernetes scope](docs/KUBERNETES.md) and the [execution tracker](docs/BETA_EXECUTION_PLAN.md).
 
 ## What it does
 
-Cloud Compass gives a single tenant-isolated view of:
+Vyom is designed to give a single tenant-isolated view of:
 
 | Domain | Question it answers |
 |---|---|
@@ -23,11 +21,12 @@ Cloud Compass gives a single tenant-isolated view of:
 | **SCA** | Are our workloads vulnerable? (SBOM, CVE, EPSS, KEV) |
 | **Compliance** | Are we audit-ready? (CIS, SOC2, auto-evidence) |
 
-All six expose identically-shaped MCP tools, all tenant-scoped, all queryable in natural language through a single LangGraph agent.
+The target architecture exposes these domains through tenant-scoped MCP tools and a single LangGraph agent. The runtime agent and most domain integrations remain pending in the execution tracker.
 
-## Features
+## Target capabilities
 
 - **Multi-Cloud Parity**: AWS (boto3), Azure (azure-mgmt / azure-identity), GCP (google-cloud-*) via a single `CloudProvider` protocol.
+- **Kubernetes Coverage**: Separate read-only API collection for EKS, AKS, GKE, and self-managed clusters, with permitted-namespace and separate cluster-wide grants; inventory/topology, health/events, and configuration posture (B11).
 - **Natural Language Operations**: LangGraph agent + in-region Amazon Bedrock inference selects and chains tools across all six domains.
 - **MCP Tool Server**: One FastMCP server (port 8000), namespaced tools (`cost.*`, `finops.*`, `inventory.*`, `security.*`, `sca.*`, `compliance.*`, `alerts.*`).
 - **RAG-Powered Insights**: Qdrant vector store + an in-region Bedrock embedding model; separate collections for chat docs, security KB, compliance KB, and CVE corpus.
@@ -38,7 +37,9 @@ All six expose identically-shaped MCP tools, all tenant-scoped, all queryable in
 
 ## Architecture
 
-The immediate release is a three-month, **AWS-only personal beta**: a read-only cockpit for daily cost, real-time infrastructure changes, Security Hub/direct checks, and grounded chat. It runs on Kind locally and EKS in a separate platform AWS account; the first monitored account is personal AWS. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for its exact boundary and the post-beta AWS → GCP → Azure roadmap.
+The immediate release is a read-only **AWS + Kubernetes personal beta**: daily AWS cost, infrastructure changes, Security Hub/direct checks, cluster/workload inventory, health/events, configuration posture, and grounded chat. It runs on Kind locally and EKS in a separate platform AWS account. Kubernetes has its own connector for EKS, AKS, GKE, and self-managed clusters; cloud billing/provider parity still follows AWS → GCP → Azure. The expanded scope needs a revised delivery estimate. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [Kubernetes architecture](docs/KUBERNETES.md).
+
+The [September infrastructure diagram](docs/diagrams/aws-beta-infrastructure.html) is a historical snapshot predating the Vyom rename and Kubernetes workstream.
 
 ```
                     ┌─────────────────────────┐
@@ -79,7 +80,7 @@ The immediate release is a three-month, **AWS-only personal beta**: a read-only 
 ## Repository Structure
 
 ```
-cloud-cost-compass/                  (repo name preserved; product is Cloud Compass)
+cloud-cost-compass/                  (repo name preserved; product is Vyom)
 ├── README.md
 ├── AGENTS.md                         # phase plan + agent invocation tracker
 ├── docs/
@@ -113,7 +114,8 @@ cloud-cost-compass/                  (repo name preserved; product is Cloud Comp
 ├── rag-service/                      # FastAPI
 │   ├── server.py
 │   ├── routers/                      # retrieve, ingest, history, compliance_kb, cve
-│   ├── embed/                        # Bedrock embedding client (target; current Minimax client is transitional)
+│   ├── embed/                        # Bedrock RAG facade + provider-neutral chunking
+│   ├── inference/                    # Bedrock adapters + optional Jev via Vercel AI Gateway
 │   ├── qdrant/                       # Qdrant client
 │   └── Dockerfile
 ├── alerts-service/                   # Phase 3
@@ -168,18 +170,20 @@ kind load docker-image hashicorp/vault:1.16 --name cloud-cost-compass
 
 ## Beta onboarding and environments
 
-- **Kind** is the required local and CI target; **EKS** in a dedicated Cloud Compass AWS account is the hosted beta target.
-- A Keycloak-authenticated `cloud-compass` CLI will generate pinned OpenTofu onboarding configuration and validate a connection. Applying infrastructure is always an explicit user action.
+- **Kind** is the required local and CI target; **EKS** in a dedicated Vyom AWS account is the hosted beta target.
+- A Keycloak-authenticated `vyom` CLI will generate pinned OpenTofu onboarding configuration and validate a connection. Applying infrastructure is always an explicit user action.
 - The CLI sends the newly-created, least-privilege AWS read-only connector secret to tenant Vault once. It does not retrieve stored AWS credentials.
 - Live connections are complemented by clearly labelled **Simulated AWS** connections backed by Floci and deterministic fixtures.
 - CloudTrail management events and Security Hub findings flow through EventBridge → SQS → an EKS worker. Daily snapshots reconcile event delivery; cost is daily and never described as real-time.
 - Bedrock inference is in-region in `ap-south-1`, uses zero retention, disables invocation-content logging, and never uses tenant content for model training. The application still minimizes/redacts prompts and enforces its own retention/deletion policy.
+- Optional Jev intent classification uses **Vercel AI Gateway** under D34's separate external-processing boundary. It is disabled by default and accepts minimized request text only. Adapter code exists; authenticated LangGraph integration and live policy/model evaluation remain pending. See [inference configuration and vector transition](docs/INFERENCE.md).
 
 ## Vault Secret Paths
 
 | Path | Rendered As | Used By |
 |---|---|---|
-| AWS IRSA for Bedrock | Short-lived workload identity | Agent/RAG services; no external model API key |
+| AWS IRSA for Bedrock | Short-lived workload identity | Bedrock adapters in agent/RAG services |
+| `secret/agent/ai_gateway_api_key` (planned B8.6) | `/etc/secrets/ai-gateway-api-key` | Optional backend Jev classifier; never the browser |
 | `secret/app/encryption_key` | `ENCRYPTION_KEY` env var | MCP server |
 | `secret/tenants/{tenant_id}/providers/aws.json` | `/etc/secrets/tenants/{tenant_id}/providers/aws.json` | MCP server |
 | `secret/tenants/{tenant_id}/providers/azure.json` | `/etc/secrets/tenants/{tenant_id}/providers/azure.json` | MCP server |

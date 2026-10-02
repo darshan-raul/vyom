@@ -1,4 +1,4 @@
-"""Versioned cross-service contracts for Cloud Compass."""
+"""Versioned cross-service contracts for Vyom."""
 
 from .v1 import API_VERSION
 

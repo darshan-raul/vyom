@@ -31,7 +31,7 @@ export function ChatPage() {
   return (
     <div className="space-y-4 h-[calc(100vh-3rem)] flex flex-col">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Cloud Compass Assistant</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Vyom Assistant</h1>
         <p className="text-sm text-muted-foreground">
           Ask about cost, security, inventory, FinOps, SCA, or compliance — answers cite the tools and KB chunks used.
         </p>
@@ -76,7 +76,7 @@ export function ChatPage() {
             <Input
               value={input}
               onChange={handleInputChange}
-              placeholder="Ask Cloud Compass…"
+              placeholder="Ask Vyom…"
               disabled={isLoading}
             />
             <Button type="submit" disabled={isLoading}>

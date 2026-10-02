@@ -7,7 +7,11 @@ metadata:
 data:
   DATABASE_URL: "postgresql://postgres:postgres@{{ .Release.Name }}-postgres:5432/cccdb"
   QDRANT_URL: "http://{{ .Release.Name }}-qdrant:6334"
-  MINIMAX_API_BASE: "https://api.minimax.chat"
+  BEDROCK_REGION: "ap-south-1"
+  BEDROCK_EMBEDDING_MODEL_ID: {{ .Values.ragService.bedrock.embeddingModelId | quote }}
+  BEDROCK_EMBEDDING_ALLOWED_MODELS: {{ .Values.ragService.bedrock.embeddingAllowedModels | quote }}
+  BEDROCK_EMBEDDING_DIMENSIONS: {{ .Values.ragService.bedrock.embeddingDimensions | quote }}
+  BEDROCK_POLICY_FILE: "/etc/secrets/bedrock-policy.json"
   VAULT_ADDR: "{{ .Values.global.vaultAddr }}"
   SECRETS_DIR: "/etc/secrets"
 ---

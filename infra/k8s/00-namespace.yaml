@@ -6,7 +6,6 @@ metadata:
 type: Opaque
 stringData:
   ENCRYPTION_KEY: "change-me-32-chars-exactly-here!"
-  MINIMAX_API_KEY: "your-minimax-api-key"
 ---
 apiVersion: v1
 kind: Secret

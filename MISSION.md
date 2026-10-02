@@ -1,7 +1,7 @@
-# Mission: LLM-powered chat for Cloud Compass
+# Mission: LLM-powered chat for Vyom
 
 ## Why
-Learn enough about large language models to design and ship a trustworthy chat experience for Cloud Compass users. The chat should explain cloud spend and operations in plain language, use tenant-scoped live data, and remain read-only and auditable.
+Learn enough about large language models to design and ship a trustworthy chat experience for Vyom users. The chat should explain cloud spend and operations in plain language, use tenant-scoped live data, and remain read-only and auditable.
 
 ## Success looks like
 - Explain the request → context → model → tool → cited answer loop.
@@ -9,7 +9,7 @@ Learn enough about large language models to design and ship a trustworthy chat e
 - Distinguish model knowledge from retrieved cloud facts and identify when an answer needs a tool call.
 
 ## Constraints
-- Short, practical lessons tied to the existing Cloud Compass architecture.
+- Short, practical lessons tied to the existing Vyom architecture.
 - Prefer managed model APIs and read-only cloud tools; no tenant document uploads in the beta.
 
 ## Out of scope

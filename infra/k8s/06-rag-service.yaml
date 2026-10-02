@@ -6,7 +6,11 @@ metadata:
 data:
   DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/cccdb"
   QDRANT_URL: "http://qdrant:6334"
-  MINIMAX_API_BASE: "https://api.minimax.chat"
+  BEDROCK_REGION: "ap-south-1"
+  BEDROCK_EMBEDDING_MODEL_ID: ""
+  BEDROCK_EMBEDDING_ALLOWED_MODELS: ""
+  BEDROCK_EMBEDDING_DIMENSIONS: "1024"
+  BEDROCK_POLICY_FILE: "/etc/secrets/bedrock-policy.json"
   VAULT_ADDR: "http://vault:8200"
   SECRETS_DIR: "/etc/secrets"
 ---

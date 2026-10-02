@@ -84,6 +84,11 @@ streamlit:
 
 ragService:
   enabled: true
+  # No candidate is selected before regional access and B3.5 policy checks.
+  bedrock:
+    embeddingModelId: ""
+    embeddingAllowedModels: ""
+    embeddingDimensions: 1024
   replicaCount: 1
   image:
     repository: cloud-cost-compass/rag-service

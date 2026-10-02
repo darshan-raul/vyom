@@ -1,6 +1,6 @@
-# Cloud Compass — AWS Personal Beta Execution Plan
+# Vyom — AWS + Kubernetes Beta Execution Plan
 
-> **Tracking authority for the three-month beta.** This plan decomposes the locked beta scope in [`ROADMAP.md`](ROADMAP.md) into independently verifiable work units. Long-term R0–R6 remains in `ROADMAP.md`; this document governs the work required before inviting external beta users.
+> **Tracking authority for the first-release beta.** This plan decomposes the scope in [`ROADMAP.md`](ROADMAP.md) into independently verifiable work units. The owner added Kubernetes on 2026-10-03; B11 expands the original AWS-only plan. Long-term R0–R6 remains in `ROADMAP.md`; this document governs the work required before inviting external beta users.
 
 ## 1. Tracking protocol
 
@@ -24,13 +24,13 @@ Rules:
 
 ## 2. Milestones and timebox
 
-This is a 12-week plan at 20 focused hours per week. A later milestone may not pull forward deferred scope.
+The original AWS-only estimate was 12 weeks at 20 focused hours per week. The weeks below are the historical baseline, not a committed schedule for AWS + Kubernetes. Estimate B11 and rebaseline milestone dates in B11.8 before promising the external release. A later milestone may not pull forward deferred scope.
 
 | Milestone | Weeks | Exit result | Task range |
 |---|---:|---|---|
 | M0 — Foundation | 1–2 | Kind has a deterministic build/test path and secure request context | B0–B2 |
 | M1 — Connected AWS | 3–4 | A live/simulated connection can be onboarded and queried safely | B3–B5 |
-| M2 — Operational signals | 5–6 | Daily cost, inventory, event updates, and security are visible to the owner | B6–B8 |
+| M2 — Operational signals | 5–6 (rebaseline pending) | AWS signals plus Kubernetes inventory, topology, health/events, and configuration posture are visible to the owner | B6–B8, B11 |
 | M3 — Personal-alpha proof | 7–8 | Owner uses EKS against the personal account and verifies the full journey | B9 |
 | M4 — External beta | 9–12 | 2–3 users are onboarded; reliability and retention evidence determine next scope | B10 |
 
@@ -43,6 +43,8 @@ This is a 12-week plan at 20 focused hours per week. A later milestone may not p
 | B0.1 | Keep `ROADMAP.md`, this plan, and locked decisions D13–D23 mutually consistent. | — | Documentation review confirms no conflicting beta scope or identity statement. | `[x]` | agent | Owner confirmed no tenant document upload/arbitrary ingest. Identity is tenant isolation: a verified user can access only the AWS accounts of the tenant to which the operator assigned membership; tenant/role are never caller-controlled. Stale post-beta document-ingest wording was labelled accordingly. |
 | B0.2 | Define beta telemetry: activated tenant, successful connection, weekly active tenant, time-to-first-signal, event lag, and failed onboarding. | B0.1 | Event schema and privacy-safe metric definitions are versioned; no secrets or raw tenant payloads in telemetry. | `[x]` | agent | Owner approved an active-status flag and the privacy/retention proposal; the versioned schema and metric definitions below are the source of truth. |
 | B0.3 | Define a release checklist for Kind, EKS, simulated AWS, and live personal AWS. | B0.2 | Checklist has executable commands and pass/fail evidence fields; used in B9.5 and B10.5. | `[x]` | agent | Owner confirmed Kind-first promotion, owner approval, immediate EKS rollback, a tagged dedicated resource for the sole controlled live event, and dated Markdown evidence. See `docs/RELEASE_CHECKLIST.md` and `docs/releases/README.md`. |
+| B0.4 | Rename the product to Vyom and apply the owner-provided executive tagline, platform subheading, and technical pitch to the app and active documentation. | B0.1 | Product surfaces and active docs consistently use Vyom; historical decisions and deployment identity compatibility are documented; branding introduces no additional beta implementation scope. | `[x]` | agent | 2026-10-03: exact owner copy checked in README and `app/src/lib/brand.ts`; title/package/UI references and favicon XML validated; active-doc search and `git diff --check` passed. Compatibility/history policy in `docs/BRAND.md`. `npm run build` could not run: dependencies are absent (`tsc: command not found`); browser/build validation remains B2.1. |
+| B0.5 | Revise first-release scope to include Kubernetes visibility, health/events, and configuration posture across EKS/AKS/GKE/self-managed clusters; define staged acceptance tasks and add Kubernetes to the typed routing vocabulary. | B0.1, B1.8 | Locked decisions, roadmap, architecture, and tracker agree on the added scope; namespace/cluster access and cost-attribution boundaries are explicit; offline classifier contract covers the Kubernetes category. | `[x]` | agent | 2026-10-03: source review aligned D13/D18/D31/D36 with `ROADMAP.md`, `ARCHITECTURE.md`, `KUBERNETES.md`, B11.1–B11.8 and release Gate E/B9.5. Checked all eight B11 tasks remain pending. Offline adapter suite passed 28 tests, including `test_kubernetes_route_is_a_planning_hint`; Python syntax/Helm rendering/diff checks passed. Scope definition and routing vocabulary only; cluster implementation/live flavor evidence and revised dates remain pending. |
 
 #### B0 telemetry contract — v1
 
@@ -70,6 +72,7 @@ Raw telemetry records are retained for 30 days. Monthly aggregate metrics are re
 | B1.5 | Add `users`, `tenants`, and `memberships`; resolve active tenant and role from verified `sub`. | B1.4 | A user can never choose tenant/role through request fields, headers, query strings, or tool arguments. | `[ ]` | — | — |
 | B1.6 | Remove trusted `X-Tenant-Id` and public `tenant_id` arguments from UI, RAG, MCP, and event paths. | B1.5 | Cross-tenant denial suite proves a forged header/argument cannot read, write, search, or infer another tenant. | `[ ]` | — | — |
 | B1.7 | Enforce `viewer`/`operator`/`admin` in server wrappers and UI guards; add audit-event interface. | B1.5 | Server-side role-denial tests pass even when UI guards are bypassed; audit entries redact secrets. | `[ ]` | — | — |
+| B1.8 | Refactor isolated inference adapters: remove MiniMax runtime/configuration, add Bedrock embedding/Converse adapters and opt-in actual TypeSafe Jev intent classification via Vercel AI Gateway, with model-versioned vectors and offline tests. Explicit parallel preparation authorized by owner on 2026-10-03; does not enable a public agent or waive B1/B3/B8 release gates. | B0.1; parallel adapter preparation | Mocked API contracts, classifier failure/escalation, policy denial, and tenant-separated vector namespaces pass; deployment changes contain no MiniMax configuration. | `[x]` | agent | 2026-10-03: `PYTHONDONTWRITEBYTECODE=1 python3.11 scripts/test-inference.py --sandbox-selector-poll` passed 27 tests; Python 3.11 syntax compilation and `git diff --check` passed; `helm template ai-refactor infra/k8s/charts/cloud-cost-compass --namespace cloud-cost-compass` rendered successfully (existing Postgres TLS-values warning). Runtime/config search found no MiniMax references. Adapters in `rag-service/inference/`, RAG facade in `embed/bedrock.py`, and tenant/model vector checks in `qdrant/client.py`; API sources/configuration/transition in `docs/INFERENCE.md`. Fake SDK/HTTP boundaries only: PyPI DNS blocks dependency-backed checks; no live provider/deployment or migration verified. Jev activation, tenant auth, model selection, and actual data-boundary evidence remain B1/B3/B8 gates. |
 
 ### B2 — Deterministic local baseline and core persistence
 
@@ -99,7 +102,7 @@ Raw telemetry records are retained for 30 days. Monthly aggregate metrics are re
 
 | ID | Task | Depends on | Verification / acceptance evidence | Status | Owner | Evidence / update |
 |---|---|---|---|---|---|---|
-| B4.1 | Scaffold the `cloud-compass` CLI with Keycloak device/browser login, tenant setup session, config validation, and safe diagnostics. | B1.4, B3.1 | CLI cannot act without a valid tenant-scoped session; token/secret redaction tests pass. | `[ ]` | — | — |
+| B4.1 | Scaffold the `vyom` CLI with Keycloak device/browser login, tenant setup session, config validation, and safe diagnostics. | B1.4, B3.1 | CLI cannot act without a valid tenant-scoped session; token/secret redaction tests pass. | `[ ]` | — | — |
 | B4.2 | Build a pinned OpenTofu module for dedicated read-only AWS IAM connector access and EventBridge forwarding prerequisites. | B4.1 | `tofu validate` and fixture `tofu plan` show only documented setup resources and least-privilege policy actions. | `[ ]` | — | — |
 | B4.3 | Implement explicit user-run apply flow and one-time connector-secret submission directly into the tenant Vault path. | B4.2, B3.1 | Secret is never printed, returned to browser, or retrievable by the CLI after upload; validation records connection status. | `[ ]` | — | — |
 | B4.4 | Add connection state machine: draft, validating, active, degraded, disabled, failed; render it in Settings. | B2.4, B4.3 | State transitions and authorization are tested; an account failure never impacts another connection. | `[ ]` | — | — |
@@ -144,7 +147,8 @@ Raw telemetry records are retained for 30 days. Monthly aggregate metrics are re
 | B8.2 | Implement LangGraph read-only flow: classify → plan → retrieve → execute allowed tools → synthesize → reflect. | B5.1, B7.1, B8.1 | Tool registry excludes writes and tenant override; tool selection tests pass. | `[ ]` | — | — |
 | B8.3 | Add SSE chat API and UI tool progress, source citations, uncertainty/partial-failure handling, and prompt-injection boundaries for tool results and curated runbooks. | B1.2, B8.2 | E2E asks cost/change/security questions; each factual answer cites a tool/result or curated-runbook source. | `[ ]` | — | — |
 | B8.4 | Add evaluation set for cost, inventory, changes, Security Hub/direct checks, simulation label, tenant override refusal, and partial failures. | B8.3 | Evaluation is repeatable in CI with fixtures; regressions block release. | `[ ]` | — | — |
-| B8.5 | Replace the transitional Minimax clients with configurable, allowlisted Bedrock chat/embedding adapters; retain in-region candidate options, select the lowest-cost pair compatible with B3.5 that passes grounded-answer evaluations, version vector dimensions, and migrate/reindex collections safely. | B3.5, B8.1 | Adapter tests prove in-region Bedrock invocation, no prompt/response logging, correct vector dimension, safe reindexing with no tenant mixing, and recorded policy/quality/cost selection evidence. | `[ ]` | — | — |
+| B8.5 | Activate and evaluate the Bedrock chat/embedding adapters prepared in B1.8; retain in-region candidate options, select the lowest-cost pair compatible with B3.5 that passes grounded-answer evaluations, and migrate/reindex the live corpus into model-versioned collections safely. | B1.8, B3.5, B8.1 | SDK-backed/live adapter checks prove in-region Bedrock invocation, no prompt/response logging, correct vector dimension, safe reindexing with no tenant mixing, and recorded policy/quality/cost selection evidence. | `[ ]` | — | — |
+| B8.6 | Activate and evaluate optional actual TypeSafe Jev intent routing through Vercel AI Gateway in LangGraph after authenticated tenant context exists; verify gateway/provider processing locations/retention and Vault-rendered gateway API key, validate input minimization, document the external prompt-classification boundary, and calibrate escalation thresholds. | B1.8, B1.6, B8.2 | Live credential smoke, labelled routing evaluation, outage/escalation E2E, tenant-boundary tests, and gateway/provider data-handling evidence pass; turning Jev off preserves the Bedrock workflow. | `[ ]` | — | — |
 
 ### B9 — Personal-account alpha
 
@@ -154,7 +158,7 @@ Raw telemetry records are retained for 30 days. Monthly aggregate metrics are re
 | B9.2 | Enable/verify CloudTrail and Security Hub source coverage; test a controlled management change. | B6.4, B7.2 | Change reaches EKS/UI within documented latency; disabled coverage is displayed accurately. | `[ ]` | — | — |
 | B9.3 | Verify live daily Cost Explorer, inventory snapshots, findings, weekly digest, and cited chat against the personal account. | B5.6, B7.5, B8.4 | Owner completes a written weekly-use script and records discrepancies/fixes. | `[ ]` | — | — |
 | B9.4 | Run security, Velero/PVC and native-state backup/restore, credential rotation/revocation, incident, and rollback drills for beta services. | B3.4, B3.6, B3.7, B9.1 | Runbooks have dated drill evidence; a revoked connector fails closed and is visible as degraded. | `[ ]` | — | — |
-| B9.5 | Execute the M3 release checklist from a clean Kind deployment and EKS release. | B0.3, B9.1–B9.4 | All required checks pass; unresolved items are explicitly deferred, not waived. | `[ ]` | — | — |
+| B9.5 | Execute the M3 release checklist from a clean Kind deployment and EKS release, including Kubernetes first-release coverage. | B0.3, B9.1–B9.4, B11.8 | All required AWS and Kubernetes checks pass; unresolved items are explicitly deferred, not waived. | `[ ]` | — | — |
 
 ### B10 — External beta and closure decision
 
@@ -165,6 +169,21 @@ Raw telemetry records are retained for 30 days. Monthly aggregate metrics are re
 | B10.3 | Run three weekly-use cycles; capture activation, weekly active tenants, evidence-link usage, and actionable signals. | B10.2, B7.5, B8.3 | At least two users return weekly for three consecutive weeks and each identifies an actionable change, cost movement, or finding. | `[ ]` | — | — |
 | B10.4 | Resolve P0/P1 beta defects and reliability issues; freeze new domains and nonessential integrations. | B10.3 | Triage log has no unaccepted P0/P1 issue; regression suite stays green. | `[ ]` | — | — |
 | B10.5 | Make the month-three closure decision: continue AWS hardening, expand AWS post-beta scope, or begin GCP discovery. | B10.4 | Written decision references success metrics, operating cost, reliability, user feedback, and unresolved risks. | `[ ]` | — | — |
+
+### B11 — Kubernetes first-release coverage
+
+The Kubernetes API has its own connector; AKS/GKE visibility does not enable Azure/GCP billing or full cloud-provider parity. These tasks are pending implementation. See [`KUBERNETES.md`](KUBERNETES.md) for collection boundaries and later governance/optimization/operations stages.
+
+| ID | Task | Depends on | Verification / acceptance evidence | Status | Owner | Evidence / update |
+|---|---|---|---|---|---|---|
+| B11.1 | Define cluster connections, flavor/capabilities, namespace and separate cluster-wide grants, normalized objects/health/events/findings/relationships, and tenant-leading persistence contracts. | B1.1, B1.5, B2.4 | Contract/isolation tests cover tenant + cluster + UID keys, namespace versus cluster scope, unknown cloud links, freshness, and D26 lifecycle classification. | `[ ]` | — | — |
+| B11.2 | Add `vyom` CLI read-only cluster onboarding with dedicated RBAC, authenticated TLS, tenant/cluster Vault credentials, grant validation, rotation/revocation, and connection status. Reject unsafe kubeconfig exec hooks and unauthorized network targets. | B11.1, B3.1, B4.1 | Denial tests exclude Secret reads, exec/attach, proxy and writes; credentials never reach browser/logs/Jev; invalid certificates, revoked access, and namespace/cluster grant violations fail closed. | `[ ]` | — | — |
+| B11.3 | Implement optional in-cluster outbound collection for unreachable private clusters: authenticated enrollment, identity renewal, tenant/cluster binding, replay protection, bounded observations, health and reconciliation. | B11.1, B11.2, B2.5 | Wrong-tenant/forged/expired/duplicate messages and collector outages are tested; recovery reconciles gaps; private credentials stay within the authorized connector boundary. | `[ ]` | — | — |
+| B11.4 | Implement Kubernetes API list/watch + reconciliation for the first-release object set, enforcing namespace and cluster-wide permissions before collection. | B11.1, B11.2 | Kind fixtures cover pagination, reconnects, duplicates/out-of-order observations, deletion, missing APIs and denied reads. No broad read followed by client-side namespace filtering; normalized fields omit secrets and literal environment values. | `[ ]` | — | — |
+| B11.5 | Build topology and evidence-based cloud correlation: workload/pod/node/cloud instance, service/load balancer, PVC/PV/volume, and namespace/team/app ownership. | B11.4, B5.4, B5.5 | Cross-tenant joins are denied; missing Azure/GCP/self-managed links stay unknown; unsupported/partial relationships are visible. Vyom's platform cluster is excluded unless explicitly onboarded. | `[ ]` | — | — |
+| B11.6 | Add workload/node health, bounded recent events, and configuration posture checks for privileged/host access, risky service accounts, broad RBAC, public exposure and isolation evidence. | B11.4 | Positive/negative/denied/stale fixtures show evidence and coverage. Partial reads never produce a clean posture claim; health does not imply historical usage, log analytics or a full CIS assessment. | `[ ]` | — | — |
+| B11.7 | Expose authorized `kubernetes.*` MCP tools and cluster UI, topology/health/posture views, cited LangGraph diagnostics and optional Jev routing. | B11.5, B11.6, B1.2, B1.7, B8.3 | E2E tests enforce role + tenant + cluster + namespace grants, failure states and evidence citations. Neither classifier nor tool arguments can grant access; Jev-disabled/outage paths preserve planning. | `[ ]` | — | — |
+| B11.8 | Verify the Kubernetes first-release gate across EKS/AKS/GKE/self-managed capabilities and private-collector recovery; estimate remaining work and rebaseline milestone dates. | B11.3, B11.7, B2.7 | Kind conformance plus flavor-specific live evidence record supported API versions, access limitations, topology/health/posture, credential revocation and deletion. Support claims require that flavor's evidence; documented effort/dependencies produce a revised schedule. | `[ ]` | — | — |
 
 ## 4. Dependency guardrails
 
@@ -181,7 +200,7 @@ B0 governance
                                     ┘
 ```
 
-Permitted parallel work: B0.2/B0.3 after B0.1; B2.1/B2.2; B5.3–B5.5 after B5.2; B7.1/B7.2 after their data dependencies; B8.1 while the AWS adapter is built. No GCP, Azure, SCA, compliance, advanced FinOps, Slack automation, or write-remediation work may enter this plan before B10.5.
+Permitted parallel work: B0.2/B0.3 after B0.1; owner-authorized B1.8 adapter preparation; B2.1/B2.2; B5.3–B5.5 after B5.2; B7.1/B7.2 after their data dependencies; B8.1 while the AWS adapter is built; B11 tasks alongside AWS work once their own dependencies pass. B11.8 is required before B9.5. No GCP/Azure cloud-provider parity, SCA, formal compliance, advanced FinOps, Slack automation, or write-remediation work may enter this plan before B10.5. Common Kubernetes API coverage of AKS/GKE is the explicit B11 exception.
 
 ## 5. Beta closure scorecard (locked)
 

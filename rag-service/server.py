@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from routers import history, ingest, retrieve
 
-app = FastAPI(title="cloud-cost-compass-rag", version="1.0.0")
+app = FastAPI(title="Vyom RAG", version="1.0.0")
 
 app.include_router(history.router)
 app.include_router(ingest.router)

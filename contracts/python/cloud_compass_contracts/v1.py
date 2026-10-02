@@ -1,4 +1,4 @@
-"""Cloud Compass v1 transport contracts.
+"""Vyom v1 transport contracts.
 
 These models define values crossing browser/API, agent, MCP, provider, and
 worker boundaries. They are deliberately provider-neutral and do not make
