@@ -1,5 +1,8 @@
 # Vyom
 
+<img width="1254" height="1254" alt="image" src="https://github.com/user-attachments/assets/2dc9be48-f22e-4a5b-9008-615f769270e6" />
+
+
 **Vyom: Grounded intelligence for the modern cloud.**
 
 Tenant-isolated cloud operations. One explainable cockpit for spend, posture, and risk across AWS and Kubernetes.
