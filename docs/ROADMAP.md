@@ -2,6 +2,7 @@
 
 > Status date: 2026-09-19
 > Inference inventory updated 2026-10-03: B1.8 adapter refactor; see [`INFERENCE.md`](INFERENCE.md). Other inventory rows retain the original snapshot date.
+> Kubernetes internal preparation updated 2026-10-03: B1.9; see [`KUBERNETES.md`](KUBERNETES.md). Public onboarding/tools and deployed support remain pending B11.
 > Delivery order: **AWS first, then GCP, then Azure**.  
 > This is the execution roadmap. Existing `F1.x`/`F2.x`/`F3.x` tracker IDs remain useful as domain-backlog references, but their original all-cloud-at-once ordering is superseded by the release sequence below.
 
@@ -124,7 +125,7 @@ The v1 platform also includes OIDC authentication, tenant-scoped authorization, 
 
 | Capability | Status | What exists now | Gaps / observations |
 |---|---|---|---|
-| LangGraph runtime | Missing | Architecture text and UI expectation only | No graph, model client, planner, tool registry, streaming endpoint, citations, safety policy, or evaluation suite |
+| LangGraph runtime | Missing | Architecture text, UI expectation and separate inference adapters | No graph wiring, planner, tool registry, streaming endpoint, citations, safety policy, or agent evaluation suite |
 | Agent HTTP/SSE endpoint | Missing | nginx route points `/api/agent/` to MCP | MCP server has no `/chat` agent endpoint |
 | Grounding and citations | Missing | Product requirement only | Must link tool results and RAG chunks to answer claims |
 | Inference adapters and routing | Partial | Bedrock Converse adapter, typed route interface, opt-in actual Jev via Vercel evaluation API, offline API/failure tests | Authenticated LangGraph wiring, live gateway/vendor evidence and calibrated routing evaluation remain B8.2/B8.6 |
@@ -146,6 +147,7 @@ The v1 platform also includes OIDC authentication, tenant-scoped authorization, 
 
 | Capability | Status | What exists now | Gaps / observations |
 |---|---|---|---|
+| Monitored-cluster connector | Partial | `mcp-server/connectors/kubernetes/`: internal grant checks, bounded HTTPS lists, normalized records, topology, health/posture, in-memory reconciliation and 25 offline tests | No backend grant lookup/onboarding, watch/persistence/private collector, cloud joins, public tools/UI or live flavor evidence; B11 gates remain pending |
 | Raw Kind manifests | Partial | Namespace, Vault, Keycloak, Postgres, MCP, app, gateway, migrations, RAG, Qdrant | Several configs are stale or incompatible; no agent/alerts/cronjobs; persistence and probes are incomplete |
 | Helm chart | Conflicting | Chart, dependencies, environment values, templates | Still names the app `streamlit`; no Refine app template; duplicated old schemas/configuration |
 | Keycloak | Conflicting | Realm import and deployment | Realm/client/roles/redirect URIs disagree with app configuration and product name |

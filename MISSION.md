@@ -1,7 +1,7 @@
 # Mission: LLM-powered chat for Vyom
 
 ## Why
-Learn enough about large language models to design and ship a trustworthy chat experience for Vyom users. The chat should explain cloud spend and operations in plain language, use tenant-scoped live data, and remain read-only and auditable.
+Learn enough about large language models to design and ship a trustworthy chat experience for Vyom users. The chat should explain AWS spend and cloud/Kubernetes operations in plain language, use authorized tenant/cluster/namespace evidence, and remain read-only and auditable.
 
 ## Success looks like
 - Explain the request → context → model → tool → cited answer loop.

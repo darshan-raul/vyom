@@ -7,6 +7,57 @@ objects, workload status/events, and configuration evidence. This is planned
 scope, not a claim that these adapters are already running. B11 in the execution
 tracker contains the implementation and acceptance gates.
 
+## Implemented internal preparation (B1.9)
+
+`mcp-server/connectors/kubernetes/` now implements an internal
+`KubernetesOperations.inspect(context, connection, grant)` flow. `context` and
+`grant` must be constructed by trusted backend identity/membership resolution;
+they are not wire request models and must never be deserialized from tool inputs.
+
+- A closed resource registry supplies namespaced list URLs and explicit
+  cluster-wide kinds. No all-namespace reads followed by filtering; no Secret,
+  exec/attach, proxy or mutation endpoints.
+- An HTTPS GET transport validates the enrolled host, disables redirects and
+  environment proxies, verifies the supplied CA, reads the token on each call,
+  limits response size, and exposes only controlled failure categories. Credential
+  files are scoped under `/etc/secrets/tenants/{tenant}/clusters/{cluster}/`.
+- Paginated collection deduplicates UID keys, limits pages/object counts, and
+  preserves incomplete/denied/unsupported coverage. Normalization projects
+  specific metadata, status and configuration fields; it excludes annotations,
+  env values, commands/args, Secret data and free-form event/error messages.
+- Topology links observed owners, pods/nodes, Services/pods and PVC/PV evidence
+  inside the same tenant/cluster/namespace boundaries. Node provider IDs remain
+  unresolved references; there is no implemented cloud-account join yet.
+- Health distinguishes unknown, attention, healthy and completed observations;
+  stale workload generations stay unknown. Bounded posture checks cover host
+  access, privileged/escalation flags, wildcard RBAC, cluster-admin bindings,
+  potential external Services and missing namespace policies only when collection
+  is complete. These are indicators, not proof of external reachability,
+  packet isolation or formal compliance.
+- In-memory reconciliation returns tombstone keys only for completely collected
+  scopes. Denied scopes retain prior observations; mixed tenant/cluster and stale
+  snapshots are rejected. This is not persisted history or a running worker.
+  Retained records are internal storage state; `authorized_records` must apply
+  current grants before any response, so retention cannot bypass revocation.
+
+Run the 25 offline tests with:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=mcp-server python3.11 -m unittest discover -s mcp-server/tests -v
+```
+
+Fixture tests exercise the same internal flow for all four flavor labels; they
+do not establish live flavor support. Kubernetes list/pagination behavior follows
+the [Kubernetes API concepts](https://kubernetes.io/docs/reference/using-api/api-concepts/).
+
+Still missing: verified membership/grant lookup, CLI/enrollment/RBAC generation,
+network-destination validation, TLS/credential deployment, API capability/version
+discovery, watch/reconnect worker, persistence and retention jobs, private outbound
+collector, cloud instance/volume/load-balancer joins, UI/public MCP/agent wiring
+and live Kind/EKS/AKS/GKE evidence. The internal module is not registered in the
+legacy unauthenticated MCP server. B11 tasks remain pending; B1.9 does not waive
+their identity, persistence or release dependencies.
+
 ## First-release scope
 
 | Area | Included |
@@ -16,7 +67,7 @@ tracker contains the implementation and acceptance gates.
 | Relationships | Cluster → namespace → workload → pod → node; workload/service endpoints; PVC → PV; evidence-based links to cloud instances, volumes, and load balancers; team/app ownership when supplied |
 | Health/events | Readiness/availability, failed scheduling, restarts, crash/image-pull symptoms, node conditions, recent events, timestamped observations and explicit missing coverage |
 | Configuration posture | Privileged/host access, risky pod/service-account configuration, broad RBAC, public exposure indicators, missing network isolation evidence; bounded checks with source object references and uncertainty |
-| Interaction | Tenant/namespace-scoped UI, filters, topology, MCP queries, and cited read-only diagnostics through the existing agent |
+| Interaction | Tenant/namespace-scoped UI, filters, topology, MCP queries, and cited read-only diagnostics through the planned LangGraph agent |
 
 Kubernetes visibility through the shared API connector can cover AKS/GKE before
 Azure/GCP cloud billing adapters. Correlation to their cloud infrastructure and

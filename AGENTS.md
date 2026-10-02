@@ -250,6 +250,8 @@ Tenant-isolated cloud operations cockpit for AWS, Azure, and GCP: one explainabl
 | 2026-10-03 00:57 | B0.5 | `[ ] → [~]` | Started owner-requested first-release Kubernetes scope expansion and staged tenant/namespace-safe delivery tasks |
 | 2026-10-03 01:12 | B0.4 | `[~] → [x]` | Applied Vyom copy to UI and active docs; exact-copy, title/package/UI reference and SVG checks passed; historical technical IDs retained; frontend build awaits missing dependencies |
 | 2026-10-03 01:12 | B0.5 | `[~] → [x]` | Aligned D13/D18/D31/D36, roadmap, architecture and release gate; defined eight pending B11 tasks; Kubernetes route included in 28 passing offline tests; original schedule requires rebaselining |
+| 2026-10-03 01:28 | B1.9 | `[ ] → [~]` | Started missing-refactor repair: truthful README inventory and tested internal Kubernetes collection/normalization/topology/health/posture; production B11 dependencies remain required |
+| 2026-10-03 01:42 | B1.9 | `[~] → [x]` | Implemented internal scoped Kubernetes API collection/analysis and revoked-grant history filtering; 25 offline tests and syntax/diff checks passed; corrected README inventory/auth/test claims and MCP display name; B11 production integration remains pending |
 
 > When you (the agent) start a new task, **append a row** here with the timestamp, the `F<n>.<m>` item, the new status, and a one-line summary. When the task completes, append a second row flipping the status to `[x]`.
 
@@ -338,4 +340,4 @@ Browser → Envoy Gateway → Refine + shadcn/ui (8080) + LangGraph agent (SSE)
 
 ## 12. Quality baseline
 
-The UI defines npm build and TypeScript-check scripts, but dependencies are not locked and no browser test suite exists yet. Python contract tests exist but still await dependencies; the RAG inference refactor has 28 passing offline tests (`scripts/test-inference.py`). Service-wide lint/typecheck, dependency-backed tests, and reproducible local/CI gates remain FX.3 and roadmap R0.2 work.
+The UI defines npm build and TypeScript-check scripts, but dependencies are not locked and no browser test suite exists yet. Python contract tests exist but still await dependencies; the RAG inference refactor has 28 passing offline tests (`scripts/test-inference.py`). The internal Kubernetes connector has 25 passing offline tests (`PYTHONPATH=mcp-server python3.11 -m unittest discover -s mcp-server/tests -v`). Service-wide lint/typecheck, dependency-backed tests, and reproducible local/CI gates remain FX.3 and roadmap R0.2 work.

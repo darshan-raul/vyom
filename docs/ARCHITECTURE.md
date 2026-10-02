@@ -80,6 +80,14 @@ mcp-server/
 
 The factory reads `secret/tenants/{tenant_id}/providers/{aws,azure,gcp}.json` from the rendered Vault volume and instantiates only the providers that have credentials. The onboarding CLI writes only the newly-created least-privilege connector credential; it never retrieves stored credentials.
 
+The provider layout above is planned; current AWS functions are still embedded
+in `mcp-server/server.py`. The separate internal Kubernetes implementation now
+exists at `mcp-server/connectors/kubernetes/` (B1.9): trusted-context/grant checks
+→ bounded API lists → allowlisted records → topology/health/posture. It is not
+registered as a public MCP tool. Watch collection, persisted history, onboarding,
+private collector and authenticated UI/agent integration remain B11 work. See
+[implemented Kubernetes boundaries](KUBERNETES.md).
+
 ## Multi-tenancy rules
 
 - Keycloak `sub` identifies a user. The verified request resolves `tenant_id` and role through a server-side membership lookup, never from a request body/header/tool argument.

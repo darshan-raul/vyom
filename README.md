@@ -1,263 +1,159 @@
 # Vyom
 
-**Grounded intelligence for the modern cloud.**
+**Vyom: Grounded intelligence for the modern cloud.**
 
 Tenant-isolated cloud operations. One explainable cockpit for spend, posture, and risk across AWS and Kubernetes.
 
 Vyom turns scattered cloud telemetry into deterministic, RAG-grounded insight—orchestrated by LangGraph agents and secure MCP tooling.
 
-> Formerly **Cloud Compass**, originally **Cloud Cost Compass**. The first-release scope now includes AWS and Kubernetes visibility, health, and configuration posture; cluster collection remains pending implementation. Historical metrics, Kubernetes cost allocation/rightsizing, and cloud billing/security parity for GCP and Azure follow later. See [Kubernetes scope](docs/KUBERNETES.md) and the [execution tracker](docs/BETA_EXECUTION_PLAN.md).
+Formerly Cloud Compass (originally Cloud Cost Compass). This repository is under
+refactor; the positioning above describes the intended product. It is not yet an
+operational or production-ready cloud/Kubernetes cockpit.
 
-## What it does
+## What is implemented
 
-Vyom is designed to give a single tenant-isolated view of:
+| Area | Repository evidence | Remaining work |
+|---|---|---|
+| Vyom product identity | App title, login, sidebar, chat copy, favicon and shared `app/src/lib/brand.ts` | Browser/build validation; coordinated migration of historical deployment identifiers |
+| Bedrock inference | RAG embedding facade, Titan V2 codec, Converse adapter, model/region allowlists and approval checks | Live access/policy evaluation, model selection, authenticated LangGraph wiring and corpus cutover |
+| Actual Jev via Vercel | Native evaluation HTTP adapter for `typesafe-ai/jev`; typed intent hints, minimized input and escalation | Vault/gateway activation, external data-handling evidence and routing evaluation; disabled by default |
+| Kubernetes internals | `mcp-server/connectors/kubernetes/`: grant checks, bounded API lists, allowlisted normalization, topology, health/posture and in-memory reconciliation | Backend membership/grant resolver, onboarding, persistence/watch worker, private collector, public tools/UI and live flavor evidence |
+| Legacy MCP | `get_costs` and `get_resources` AWS functions in `mcp-server/server.py` | JWT verification, server-resolved tenant/role, normalized providers, pagination and browser HTTP adapter |
+| RAG service | `/health`, `/retrieve`, `/ingest`, `/history`; tenant/model-versioned vectors | Replace trusted tenant headers, secure history/corpus access, restrict arbitrary ingest and implement lifecycle/transactions |
+| Browser app | Refine/Vite/shadcn-style shell, pages, Keycloak scaffold and chat UI | Resolve existing imports/auth/API mismatches, lock/install dependencies and verify build; no Kubernetes page yet |
+| LangGraph agent | Reasoning/classification adapters exist | No graph, authenticated chat/SSE endpoint or citation/evaluation runtime yet |
+| Deployment | Raw manifests, Helm chart and Kind/EKS scripts exist | Reconcile deployment sources, identity, persistence and service routing; no end-to-end release has been verified |
 
-| Domain | Question it answers |
-|---|---|
-| **Cost** | Where is money being spent, and is it trending up? |
-| **FinOps** | Where can we save? (rightsizing, reservations, idle resources) |
-| **Inventory** | What do we actually have, and is it tagged? |
-| **Security** | Where are we exposed? (CSPM, IAM drift, public assets, encryption) |
-| **SCA** | Are our workloads vulnerable? (SBOM, CVE, EPSS, KEV) |
-| **Compliance** | Are we audit-ready? (CIS, SOC2, auto-evidence) |
+The **28 inference tests** and **25 Kubernetes tests** run offline. They verify
+adapter behavior with fake boundaries, not live Bedrock/Jev access, deployed
+identity isolation, or EKS/AKS/GKE connectivity. Python contract tests exist but
+cannot run here without their dependencies. The frontend build also remains
+unverified because Node dependencies are absent.
 
-The target architecture exposes these domains through tenant-scoped MCP tools and a single LangGraph agent. The runtime agent and most domain integrations remain pending in the execution tracker.
+## First-release scope
 
-## Target capabilities
+AWS comes first for cloud-provider billing/inventory/security; GCP then Azure
+follow their release gates. Kubernetes has a separate API connector that can
+represent **EKS, AKS, GKE and self-managed clusters** without claiming cloud
+billing parity for those providers.
 
-- **Multi-Cloud Parity**: AWS (boto3), Azure (azure-mgmt / azure-identity), GCP (google-cloud-*) via a single `CloudProvider` protocol.
-- **Kubernetes Coverage**: Separate read-only API collection for EKS, AKS, GKE, and self-managed clusters, with permitted-namespace and separate cluster-wide grants; inventory/topology, health/events, and configuration posture (B11).
-- **Natural Language Operations**: LangGraph agent + in-region Amazon Bedrock inference selects and chains tools across all six domains.
-- **MCP Tool Server**: One FastMCP server (port 8000), namespaced tools (`cost.*`, `finops.*`, `inventory.*`, `security.*`, `sca.*`, `compliance.*`, `alerts.*`).
-- **RAG-Powered Insights**: Qdrant vector store + an in-region Bedrock embedding model; separate collections for chat docs, security KB, compliance KB, and CVE corpus.
-- **Multi-Tenant Dashboard**: **Refine + shadcn/ui (React + Vite + TypeScript)**, OIDC SSO (Keycloak), per-tenant data isolation enforced in DB layer, Qdrant collections, Vault paths, and MCP tool wrappers.
-- **Streaming Chat**: Vercel AI SDK hits the LangGraph agent over SSE; tool calls rendered inline with citations.
-- **Role-Based Access**: `viewer` / `operator` / `admin` enforced in both UI route guards and MCP tool wrappers (defense in depth).
-- **Vault Agent Sidecars**: All app secrets (API keys, cloud credentials, Slack webhooks) rendered from HashiCorp Vault at runtime to `emptyDir` volumes. **No Kubernetes Secret objects used for application secrets.**
+- Daily AWS cost, cloud inventory/change detection, Security Hub/direct checks,
+  weekly digest and cited read-only chat.
+- Kubernetes cluster/workload inventory, topology, health/recent events and
+  bounded configuration posture. Access is tenant → cluster → permitted
+  namespaces, with separate grants for cluster-wide objects.
+- Later: historical monitoring integration, Kubernetes cost allocation and
+  rightsizing, formal governance/compliance, image/SBOM analysis and deeper
+  operational diagnostics. Namespace costs must reconcile to infrastructure
+  charges without counting node costs twice. Write remediation remains deferred.
 
-## Architecture
+The Kubernetes code is an internal collection-to-analysis flow; it is deliberately
+not registered in the legacy unauthenticated MCP server. Watch collection,
+persistence, private-cluster outbound collection and live support evidence remain
+B11 work. The original 12-week AWS-only estimate needs rebaselining for this scope.
 
-The immediate release is a read-only **AWS + Kubernetes personal beta**: daily AWS cost, infrastructure changes, Security Hub/direct checks, cluster/workload inventory, health/events, configuration posture, and grounded chat. It runs on Kind locally and EKS in a separate platform AWS account. Kubernetes has its own connector for EKS, AKS, GKE, and self-managed clusters; cloud billing/provider parity still follows AWS → GCP → Azure. The expanded scope needs a revised delivery estimate. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [Kubernetes architecture](docs/KUBERNETES.md).
+See the [execution tracker](docs/BETA_EXECUTION_PLAN.md),
+[Kubernetes implementation and delivery boundaries](docs/KUBERNETES.md),
+[inference configuration](docs/INFERENCE.md) and [roadmap](docs/ROADMAP.md).
 
-The [September infrastructure diagram](docs/diagrams/aws-beta-infrastructure.html) is a historical snapshot predating the Vyom rename and Kubernetes workstream.
+## Target architecture
 
-```
-                    ┌─────────────────────────┐
-                    │  Browser (end user)     │
-                    └────────────┬────────────┘
-                                 │ HTTPS
-                    ┌────────────▼────────────┐
-                    │   Envoy Gateway         │  Gateway API
-                    │   (TLS, routing)        │
-                    └────────────┬────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │   Refine + shadcn/ui    │  :8080 (nginx) → Vite static + reverse proxy
-                    │   (React, Vite, TS)     │  /api/* → backend services
-                    └─┬───────────┬─────────┬─┘
-                      │           │         │
-              ┌───────▼──┐  ┌─────▼────┐  ┌─▼──────────┐
-              │   MCP    │  │   RAG    │  │  Alerts    │
-              │  Server  │  │ Service  │  │  Service   │
-              │  :8000   │  │  :8001   │  │  :8002     │
-              └────┬─────┘  └────┬─────┘  └─────┬──────┘
-                   │             │              │
-       ┌───────────┼──┐    ┌─────┼─────┐        │
-       │           │  │    │     │     │        │
-   ┌───▼──┐  ┌─────▼┐ │  ┌─▼──┐ ┌▼───┐ │   ┌────▼────┐
-   │ AWS  │  │Azure │ │  │Qdr.│ │Postg│ │   │ Slack   │
-   │ SDK  │  │ SDK  │ │  │6334│ │5432│ │   │ Webhook │
-   └──────┘  └──────┘ │  └────┘ └────┘ │   └─────────┘
-               ┌──────▼┐               │
-               │ GCP   │               │
-               │ SDK   │               │
-               └───────┘               │
-        All pods: Vault Agent sidecar ◄┘
-        renders secrets to emptyDir vol
-        (no K8s Secret objects for app secrets)
-```
+The browser authenticates through Keycloak. Backend membership resolution must
+produce tenant/role context before LangGraph or MCP can call a connector.
+LangGraph will use Bedrock for reasoning/embeddings and optional Jev for intent
+classification. Authorized cloud and Kubernetes collectors produce normalized
+objects, relationships, findings and evidence for Postgres and tenant-scoped RAG.
+Calculations and explicit policy checks remain deterministic code.
 
-## Repository Structure
+Kind is the local/CI target; the hosted platform targets a dedicated EKS account
+in `ap-south-1`, with self-managed Postgres, Qdrant, Vault and Keycloak. Bedrock
+has a regional data-policy gate; external Jev classification has a separate gate.
+Neither boundary is established by the offline adapters alone.
 
-```
-cloud-cost-compass/                  (repo name preserved; product is Vyom)
-├── README.md
-├── AGENTS.md                         # phase plan + agent invocation tracker
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── SECURITY.md
-│   └── RUNBOOKS.md
-├── app/                              # Refine + shadcn/ui dashboard (Vite + TS)
-│   ├── Dockerfile                    # multi-stage: node build → nginx serve
-│   ├── nginx.conf                    # SPA + /api reverse proxy
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.ts
-│   ├── components.json               # shadcn config
-│   ├── index.html
-│   ├── src/
-│   │   ├── main.tsx
-│   │   ├── App.tsx                   # Refine + Router + AuthProvider
-│   │   ├── auth/                     # Keycloak OIDC + role guards
-│   │   ├── providers/                # refine data providers → MCP / RAG / Alerts
-│   │   ├── pages/                    # overview, costs, finops, inventory, security, sca, compliance, alerts, chat, settings
-│   │   ├── components/               # shadcn/ui + domain widgets
-│   │   ├── lib/                      # api client, role helpers, formatters
-│   │   └── styles/                   # tailwind globals
-│   └── public/
-├── mcp-server/                       # FastMCP server, namespaced tools
-│   ├── server.py
-│   ├── providers/                    # base, aws, azure, gcp, factory
-│   ├── tools/                        # cost, finops, inventory, security, sca, compliance
-│   └── Dockerfile
-├── rag-service/                      # FastAPI
-│   ├── server.py
-│   ├── routers/                      # retrieve, ingest, history, compliance_kb, cve
-│   ├── embed/                        # Bedrock RAG facade + provider-neutral chunking
-│   ├── inference/                    # Bedrock adapters + optional Jev via Vercel AI Gateway
-│   ├── qdrant/                       # Qdrant client
-│   └── Dockerfile
-├── alerts-service/                   # Phase 3
-├── compliance/                       # YAML framework packs (committed)
-├── migrations/                       # 9 phase-stamped SQL files
-├── infra/
-│   ├── k8s/                          # 00..10 manifests + Gateway API
-│   └── kind/
-└── scripts/                          # setup-kind, deploy-eks, seed-vault, bootstrap-tenant
+The [architecture document](docs/ARCHITECTURE.md) describes this target. The
+[September infrastructure diagram](docs/diagrams/aws-beta-infrastructure.html)
+is historical and predates Vyom/Kubernetes collection.
+
+## Actual repository layout
+
+```text
+cloud-compass/                       # current directory; product is Vyom
+├── AGENTS.md                        # decisions and invocation log
+├── app/                             # browser shell, auth, pages, shared brand
+├── contracts/python/                # v1 Pydantic contracts and tests
+├── docs/                            # scope, roadmap, trackers and release gates
+├── mcp-server/
+│   ├── server.py                    # legacy AWS MCP tools
+│   ├── connectors/kubernetes/       # internal collection/analysis module
+│   └── tests/test_kubernetes.py
+├── rag-service/
+│   ├── routers/                     # retrieve, ingest, history
+│   ├── embed/                       # Bedrock facade and text chunking
+│   ├── inference/                   # Bedrock + actual Jev adapters
+│   ├── qdrant/                      # tenant/model-versioned vector access
+│   └── tests/                       # offline inference/vector tests
+├── migrations/                      # 001_initial_schema.sql, 002_seed_tenants.sql
+├── infra/                           # raw manifests, Helm chart and Kind config
+└── scripts/                         # setup-kind, deploy-eks, test-inference
 ```
 
-## Setup
+There is no agent service, alerts service, cloud-provider abstraction directory,
+CLI/OpenTofu onboarding implementation, or formal compliance pack yet. Planned
+MCP names such as `kubernetes.*` and `cost.get_costs` are acceptance targets;
+the running legacy server currently registers `get_costs` and `get_resources`.
 
-### Local Kind
+## Local verification
+
+From the repository root:
 
 ```bash
-./scripts/setup-kind.sh
+PYTHONDONTWRITEBYTECODE=1 python3.11 scripts/test-inference.py --sandbox-selector-poll
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=mcp-server python3.11 -m unittest discover -s mcp-server/tests -v
+helm template vyom infra/k8s/charts/cloud-cost-compass --namespace cloud-cost-compass
 ```
 
-### EKS
+The selector flag is a test-process workaround for this managed sandbox; normal
+hosts can run the inference runner without it. Helm rendering is a manifest
+syntax check, not deployment evidence; it currently emits a Postgres TLS-values
+warning. Full service checks require dependencies and B2 quality-gate repairs.
 
-```bash
-export REGISTRY=your-registry.example.com
-./scripts/deploy-eks.sh
-```
-
-### Build images
-
-```bash
-docker build -t cloud-cost-compass/app:latest -f app/Dockerfile app/
-docker build -t cloud-cost-compass/mcp-server:latest -f mcp-server/Dockerfile mcp-server/
-docker build -t cloud-cost-compass/rag-service:latest -f rag-service/Dockerfile rag-service/
-```
-
-### App (local dev)
+For frontend development:
 
 ```bash
 cd app
 npm install
-npm run dev      # vite dev server on :5173, proxies /api/* to localhost:8000/8001/8002
+npm run lint
+npm run build
+npm run dev
 ```
 
-### Kind image load
+The app defines these scripts; no lockfile is present yet. Vite listens on 5173
+and defaults to in-cluster backend proxy hostnames. For local backends set
+`VITE_MCP_PROXY`, `VITE_RAG_PROXY` and `VITE_ALERTS_PROXY` explicitly; the alerts
+service and chat endpoint do not exist yet. `VITE_KEYCLOAK_*` must match the
+reconciled realm/client configuration. These commands are not a verified
+end-to-end setup instruction until B1/B2 pass.
 
-```bash
-kind load docker-image cloud-cost-compass/app:latest --name cloud-cost-compass
-kind load docker-image cloud-cost-compass/mcp-server:latest --name cloud-cost-compass
-kind load docker-image cloud-cost-compass/rag-service:latest --name cloud-cost-compass
-kind load docker-image qdrant/qdrant:v1.7.4 --name cloud-cost-compass
-kind load docker-image hashicorp/vault:1.16 --name cloud-cost-compass
-```
+## Deployment and identity compatibility
 
-## Beta onboarding and environments
+The namespace, Kind cluster, image prefix and Helm chart still use
+`cloud-cost-compass`; Keycloak configurations retain historical identifiers
+that are not yet consistent across app/manifests. Package imports use
+`cloud_compass_contracts`. The repository directory/remotes remain owner-managed.
+See [branding compatibility](docs/BRAND.md). Product copy changes do not migrate
+these identities or repair the authentication boundary.
 
-- **Kind** is the required local and CI target; **EKS** in a dedicated Vyom AWS account is the hosted beta target.
-- A Keycloak-authenticated `vyom` CLI will generate pinned OpenTofu onboarding configuration and validate a connection. Applying infrastructure is always an explicit user action.
-- The CLI sends the newly-created, least-privilege AWS read-only connector secret to tenant Vault once. It does not retrieve stored AWS credentials.
-- Live connections are complemented by clearly labelled **Simulated AWS** connections backed by Floci and deterministic fixtures.
-- CloudTrail management events and Security Hub findings flow through EventBridge → SQS → an EKS worker. Daily snapshots reconcile event delivery; cost is daily and never described as real-time.
-- Bedrock inference is in-region in `ap-south-1`, uses zero retention, disables invocation-content logging, and never uses tenant content for model training. The application still minimizes/redacts prompts and enforces its own retention/deletion policy.
-- Optional Jev intent classification uses **Vercel AI Gateway** under D34's separate external-processing boundary. It is disabled by default and accepts minimized request text only. Adapter code exists; authenticated LangGraph integration and live policy/model evaluation remain pending. See [inference configuration and vector transition](docs/INFERENCE.md).
+Existing setup/deployment scripts are in `scripts/`. Follow the
+[release checklist](docs/RELEASE_CHECKLIST.md) before using them for promotion;
+Kind/EKS health, persistence, rollback and isolation gates are still pending.
+No public service should be treated as tenant-safe based on the current legacy
+MCP/RAG interfaces: MCP accepts a caller-supplied tenant argument, RAG trusts a
+tenant header, and the browser currently conflates Keycloak `sub` with tenant
+identity. B1.3–B1.7 must resolve these gaps before onboarding tenants or exposing
+Kubernetes tools.
 
-## Vault Secret Paths
-
-| Path | Rendered As | Used By |
-|---|---|---|
-| AWS IRSA for Bedrock | Short-lived workload identity | Bedrock adapters in agent/RAG services |
-| `secret/agent/ai_gateway_api_key` (planned B8.6) | `/etc/secrets/ai-gateway-api-key` | Optional backend Jev classifier; never the browser |
-| `secret/app/encryption_key` | `ENCRYPTION_KEY` env var | MCP server |
-| `secret/tenants/{tenant_id}/providers/aws.json` | `/etc/secrets/tenants/{tenant_id}/providers/aws.json` | MCP server |
-| `secret/tenants/{tenant_id}/providers/azure.json` | `/etc/secrets/tenants/{tenant_id}/providers/azure.json` | MCP server |
-| `secret/tenants/{tenant_id}/providers/gcp.json` | `/etc/secrets/tenants/{tenant_id}/providers/gcp.json` | MCP server |
-| `secret/tenants/{tenant_id}/alerts/slack_webhook` | `/etc/secrets/tenants/{tenant_id}/alerts/slack_webhook` | Alerts service (Phase 3) |
-
-## Keycloak
-
-Keycloak at `http://keycloak:8080/realms/cloud-compass`. Realm: `cloud-compass`. Realm roles: `viewer`, `operator`, `admin` (mirrored into `user_roles` table).
-
-The Refine app uses an OIDC code-flow client (configured via `VITE_KEYCLOAK_*` env vars) and reads roles from the JWT for client-side route guards. The MCP server re-validates the JWT and re-checks roles for server-side enforcement (D2).
-
-## MCP Tools (per phase)
-
-### Phase 1
-`auth.whoami`, `cost.get_costs`, `cost.get_forecast`, `inventory.list_resources`, `inventory.get_tag_coverage`, `inventory.get_unused_resources`
-
-### Phase 2
-`finops.get_rightsizing`, `finops.get_reservation_coverage`, `finops.get_reservation_utilization`, `finops.get_idle_resources`, `security.list_findings`, `security.get_iam_anomalies`, `security.get_public_assets`, `security.get_encryption_status`
-
-### Phase 3
-`sca.list_vulnerabilities`, `sca.get_sbom`, `sca.ingest_sbom`, `sca.sync_cve_feed`, `compliance.list_frameworks`, `compliance.get_control_status`, `compliance.generate_evidence`, `alerts.list_rules`, `alerts.create_rule`, `alerts.delete_rule`, `alerts.list_events`, `alerts.test_channel`
-
-## RAG Service Endpoints
-
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/retrieve` | POST | Semantic search (embed query → Qdrant → chunk texts) |
-| `/ingest` | POST | Ingest document (chunk → embed → Qdrant + Postgres) |
-| `/history` | GET/POST | Chat history CRUD |
-| `/security_kb` | POST | Security playbook / CIS control retrieval |
-| `/compliance_kb` | POST | Policy text / control mapping retrieval |
-| `/cve` | POST | CVE corpus retrieval filtered to tenant stack |
-| `/health` | GET | Liveness |
-
-## Qdrant Collections
-
-| Collection | Purpose |
-|---|---|
-| `rag-{tenant_id}` | Chat-time doc retrieval (uploads, scraped cost docs) |
-| `kb-{tenant_id}-security` | Security playbooks, CIS controls, provider hardening |
-| `kb-{tenant_id}-compliance` | Policy text, control mappings |
-| `cve-{tenant_id}` | Synced CVE corpus (NVD + EPSS + KEV), filtered to tenant PURLs |
-
-Collections use a versioned dimension and embedding model selected from in-region Bedrock models under the zero-retention policy; migrations prevent mixing vectors from incompatible models.
-
-## UI Stack (locked)
-
-- **Framework**: [Refine](https://refine.dev) (React, headless on K8s)
-- **Component library**: [shadcn/ui](https://ui.shadcn.com) (Radix + Tailwind, copy-paste components)
-- **Build**: Vite + TypeScript
-- **Data**: Refine data providers wrapping MCP / RAG / Alerts REST endpoints
-- **Chat**: Vercel AI SDK `useChat` over SSE to a LangGraph agent endpoint
-- **Auth**: Refine auth provider against Keycloak OIDC (code flow, PKCE)
-- **Tables**: TanStack Table (via Refine `useTable`) for findings, SBOM, control matrices
-- **Charts**: Recharts for cost trends, severity donuts, KEV exposure
-- **Serve**: nginx (multi-stage Docker build, SPA routing + `/api/*` reverse proxy)
-
-## Multi-Tenancy
-
-- AuthN: OIDC via self-hosted Keycloak; `sub` identifies the user, then server-side memberships resolve the active tenant.
-- AuthZ: membership roles (`viewer`, `operator`, `admin`) are enforced in UI and MCP tool wrappers.
-- Per-tenant cloud credentials stored in Vault under `secret/tenants/{tenant_id}/providers/`.
-- Qdrant collection per tenant; all DB queries and SDK calls filtered by `tenant_id`.
-- Encrypted at rest in Postgres via `ENCRYPTION_KEY` (envelope encryption in a follow-up).
-
-## K8s Deploy Order
-
-Files prefixed to enforce ordering: `00-namespace.yaml` → `00-secrets-bootstrap.yaml` → `00-vault.yaml` → `00-1-keycloak.yaml` → `01-postgres.yaml` → `02-mcp-server.yaml` → `03-app.yaml` → `04-gateway.yaml` → `05-migrations.yaml` → `06-rag-service.yaml` → `07-qdrant.yaml` → `08-alerts-service.yaml` (P3) → `09-cronjobs.yaml` (P3) → `10-ingress-tls.yaml`. Apply the whole directory.
-
-## Gateway API
-
-Envoy Gateway handles ingress on Kind. `04-gateway.yaml` creates a Gateway and HTTPRoute routing `/` to the Refine app (8080). The Refine app's nginx reverse-proxies `/api/mcp/*`, `/api/rag/*`, `/api/alerts/*` to the in-cluster backend services. Backend services are ClusterIP-only.
-
-## No test/lint/build scripts
-
-Pure IaC + Docker. No npm scripts, test suites, or lint commands.
+Bedrock configuration, Vault-rendered approval/key paths and the explicit vector
+reindex requirement are documented in [INFERENCE.md](docs/INFERENCE.md).
+Kubernetes transport expects backend-enrolled HTTPS endpoints and tenant/cluster
+Vault-rendered credentials; it never executes kubeconfig hooks. Enrollment and
+network-destination validation remain B11.2 work.

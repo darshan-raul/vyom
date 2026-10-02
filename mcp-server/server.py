@@ -1,7 +1,7 @@
 import os
 from fastmcp import FastMCP
 
-mcp = FastMCP("cloud-cost-compass-mcp")
+mcp = FastMCP("vyom-mcp")
 
 @mcp.tool()
 async def get_costs(
