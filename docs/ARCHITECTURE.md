@@ -10,14 +10,14 @@ The [interactive overview](diagrams/application.html) and [editable JSON](diagra
 flowchart TB
     ui[Vyom UI / future CLI<br/>Ordinary backend API client]
     subgraph backend[Vyom backend / FastAPI]
-        auth[Server context and authorization<br/>Fixed operator initially; Keycloak memberships S6]
-        graph[Agent / LangGraph<br/>Bounded reasoning and tool selection]
+        auth[Server context and authorization<br/>Fixed operator initially, Keycloak memberships S6]
+        lg[Agent / LangGraph<br/>Bounded reasoning and tool selection]
         host[MCP client / host<br/>Connection registry, policy, credentials, evidence]
         deterministic[Deterministic product logic<br/>Inventory, sync, dashboards, calculations]
         persistence[Persistence / RAG modules<br/>Normal libraries and APIs]
-        auth --> graph --> host
+        auth --> lg --> host
         auth --> deterministic
-        graph --> persistence
+        lg --> persistence
         deterministic --> persistence
     end
     subgraph target[Target Kubernetes cluster]
@@ -29,10 +29,10 @@ flowchart TB
     aws[AWS APIs<br/>Read-only IAM]
     pg[(Postgres · S3)]
     q[(Qdrant · S3)]
-    model[Reasoning endpoint<br/>Compatible API S1; Bedrock S3]
+    model[Reasoning endpoint<br/>Compatible API S1, Bedrock S3]
     future[Later registered MCP servers<br/>GitHub, IaC, docs, FinOps]
     ui -->|HTTP API| auth
-    graph -->|Model SDK/API| model
+    lg -->|Model SDK/API| model
     host -->|Authenticated MCP| kmcp
     host -->|Authenticated remote MCP| awsMCP
     awsMCP -->|Scoped AWS identity| aws
@@ -60,7 +60,7 @@ flowchart LR
     subgraph kind[KIND cluster · same cluster monitored first]
         ui[UI Deployment / internal Service]
         subgraph app[Vyom API Deployment]
-            graph[LangGraph + MCP client]
+            lg[LangGraph + MCP client]
             sdk[Direct pod SDK projection]
         end
         svc[Private authenticated MCP endpoint<br/>ClusterIP Service for HTTP]
@@ -70,7 +70,7 @@ flowchart LR
         kapi[Kubernetes API]
         demo[Demo namespace / test pods]
         ui -->|Normal HTTP API| app
-        graph -->|MCP over chosen secure transport| svc
+        lg -->|MCP over chosen secure transport| svc
         svc --> upstream
         upstream -->|In-cluster credentials| msa
         msa --> kapi
@@ -78,7 +78,7 @@ flowchart LR
         kapi --> demo
     end
     dev -->|Localhost port-forward| ui
-    graph -->|Backend-only model key| model
+    lg -->|Backend-only model key| model
 ```
 
 The MCP endpoint is private and authenticated without requiring early Keycloak. Prefer supported Streamable HTTP; the Service is conditional on network transport. If an existing authentication/TLS proxy is selected, the raw server port must not bypass it. The MCP server uses its ServiceAccount for Kubernetes API access; do not forward a frontend token as Kubernetes authority. No developer-admin kubeconfig is mounted.
@@ -89,7 +89,7 @@ S1 acceptance covers Deployment, Service when needed, ServiceAccount, minimal RB
 
 ```mermaid
 flowchart TB
-    user[Operator; authenticated tenants only after S6]
+    user[Operator, authenticated tenants only after S6]
     subgraph region[Platform AWS region · ap-south-1]
         subgraph eks[EKS cluster]
             entry[Private UI/API Services<br/>HTTPS ingress only after S6 gates]
@@ -111,7 +111,7 @@ flowchart TB
         end
         bedrock[Bedrock · S3<br/>Reasoning and embeddings]
     end
-    awsMCP[AWS-managed MCP endpoint<br/>Region verified separately; remote dependency]
+    awsMCP[AWS-managed MCP endpoint<br/>Region verified separately, remote dependency]
     aws[AWS service APIs<br/>Configured account / resource region]
     backup[Protected backup destination outside cluster · S5]
     user -->|Localhost port-forward before S6| entry
@@ -142,7 +142,7 @@ sequenceDiagram
     participant A as AWS-managed MCP
     participant P as Provider API
     participant R as Normal persistence/RAG APIs
-    U->>API: Question + resource filters; JWT only S6
+    U->>API: Question + resource filters, JWT only S6
     API->>API: Resolve fixed context or verified membership/grants
     API->>G: Authorized context and budgets
     G->>L: Supported question + allowed tool schemas
@@ -160,7 +160,7 @@ sequenceDiagram
         P-->>A: Resources or denied/partial/error
         A-->>H: Upstream result
     end
-    H->>H: Minimize and normalize evidence; reject unsafe output
+    H->>H: Minimize and normalize evidence, reject unsafe output
     H-->>G: Source, time, coverage, evidence IDs and limitations
     opt Runbook guidance / history from S3
         G->>R: Scoped retrieval via normal libraries
@@ -188,7 +188,7 @@ flowchart TB
     sdk --> api[Provider APIs]
     api --> normalize[Scope + minimize + normalize evidence]
     normalize --> db[(Postgres observations/errors/history)]
-    db -->|Authorized query; freshness labels| dash
+    db -->|Authorized query, freshness labels| dash
     agent[Agent MCP result] --> normalize
     corpus[Curated versioned runbooks] --> job[Operator ingest job]
     job --> embed[Bedrock embedding SDK]
@@ -220,7 +220,7 @@ flowchart TD
     direct --> provider[Scoped SDK ServiceAccount / IAM identity]
     grants --> history[History / citations / retrieval / jobs authorization]
     revoke[Revoke grant or membership] --> resolver
-    revoke --> invalidate[Invalidate sessions/caches; reconcile permissions<br/>Block reads while bindings are stale]
+    revoke --> invalidate[Invalidate sessions/caches, reconcile permissions<br/>Block reads while bindings are stale]
     invalidate --> host
     invalidate --> direct
     invalidate --> history
@@ -237,14 +237,14 @@ Viewer/operator roles govern product actions; all cloud and Kubernetes operation
 ```mermaid
 flowchart LR
     request[Authorized request text] --> gate{Jev enabled and<br/>data-handling gate passed?}
-    gate -->|No| graph[Core Bedrock workflow]
+    gate -->|No| lg[Core Bedrock workflow]
     gate -->|Yes| redact[Minimize / redact<br/>Exclude credentials, identity,<br/>tool results and retrieved context]
     redact --> gateway[Vercel AI Gateway → actual Jev]
     gateway --> validate[Validate typed category + confidence]
     validate -->|Known and sufficient confidence| hint[Routing hint only]
-    validate -->|Unknown / failure / uncertainty| graph
-    hint --> graph
-    graph --> auth[Normal code-based authorization<br/>and calculations remain mandatory]
+    validate -->|Unknown / failure / uncertainty| lg
+    hint --> lg
+    lg --> auth[Normal code-based authorization<br/>and calculations remain mandatory]
 ```
 
 Jev is evaluated in S4, disabled by default, and never necessary for the core journey. Geography, retention and minimization must pass before activation. The initial S1 compatible reasoning provider and this optional classifier are separate data-processing paths with separate configuration and checks.
