@@ -1,9 +1,0 @@
-{{- if and .Values.vault.enabled .Values.vault.devMode -}}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-vault-config
-  namespace: {{ .Release.Namespace }}
-data:
-  VAULT_DEV_ROOT_TOKEN: "vault-root-token"
-{{- end }}

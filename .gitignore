@@ -1,0 +1,30 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.kubeconfig
+/secrets/
+/.credentials/
+/.aws/
+# Environment-owned agent directories
+/.agents/
+/.codex/
+# Generated runtime/build state
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+coverage/
+.coverage
+htmlcov/
+*.log
+.DS_Store
+# Keep curated sanitized evidence; ignore raw local captures
+/.local/
+/tmp/

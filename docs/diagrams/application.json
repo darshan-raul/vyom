@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Vyom \u00b7 Planned MCP host architecture",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1200,
+      690
+    ]
+  },
+  "components": [
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "Vyom UI / future CLI",
+      "sublabel": "Ordinary backend API",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Backend + agent",
+      "sublabel": "FastAPI / LangGraph",
+      "pos": [
+        340,
+        300
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "host",
+      "type": "backend",
+      "label": "MCP host / client",
+      "sublabel": "Policy + scoped connections",
+      "pos": [
+        640,
+        300
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "kmcp",
+      "type": "backend",
+      "label": "Kubernetes MCP",
+      "sublabel": "Upstream; inside target cluster",
+      "pos": [
+        940,
+        300
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "kapi",
+      "type": "cloud",
+      "label": "Kubernetes API",
+      "sublabel": "ServiceAccount + scoped RBAC",
+      "pos": [
+        940,
+        530
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "awsMcp",
+      "type": "cloud",
+      "label": "AWS-managed MCP",
+      "sublabel": "Remote AWS-provided endpoint",
+      "pos": [
+        640,
+        70
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "awsApi",
+      "type": "cloud",
+      "label": "AWS APIs",
+      "sublabel": "Account-bound read-only IAM",
+      "pos": [
+        940,
+        70
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "sdk",
+      "type": "backend",
+      "label": "Deterministic logic",
+      "sublabel": "Direct SDK inventory / sync",
+      "pos": [
+        340,
+        530
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "providers",
+      "type": "cloud",
+      "label": "Same provider APIs",
+      "sublabel": "Direct AWS / Kubernetes reads",
+      "pos": [
+        640,
+        530
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "state",
+      "type": "database",
+      "label": "Postgres / Qdrant",
+      "sublabel": "Normal libraries; from S3",
+      "pos": [
+        340,
+        70
+      ],
+      "size": [
+        210,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "ui",
+      "to": "api",
+      "label": "HTTP API"
+    },
+    {
+      "from": "api",
+      "to": "host",
+      "label": "Agent calls"
+    },
+    {
+      "from": "host",
+      "to": "kmcp",
+      "label": "Private MCP"
+    },
+    {
+      "from": "kmcp",
+      "to": "kapi",
+      "label": "Scoped reads",
+      "labelAt": [
+        1045,
+        450
+      ]
+    },
+    {
+      "from": "host",
+      "to": "awsMcp",
+      "label": "Remote MCP"
+    },
+    {
+      "from": "awsMcp",
+      "to": "awsApi",
+      "label": "IAM reads"
+    },
+    {
+      "from": "api",
+      "to": "sdk",
+      "label": "Product logic",
+      "labelAt": [
+        445,
+        450
+      ]
+    },
+    {
+      "from": "sdk",
+      "to": "providers",
+      "label": "SDK calls"
+    },
+    {
+      "from": "api",
+      "to": "state",
+      "label": "Data APIs"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Agent integration boundary",
+      "items": [
+        "AWS: managed / AWS-provided capabilities",
+        "Kubernetes: pinned upstream server; no custom protocol"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Deterministic product path",
+      "items": [
+        "Inventory, sync and dashboards may use direct SDKs",
+        "Postgres, Qdrant and internal logic use normal APIs"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Progressive, read-only alpha",
+      "items": [
+        "Kind S1; AWS + EKS S2; Bedrock + RAG S3",
+        "Keycloak and tenant/connection isolation remain S6"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "diagram_type": "architecture",
+  "output": "docs/diagrams/application.html",
+  "revision": "2026-10-03 MCP host/client architecture",
+  "artifact_checks": "9/9 direct checker; 0 composition errors/warnings",
+  "atomic_delivery": "failed: delivery/receipt-invalid",
+  "browser_evidence": "not run: successful delivery prerequisite unmet",
+  "visual_review": "not performed",
+  "correction_rounds": 2,
+  "files": {
+    "application.json": {
+      "sha256": "27dc073a4d5fa60e6800229f58b49bbc1bd46d5e104d1d9ab9059fefacaf11cf",
+      "bytes": 4182
+    },
+    "application.html": {
+      "sha256": "8d30d8d2a7d33ce12a6a734126064128795753f0a718f23e8a7f0235ae9bf4cd",
+      "bytes": 810104
+    }
+  }
+}
