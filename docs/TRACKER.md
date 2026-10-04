@@ -17,6 +17,8 @@ States: `pending`, `in_progress`, `blocked`, `done`, `deferred`. `blocked` requi
 | P6 | Compact README architecture overview | done | [2026-10-04-04](sessions/2026-10-04-04.md) | One overview: seven nodes / six connections; source/docs/whitespace checks pass; rendering unverified |
 | P7 | README diagram detail and readability balance | done | [2026-10-04-05](sessions/2026-10-04-05.md) | Named-service map: 12 nodes / nine connections; expandable telemetry: five nodes / five connections. Source/docs/whitespace pass; rendering unverified |
 | P8 | README deployment architecture SVG | done | [2026-10-04-06](sessions/2026-10-04-06.md) | Standalone SVG with service boundaries/icons and five primary connectors; XML, 1200px/760px rendering and visual review pass; doc/whitespace checks pass |
+| P9 | Owner-supplied canonical Vyom logo | done | [2026-10-04-07](sessions/2026-10-04-07.md) | Original PNG preserved; README/diagram branded; future reuse documented. Byte/dimension/XML checks, raster/visual review and docs/whitespace pass |
+| P10 | Explicit RAG in README architecture | done | [2026-10-04-08](sessions/2026-10-04-08.md) | Backend RAG S3, ingestion/retrieval/citations visible; five connectors retained. SVG/labels/logo, rendering/visual review and docs/whitespace pass |
 
 ## S1 — Smallest real agent with observability
 

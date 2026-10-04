@@ -1,4 +1,8 @@
-# Vyom
+<p align="center">
+  <img src="assets/branding/vyom-logo.png" width="128" alt="Vyom logo" />
+</p>
+
+<h1 align="center">Vyom</h1>
 
 A progressively built AWS + Kubernetes intelligence cockpit: ask a question, inspect live read-only evidence, and understand the answer.
 
@@ -8,11 +12,11 @@ A progressively built AWS + Kubernetes intelligence cockpit: ask a question, ins
 
 The planned deployment runs on Kind in S1 and EKS in S2. Service groups distinguish application workloads, cluster integration, persistent state, observability and external dependencies. Sprint labels show when each component enters the plan.
 
-![Vyom planned deployment architecture: application workloads, cluster integration, state, observability and external providers](docs/diagrams/readme-architecture.svg)
+![Vyom planned deployment architecture: application workloads, cluster integration, state and RAG, observability and external providers](docs/diagrams/readme-architecture.svg)
 
 [Open full-size diagram](docs/diagrams/readme-architecture.svg) · [Detailed architecture and request paths](docs/ARCHITECTURE.md) · [Observability collection topology](docs/OBSERVABILITY.md#collection-topology)
 
-FastAPI, LangGraph, the MCP host and deterministic collectors share one backend workload. Chat explores through upstream MCP integrations; inventory uses direct SDKs. Postgres and Qdrant use normal clients, while jobs reuse backend libraries. The model provider is explicitly configured, with Bedrock introduced in S3.
+FastAPI, LangGraph, the MCP host and deterministic collectors share one backend workload. Chat explores through upstream MCP integrations; inventory uses direct SDKs. Postgres and Qdrant use normal clients, while jobs reuse backend libraries. The model provider is explicitly configured, with Bedrock introduced in S3. **RAG starts in S3 inside the backend:** jobs ingest curated runbooks using Bedrock embeddings, Qdrant retrieves relevant sections, and LangGraph combines that guidance with live evidence using distinct citations.
 
 The diagram shows primary connections; placement identifies deployment ownership. Observability starts in S1, with bounded exports and private Grafana access. Access stays private through localhost port-forwarding before S6; backend membership/grant policy supplies authority after Keycloak verifies identity.
 
@@ -41,6 +45,7 @@ One Vyom application chart and pinned vendor observability releases share a repr
 7. [Verification](docs/VERIFICATION.md) — what constitutes proof.
 8. [MCP integrations](docs/MCP_INTEGRATIONS.md) — upstream ownership, dual execution paths and deployment/auth gates.
 9. [Observability](docs/OBSERVABILITY.md) — S1 metrics/logs/traces topology, privacy and live gates.
-10. [Decisions](docs/DECISIONS.md) — open choices and accepted implementation decisions.
+10. [Branding](docs/BRANDING.md) — canonical logo and reuse for the application, documents and future site.
+11. [Decisions](docs/DECISIONS.md) — open choices and accepted implementation decisions.
 
 First milestone: on Kind, ask which pods are unhealthy in a demo namespace and receive an answer citing the upstream Kubernetes MCP server through Vyom’s MCP client; the resource view uses a direct SDK path. The same real chat must expose Prometheus metrics, sanitized Loki logs and an OTel/Tempo trace through privately accessed Grafana. S1 adds 10 estimated hours; the aggregate is 12.5 weeks at current capacity, with twelve weeks still the target. No runtime setup commands exist yet; S1 will introduce and verify them.

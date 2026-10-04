@@ -2,7 +2,7 @@
 
 Updated for the owner-required S1 observability revision on 2026-10-04. These are **planned personal-alpha architecture**, with sprint additions labelled; none proves deployed capability.
 
-- [README deployment architecture — standalone SVG](readme-architecture.svg): cluster/external boundaries, service icons and five primary connections. Edited directly as SVG; separate from the Archify drafts below.
+- [README deployment architecture — standalone SVG](readme-architecture.svg): cluster/external boundaries, service icons, explicit backend RAG/retrieval labels and five primary connections. Edited directly as SVG, with the canonical logo embedded for portability; separate from the Archify drafts below.
 - [Architecture and eight Mermaid views](../ARCHITECTURE.md).
 - [Interactive application overview — rendered draft](application.html) and [editable source](application.json).
 - [Interactive S1 observability topology — rendered draft](observability.html) and [editable source](observability.json).
