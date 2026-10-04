@@ -9,6 +9,7 @@ This is a test strategy, not a list of commands that already exist. Each impleme
 | Direct SDK collector | Pagination, resource bounds, denied/unavailable/partial outcomes; no prohibited fields | S1; AWS S2 |
 | MCP host and agent | Pinned upstream/client compatibility, authenticated discovery/call, server-qualified allowlist and operation/argument validation; bounded execution; no answer inventing unavailable evidence; cited IDs exist | S1 |
 | Live journey | Browser question → real model tool call → MCP client → upstream Kubernetes server → real cluster → cited answer; compare with kubectl | S1 |
+| Observability | Pinned clean stack install, actual cluster/app metrics and allowlisted logs, owned chat trace and log/trace links; provider/MCP failure, telemetry outage/loss/recovery, payload/cardinality and duplicate-ingestion checks | S1; repeat EKS S2 |
 | Providers | Same tool/evidence smoke on initial adapter and Bedrock; no silent external failover | S3 |
 | Retrieval | Relevant/irrelevant queries, duplicate ingestion, version replacement, injection text, citation provenance | S3 |
 | Persistence | Workspace-scoped reads/writes, restart survival, stale labels, idempotent observations | S3 |
@@ -39,11 +40,17 @@ For nondeterministic answers, assess properties: factual claims supported by cit
 
 ## Sprint demonstrations
 
-- S1: controlled unhealthy pod, matching live table and cited answer; denial and provider-failure demonstrations; reproducible clean Kind setup.
-- S2: same release on Kind/EKS; failed workload; current metrics comparison and explicit missing metrics; EC2 inventory including stopped instances.
-- S3: both reasoning adapters pass the same journey; live evidence + distinct runbook citations; restart preserves history; re-ingest is idempotent.
-- S4: bounded investigation; service cost reconciliation; Jev on/off benchmark and explicit enabled/disabled decision.
-- S5: restore into a clean deployment, rollback a bad release, fail dependencies deliberately and pass evidence evaluations.
-- S6: two tenants, denial matrix and revocation on persisted evidence; Keycloak recovery; public ingress remains disabled until all relevant gates pass.
+- S1: controlled unhealthy pod, matching live table and cited answer; denial and provider-failure demonstrations; clean Kind setup with the full observability stack. A real chat/failure must have applicable metrics, sanitized logs and owned spans in Grafana; synthetic OTLP is setup evidence only. Interrupt telemetry, show bounded application behavior plus independently observable loss and recovery, and inspect prohibited fields/duplicates.
+- S2: same release on Kind/EKS; failed workload; current metrics comparison and explicit missing metrics; EC2 inventory including stopped instances; repeat the S1 telemetry gates on EKS, record storage/pins and inaccessible control-plane targets.
+- S3: both reasoning adapters pass the same journey; live evidence + distinct runbook citations; restart preserves history; re-ingest is idempotent; inspect payload-free Bedrock/embedding/retrieval/database/vector/job signals and failure outcomes.
+- S4: bounded investigation; service cost reconciliation; Jev on/off benchmark and explicit enabled/disabled decision; inspect investigation/cost and applicable Jev timings/outcomes.
+- S5: restore into a clean deployment, rollback a bad release, fail dependencies deliberately and pass evidence evaluations; test alerts and telemetry storage/sampling/retention/loss/recovery.
+- S6: two tenants, denial matrix and revocation on persisted evidence; Keycloak recovery; public ingress remains disabled until all relevant gates pass, including current-grant checks on exposed telemetry query/proxy/Grafana surfaces or evidence that shared operator telemetry remains private.
 
 A sprint gate is not satisfied by its component task checkboxes alone. Record a separate end-to-end result.
+
+## Observability evidence
+
+Follow the six-step [S1 live gate](OBSERVABILITY.md#s1-live-gate). Record chart/image versions, environment, window, exact PromQL/LogQL/trace queries, sanitized trace ID and both navigation directions. Inspect owned HTTP/graph/model-client/MCP-client/normalization spans; require upstream internal spans only where pinned support is verified. External provider internals are not promised. Metrics are aggregate; optional exemplars are not universal request correlation. Missing token usage is unavailable, not zero.
+
+Inspect signal storage as well as source configuration for credentials, prompts/answers/tool bodies, pod environment fields, unsafe errors and sensitive headers/URLs. Verify finite label sets and single log ingestion, node-local discovery and separate observer RBAC. Prove bounded queues/retries and application response during exporter/collector/store outage; use Prometheus scrape health and Kubernetes status to detect collector loss independently. Record drops and recovery without promising complete trace delivery during failure. Grafana auth/private access and internal endpoints must be checked; tenant filters alone cannot close S6 isolation.

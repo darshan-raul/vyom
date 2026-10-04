@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "deliver",
+  "stage": "receipt",
+  "type": "architecture",
+  "input": "/home/darshan/projects/vyom/docs/diagrams/observability.json",
+  "output": "/home/darshan/projects/vyom/docs/diagrams/observability.html",
+  "error": "Could not parse the successful artifact-check receipt: Unexpected end of JSON input",
+  "diagnostics": [
+    {
+      "code": "delivery/receipt-invalid",
+      "severity": "error",
+      "message": "Could not parse the successful artifact-check receipt: Unexpected end of JSON input",
+      "subject": {
+        "output": "/home/darshan/projects/vyom/docs/diagrams/observability.html"
+      },
+      "evidence": {
+        "reason": "Unexpected end of JSON input"
+      },
+      "supportedFixes": []
+    }
+  ]
+}

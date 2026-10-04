@@ -6,6 +6,8 @@ Prepared 3 October 2026; revised for a fresh implementation with intelligence in
 
 Build a small, useful AWS + Kubernetes intelligence cockpit. The first working slice must already answer a natural-language question using live read-only MCP tool results, an OpenAI-compatible model endpoint, and LangGraph. Run it on Kind, extend it to AWS and EKS, introduce Bedrock and curated RAG in S3, then add deeper operational signals, hardening, and finally Keycloak/multi-tenancy.
 
+Owner decision, 4 October 2026: **Loki + Prometheus + Grafana + OpenTelemetry-based tracing are required in S1.** Use Tempo for trace storage and Grafana Alloy as the OpenTelemetry-compatible collector and Kubernetes log collector. Start with single-instance stores, short retention and private access on Kind; carry the stack to EKS in S2 and harden it in S5. The first real agent demonstration must also produce queryable metrics, correlated logs and a trace. See [observability design](docs/OBSERVABILITY.md).
+
 Owner decision: S1–S2 use a simple server-side API key and configurable OpenAI-compatible endpoint. Bedrock arrives in S3 as the intended AWS inference path. This changes the former Bedrock-only early-alpha requirement; it does not remove the agent, MCP, or grounded-answer acceptance gates. Use a non-sensitive development account/cluster and bounded tool projections for the initial provider path.
 
 Vyom's purpose is to connect operational evidence to an explainable answer and useful next checks. Tables and charts expose that evidence; chat and the agent are central product functionality. Reduce the number of sources, tools, documents, and supported questions to fit each sprint. Do not defer the entire intelligence layer.
@@ -14,11 +16,11 @@ Owner decision: remove all existing project files except this plan and begin fro
 
 The first milestone is a working personal agent, rather than the existing external-beta scorecard. The 12-week goal is a useful personal alpha with grounded AWS/Kubernetes chat, curated RAG, and a tested initial tenant boundary. Completing the entire existing beta backlog, broad monitoring coverage, and general production availability are outside this timebox.
 
-Planning assumption: one developer with roughly 20 focused hours per week. Each two-week sprint has approximately 40 hours; reserve about a quarter for integration, failures, and demonstration. Weeks are relative to kickoff. If available time is lower, move the dates rather than increasing work in each sprint.
+Planning assumption: one developer with roughly 20 focused hours per week. The original two-week capacity was 30 task hours plus 10 integration hours. The owner-required S1 observability stack adds an initial 10-hour task estimate: S1 now plans 40 task hours plus 10 reserve, while S2–S6 retain 30 plus 10. This exceeds the original S1 capacity by 10 hours; at unchanged availability the aggregate estimate is 12.5 weeks, and S1 itself needs 2.5 weeks. Twelve weeks remains the target, not a validated schedule. Re-estimate after the first clean Kind installation and explicitly adjust capacity, dates or later scope; do not remove the agent or observability gates to fit the calendar. Weeks below are target windows relative to kickoff.
 
 | Sprint | Weeks | Deliverable | Demonstration that closes the sprint |
 |---|---|---|---|
-| S1 | 1–2 | Fresh shadcn/ui app on Kind; LLM + LangGraph MCP host + upstream read-only Kubernetes MCP | Ask which pods are unhealthy; the agent calls a live tool and cites the returned resources |
+| S1 | 1–2 target | Fresh shadcn/ui app on Kind; real LLM/LangGraph/MCP agent; Loki, Prometheus, Grafana, Tempo and OTel/Alloy | Ask which pods are unhealthy; inspect cited live resources, request metrics, correlated logs and trace |
 | S2 | 3–4 | AWS-managed MCP integration, direct EC2 collection, EKS deployment, basic monitoring | Ask about EC2 instances and EKS workload health; inspect the supporting live evidence |
 | S3 | 5–6 | Bedrock reasoning adapter, curated RAG with Qdrant/Bedrock embeddings, minimal history | Switch the configured reasoning provider, pass the same tool journey, and add cited runbook guidance |
 | S4 | 7–8 | Bounded multi-tool investigation, daily cost queries, Jev evaluation | Investigate a demo failure or explain service spend using linked tool results; compare classification with/without Jev |
@@ -46,7 +48,7 @@ For Kubernetes, self-host a pinned existing implementation, preferably `containe
 
 **Two execution paths:** deterministic inventory, scheduled synchronization, dashboards, large structured pulls and calculations use direct AWS/Kubernetes SDKs/APIs where simpler and more reliable. PostgreSQL, Qdrant, persistence, embeddings and ordinary internal logic use normal libraries/APIs, not MCP. Agent exploration uses upstream MCP capabilities. Both paths normalize authorized, sanitized evidence into the same source/time/coverage contract, but neither depends on identical collection code or converts every backend function into an MCP tool.
 
-S1 has UI, API/agent with an embedded MCP client, and the independently packaged upstream Kubernetes MCP Deployment. Vyom builds its UI/API images and pins the upstream server image/chart; it does not share a Vyom Python image with that server. A configured OpenAI-compatible endpoint supplies reasoning in S1–S2. Add Bedrock, Postgres and Qdrant in S3, with RAG inside the API. Keycloak remains S6 and Vault remains conditional. Basic MCP connection health and sanitized logs start in S1; broader operational hardening stays S5.
+S1 has UI, API/agent with an embedded MCP client, and the independently packaged upstream Kubernetes MCP Deployment. Vyom builds its UI/API images and pins the upstream server image/chart; it does not share a Vyom Python image with that server. A configured OpenAI-compatible endpoint supplies reasoning in S1–S2. Add Bedrock, Postgres and Qdrant in S3, with RAG inside the API. Keycloak remains S6 and Vault remains conditional. The full metrics/logs/traces stack and application instrumentation start in S1; broader operational hardening stays S5. Keep one Vyom application chart; install pinned vendor observability charts through the same reproducible environment workflow rather than hand-copying their manifests.
 
 The MCP client owns connection lifecycle, protocol negotiation, tool discovery restricted by a host allowlist, argument validation, deadlines, size/call budgets, credential binding and result normalization. Use server-qualified tool identities to avoid collisions. Server URLs, credential references, account, cluster and namespace authority come from operator/server configuration, never prompts. Additional GitHub, Terraform/IaC, documentation, FinOps or domain MCP endpoints may use this boundary later; implementing them or a plugin marketplace is outside the six-sprint core. An educational MCP server may be built separately only on request and never becomes a production dependency or satisfies a sprint gate.
 
@@ -76,9 +78,9 @@ AWS and Kubernetes collection are read-only from day one. Configure one explicit
 
 ## S1: make the smallest real agent work
 
-**Week 1:** complete the reset, scaffold the shadcn/ui browser/API and MCP client, and connect the host to one allowlisted upstream pod capability in the Kind demo namespace.
+**Week 1 target:** complete the reset, scaffold the shadcn/ui browser/API and MCP client, install the observability stack, and connect the host to one allowlisted upstream pod capability in the Kind demo namespace. Instrument backend requests and outgoing calls as they are added.
 
-**Week 2:** connect the chosen OpenAI-compatible endpoint and a minimal LangGraph tool workflow to chat, add evidence links, and make the full Kind installation reproducible. AWS collection begins in S2 so the fresh-start sprint remains small.
+**Week 2 target (capacity re-estimate required):** connect the chosen OpenAI-compatible endpoint and a minimal LangGraph tool workflow to chat, add evidence links, and make the full Kind installation reproducible. AWS collection begins in S2 so the fresh-start sprint remains small.
 
 Work:
 
@@ -89,6 +91,8 @@ Work:
 5. Show the tools called and evidence behind the answer. A simple final-response HTTP path is sufficient; polished streaming is later work.
 6. Build new Vyom images, pin the upstream Kubernetes MCP image and deploy the fresh chart on Kind. Configure the provider's base URL/model and inject its API key into the API workload at runtime through an ignored developer credential file or equivalent private mechanism. Provide only redacted placeholders in examples; no AWS Bedrock credentials are required in S1.
 
+7. Install pinned Prometheus/Grafana, Loki, Tempo and Alloy charts/configuration in an `observability` namespace. Collect node-local allowlisted container logs once, receive backend OTLP traces, scrape app and Kubernetes metrics, provision Grafana data sources and two starter dashboards (cluster and Vyom/agent). Configure bounded buffers, private access, short retention and PVC storage; add telemetry to each owned request/graph/model/MCP/collector path as it is implemented.
+
 Acceptance:
 
 - A clean checkout can build and reach chat and the live Kubernetes view through documented commands.
@@ -98,11 +102,13 @@ Acceptance:
 - A controlled workload change changes both the direct-SDK table and a fresh MCP-backed answer with matching resource identity/time semantics. MCP unavailability does not break independent deterministic collection; chat reports the integration failure explicitly.
 - Kubernetes denial, model-provider failure, unsupported requests, and missing evidence produce explicit limitations. The agent does not invent tool data or claim a confirmed root cause from status alone.
 - Offline tool/model fixtures are visibly separate from the required live demonstration.
-- No login screen, persistent history, metrics pipeline, RAG corpus, Bedrock setup, or tenant management is required to close S1. Working LLM chat, LangGraph, and MCP are required.
+- Grafana shows real cluster and application metrics from Prometheus, sanitized container/request logs from Loki and a Tempo trace for a real chat through the owned graph/model-client/MCP-client spans. Trace IDs link logs and traces; an induced provider or MCP failure appears in all applicable signals. Verify upstream internal spans only if the pinned server supports context propagation/instrumentation; external provider internals are not promised.
+- No credentials, raw prompts, answers, unrestricted tool results or literal pod environment values appear in telemetry. Collector/telemetry-store outage does not block application requests; signal loss is explicit.
+- No application login screen, persistent chat history, RAG corpus, Bedrock setup, or tenant management is required to close S1. Working LLM chat, LangGraph, MCP and the full observability stack are required; Grafana has its own private authenticated access.
 
 ## S2: deploy on EKS and add easy monitoring
 
-Move the same images and chart to a small development EKS cluster in `ap-south-1`. Use existing suitable development infrastructure where available; dedicated production provisioning comes later. Keep access private through port-forwarding.
+Move the same images, application chart and pinned observability configuration to a small development EKS cluster in `ap-south-1`. Use existing suitable development infrastructure where available; dedicated production provisioning comes later. Keep access private through port-forwarding.
 
 Work:
 
@@ -118,6 +124,7 @@ Acceptance:
 - Kind and EKS run the same application release and pinned Kubernetes MCP version with environment-specific configuration. AWS-managed MCP remains a remote dependency, not an EKS workload; endpoint location is verified separately from the ap-south-1 platform and target-resource region.
 - A real AWS investigation traverses the MCP client and AWS-provided capability, with account/region/credential and write-denial checks. Direct inventory still works when MCP is down. Endpoint/auth/data-handling or capability gaps leave the affected gate unfinished; SDK success is not MCP acceptance.
 - A failed demo pod produces the expected visible state.
+- Prometheus, Loki, Tempo, Grafana and Alloy run on EKS; repeat the S1 metric/log/trace and outage gates with environment-specific storage/resources and no public telemetry endpoints. AWS SDK/MCP client calls receive the same instrumentation.
 - Current resource metrics match a contemporary `kubectl top` reading within collection timing limits.
 - EC2 charts show the requested time window and source; missing metrics are not displayed as zero.
 - Ask about EC2 instances or EKS workload health and receive a grounded answer with correctly scoped tool results.
@@ -135,7 +142,8 @@ Work:
 4. Add retrieval to LangGraph alongside live MCP evidence. Distinguish observed facts, possible explanations, and runbook next checks in the answer. A runbook does not prove a cause in the live cluster.
 5. Store sessions, messages, citations, source/connection identities, bounded observations, and collection errors in Postgres. Scope repository queries and vector searches to the internal workspace.
 6. Add a small idempotent direct-SDK scheduled observation job, freshness display, and persisted chat evidence; database/vector access remains through normal libraries. Do not claim a comprehensive change feed yet.
-7. Add a compact answer-evaluation set, including relevant/irrelevant retrieval, unsupported questions, stale evidence, unavailable tools, and instructions embedded in retrieved text.
+7. Instrument Bedrock/embeddings, retrieval, SQL/vector clients and jobs as added, using bounded dimensions and payload-free spans/logs. Verify provider switch, retrieval/job failure and collector freshness in the existing stack; never capture query/vector/document bodies.
+8. Add a compact answer-evaluation set, including relevant/irrelevant retrieval, unsupported questions, stale evidence, unavailable tools, and instructions embedded in retrieved text.
 
 Acceptance:
 
@@ -158,7 +166,8 @@ Work:
 2. Permit a bounded sequence of health, event, related-resource, and runbook reads in LangGraph. Set tool-call, iteration, time, and context limits; the model cannot add permissions or run write actions.
 3. Add direct-SDK daily AWS Cost Explorer totals/service breakdown over a bounded date range; prefer verified AWS-provided MCP capabilities for exploratory cost questions, without a custom general-purpose wrapper. An explicitly documented agent-internal deterministic calculation/history function may consume normalized results through ordinary code, never masquerading as an upstream MCP capability. Handle pagination and freshness; do arithmetic in code and ground explanations in returned numbers. Persist a small daily cost series if it fits the schema already established.
 4. Build two small evidence-backed findings: unavailable replicas and repeated recent restarts. Link each to observations and a runbook; use deterministic code for finding conditions.
-5. Implement Jev behind a typed, disabled-by-default classifier interface using the intended Vercel gateway integration. Evaluate classification quality, latency, and failure behavior on a small benchmark. Activate only after the existing geography/retention/minimization requirements are verified: no credentials, identity, cloud tool results, or retrieved context leave through classification. Uncertain or failed classification falls back to the Bedrock workflow. Classification never grants access or performs calculations.
+5. Instrument investigation and cost-path timings/outcomes; add Jev spans only when implemented/enabled without classifier payloads.
+6. Implement Jev behind a typed, disabled-by-default classifier interface using the intended Vercel gateway integration. Evaluate classification quality, latency, and failure behavior on a small benchmark. Activate only after the existing geography/retention/minimization requirements are verified: no credentials, identity, cloud tool results, or retrieved context leave through classification. Uncertain or failed classification falls back to the Bedrock workflow. Classification never grants access or performs calculations.
 
 Acceptance:
 
@@ -167,7 +176,7 @@ Acceptance:
 - Tool-loop limits, unavailable event sources, stale data, and partial results produce explicit limits.
 - The Jev-on/off evaluation records evidence for keeping it enabled or disabled. Disabling Jev preserves the full core product journey.
 
-Broad topology diagrams, EBS/security-group inventory, detailed change detection, and Prometheus integration remain later increments. Do not pull them into this sprint alongside the intelligence work.
+Broad topology diagrams, EBS/security-group inventory, detailed change detection, and agent querying of Prometheus/Loki/Tempo remain later increments. The stack itself is mandatory from S1. Do not pull them into this sprint alongside the intelligence work.
 
 ## S5: harden what already works
 
@@ -178,7 +187,7 @@ Work:
 1. Automate builds, meaningful unit/integration tests, and the Kind smoke journey in CI; release immutable images with pinned dependencies.
 2. Add resource requests/limits, health probes, timeouts, bounded retries, collection concurrency limits, and duplicate-job protection.
 3. Tighten pod security, IAM, RBAC, network access, and credential renewal; sanitize application logs and avoid raw sensitive event storage.
-4. Monitor Vyom itself: per-server MCP discovery/auth/session/latency failures, upstream tool-schema drift, collection and tool failures, request duration, graph steps, model usage/cost, retrieval failures, last success, and storage availability. Avoid raw prompts, answers, and tool payloads in routine telemetry.
+4. Harden the S1 observability stack: tune retention/storage, resource budgets and sampling, add tested operational alerts/dashboards and exercise telemetry recovery. Monitor Vyom itself: per-server MCP discovery/auth/session/latency failures, upstream tool-schema drift, collection and tool failures, request duration, graph steps, model usage/cost, retrieval failures, last success, and storage availability. Avoid raw prompts, answers, and tool payloads in routine telemetry.
 5. Back up Postgres and Qdrant outside the cluster and restore into a clean test deployment. Protect backup access, document corpus re-ingestion, and define alpha retention. Native state recovery remains essential.
 6. Rehearse release rollback and recovery; run the grounded-answer evaluation suite and deliberate model/MCP/Qdrant failure scenarios. Add streaming and cancellation only after the bounded final-response path works reliably.
 
@@ -203,7 +212,8 @@ Work:
 4. Assign AWS connections, Kubernetes clusters, and namespace/cluster-wide grants to tenants. Do not accept caller-selected authority from headers or tool arguments.
 5. Enforce viewer and operator access across the backend, MCP tools, graph checkpoints, cached results, retrieval, document/evidence access, chat sessions/history, and collection jobs. Resolve endpoint and credential scope inside the MCP host; upstream servers are not assumed to understand Vyom tenant headers. Use separately scoped Kubernetes MCP deployments/ServiceAccounts for distinct tenant grant scopes and account-bound AWS credentials; also enforce context on direct SDK paths. Test pooled session isolation, endpoint selection and revocation; user prompts and model arguments cannot override authority.
 6. Add audit events for connection/grant changes and denied access. Include Keycloak state in backup/restore procedures. Design credential segregation; bring in Vault here only if supporting additional connection secrets makes it necessary.
-7. Test two tenants with distinct fixture accounts, namespaces, and history. Configure HTTPS and authenticated ingress only when the authorization and recovery checks pass.
+7. Decide operator-only versus tenant-visible telemetry. Before exposing Grafana, dashboards or telemetry query/proxy routes, enforce current grants and test cross-tenant denial and revocation; tenant labels/filters alone are not authorization. Shared operator telemetry stays private unless these gates pass.
+8. Test two tenants with distinct fixture accounts, namespaces, and history. Configure HTTPS and authenticated ingress only when the authorization and recovery checks pass.
 
 Acceptance:
 
@@ -212,6 +222,7 @@ Acceptance:
 - Namespace revocation takes effect for both fresh and persisted Kubernetes results.
 - An ordinary viewer cannot change connections, grants, or trigger privileged operations.
 - Development identity mode is disabled for externally accessible deployments.
+- The telemetry access decision is documented; any exposed telemetry queries/proxies and Grafana access enforce current grants and pass two-tenant denial/revocation checks. Shared operator stores remain private otherwise.
 
 If the tenant boundary or recovery checks do not fit the final sprint, keep the app private and carry those tasks forward. Do not weaken the acceptance gates to meet the calendar.
 
@@ -222,7 +233,7 @@ If the tenant boundary or recovery checks do not fit the final sprint, keep the 
 - CloudTrail → EventBridge → SQS streaming ingestion and live AWS change guarantees.
 - Full Security Hub aggregation, SCA/SBOM, formal compliance, FinOps recommendations, and external alert channels.
 - Arbitrary document uploads, generic crawlers, public MCP integrations, and unconstrained autonomous agents. The MCP host and selected upstream integrations, Bedrock/LangGraph chat, curated RAG/Qdrant, and Jev evaluation are in scope above.
-- General-purpose Prometheus/log/trace analytics, custom monitoring agents, and Kubernetes cost allocation.
+- General-purpose agent-driven Prometheus/log/trace analytics, custom monitoring agents, and Kubernetes cost allocation. The S1 operational stack and starter dashboards remain required.
 - Multi-region DR, comprehensive HA, public self-signup, subscriptions, and general external beta commitments.
 
 The first three months deliver the intelligence layer progressively: OpenAI-compatible reasoning and live tools in S1, AWS/EKS evidence in S2, Bedrock and curated retrieval in S3, and bounded investigation/classification in S4. Later breadth must build on that working path.
@@ -235,7 +246,7 @@ Start with a small layout: frontend, API/agent with MCP client and direct SDK co
 
 | New workstream | Delivery |
 |---|---|
-| Reset, shadcn/ui chat/evidence, OpenAI-compatible model adapter, LangGraph, upstream Kubernetes MCP integration, direct pod view, fresh Vyom containers/chart | S1 |
+| Reset, shadcn/ui chat/evidence, OpenAI-compatible model adapter, LangGraph, upstream Kubernetes MCP integration, direct pod view, fresh Vyom containers/chart, full metrics/logs/OTel tracing stack | S1 |
 | AWS-provided MCP integration, direct AWS SDK collection, EKS configuration, basic monitoring in chat and UI | S2 |
 | Bedrock reasoning adapter, curated RAG, Qdrant, Bedrock embeddings, new schema/migrations and minimal history | S3 |
 | Bounded multi-tool investigation, event evidence, cost queries, Jev evaluation | S4 |

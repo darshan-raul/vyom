@@ -40,9 +40,13 @@ for task, row in rows:
         errors.append(f'{task}: dependencies differ between plan/tracker')
 for sprint in re.split(r'\n## S\d+ — ', plan)[1:]:
     hours = sum(map(int, re.findall(r'\*\*Budget:\*\* (\d+) hours', sprint)))
-    if hours != 30:
-        errors.append(f'{sprint.splitlines()[0]}: expected 30 task hours, got {hours}')
+    declared = re.search(r'Planned task budget: (\d+) hours; sprint reserve: (\d+) hours', sprint)
+    expected = int(declared.group(1)) if declared else None
+    if not declared or declared.group(2) != '10':
+        errors.append(f'{sprint.splitlines()[0]}: missing budget or unexpected reserve')
+    if hours != expected:
+        errors.append(f'{sprint.splitlines()[0]}: expected {expected} task hours, got {hours}')
 if errors:
     raise SystemExit('\n'.join(errors))
-print(f'PASS: {len(files)} Markdown files; local links/code fences; {len(ids)} matched task IDs; dependencies/status evidence; six 30-hour budgets.')
+print(f'PASS: {len(files)} Markdown files; local links/code fences; {len(ids)} matched task IDs; dependencies/status evidence; S1 40-hour and S2–S6 30-hour task budgets.')
 print('Does not validate Mermaid rendering, runtime code, external URLs, or live acceptance.')

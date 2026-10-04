@@ -12,6 +12,9 @@ The constitution already specifies the product stack and sprint boundaries; do n
 | P06 | Open | Private host-to-upstream transport/authentication and explicit Kubernetes ServiceAccount auth mode | S1.2; harden S6.3 | Verify selected upstream release; no tenant-header trust, token passthrough or model-controlled endpoint |
 | P07 | Open | Alpha retention, backup destination, restore objectives and encryption | S5.3 | Backups must be outside cluster; S3 bucket is a possible choice, not mandated here |
 | P08 | Open | Jev gateway geography, retention, redaction and benchmark threshold | S4.5 | Default remains disabled unless activation gate passes |
+| P10 | Open | Pin observability chart/image versions; validate PVC/storage/retention/compaction, discovery, endpoint controls and private Grafana credentials | S1.9; repeat S2.1 | Initial 48h/100% demo sampling is bounded but unmeasured; no Kafka or HA assumed |
+| P11 | Open | Re-estimate S1 and aggregate dates/capacity after clean Kind stack installation | S1.8 | 250h means 12.5 weeks at 20h/week; twelve-week target requires an explicit adjustment |
+| P12 | Open | Operator-only versus tenant-visible telemetry access and current-grant enforcement | S6.3 | Keep shared operator stores/Grafana private until exposed surfaces pass isolation/revocation gates |
 | P09 | Open | Keycloak realm/client, HTTPS hostname, credential segregation and whether Vault is needed | S6.1 | No old realm IDs or domain assumed |
 
 For each resolved entry record: date, accepted/proposed status, task, decision, reason, alternative, consequences, and evidence. Owner acceptance is required for changes to scope or constitutional constraints; routine implementation details can be decided and documented by the implementing agent.
@@ -30,3 +33,9 @@ Owner decision, recorded in [session 2026-10-03-02](sessions/2026-10-03-02.md) a
 | MCP06 | Planned implementation of accepted isolation rule | Separate upstream Kubernetes endpoints/ServiceAccounts per tenant grant scope initially; AWS account-bound credentials | Avoid treating a shared broad identity or tenant header as provider authorization; verify before S6 completion | S6.3–S6.4 |
 
 Open integration inputs: select/pin upstream version and safe pod result projection (S1.3); choose supported endpoint authentication/TLS (S1.2); verify AWS endpoint region/data handling, read capabilities and unattended credential renewal (S2.1). Source checks are in [MCP_INTEGRATIONS.md](MCP_INTEGRATIONS.md). These decisions replace only the former MCP ownership/universal collection assumptions, not the six-sprint scope or model-provider schedule.
+
+## Observability scope revision — 2026-10-04
+
+Owner-required Loki, Prometheus, Grafana and OTel tracing are accepted scope in the constitution. Its specified design uses Tempo for traces and Alloy for OTLP/log collection, single-instance PVC-backed stores, private access and two starter dashboards from S1; EKS follows S2 and hardening S5. These are planned, undelivered choices, not measured sizing or deployment evidence. See [design](OBSERVABILITY.md) and [planning session](sessions/2026-10-04-01.md).
+
+S1.9 adds 10 task hours and is a prerequisite of S1.7, while S1.8 remains the live closing gate. Existing task IDs and intelligence gates are preserved. S2–S6 instrumentation, recovery and telemetry authorization are acceptance within their current budgets, subject to re-estimation. Agent analytics over the telemetry stores remains deferred; observer log access never widens MCP permissions.

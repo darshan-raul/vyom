@@ -4,19 +4,19 @@ The [constitution](../vyom-12-week-sprint-plan.md) governs this decomposition. [
 
 ## Capacity and execution
 
-Six two-week sprints assume 20 focused hours/week. Each has 30 hours of estimated task work and 10 hours reserved for integration/failures/demonstration overrun. Estimates are planning budgets, not promises. The MCP architecture revision substitutes upstream integration work for server implementation; re-estimate S1.2–S1.3 and S2.1–S2.2 after transport/auth/capability validation. Do not assume reuse eliminates integration effort or force acceptance into the existing budget. Re-estimate after S1. If a gate slips, explicitly move later scope or dates; never silently accumulate unfinished tasks. Scope changes require updating the constitution.
+The target is six two-week sprints at 20 focused hours/week. S1 now estimates 40 task hours plus 10 reserve for the owner-required observability stack; S2–S6 each retain 30 task hours plus 10 reserve. Total: 190 task hours + 60 reserve = 250 hours, or 12.5 weeks at unchanged availability. S1 needs 2.5 weeks; twelve weeks remains a target. Re-estimate after the first clean Kind observability installation and explicitly adjust capacity, dates or later scope without dropping either S1 live gate. Estimates are planning budgets, not promises. The MCP architecture revision substitutes upstream integration work for server implementation; re-estimate S1.2–S1.3 and S2.1–S2.2 after transport/auth/capability validation. Do not assume reuse eliminates integration effort or force acceptance into the existing budget. Re-estimate after S1. If a gate slips, explicitly move later scope or dates; never silently accumulate unfinished tasks. Scope changes require updating the constitution.
 
 Create a fresh small layout when S1.1 starts: `frontend/`, `backend/` with separate API/agent/MCP-client and direct-SDK collection modules, `tests/`, `deploy/`, `scripts/`. Add `corpus/` and migrations in S3. These are proposed paths, not pre-created scaffolds.
 
-The [MCP integration design](MCP_INTEGRATIONS.md) supplies component responsibilities, deployment/security requirements and source-backed compatibility gates. No custom production MCP server is in scope. The UI remains S1; a CLI is a future ordinary backend API client, not a new sprint deliverable.
+The [MCP integration design](MCP_INTEGRATIONS.md) supplies component responsibilities, deployment/security requirements and source-backed compatibility gates. No custom production MCP server is in scope. The UI remains S1; a CLI is a future ordinary backend API client, not a new sprint deliverable. [Observability design](OBSERVABILITY.md) specifies the required S1 stack and progressive gates. Instrument each owned path as it is added; the stack is operational telemetry, not new agent-facing tools.
 
 ## Working increment
 
 Select task → mark in progress → implement one reviewable change → run required checks → record evidence → update tracker and handoff. Keep a usable journey through each sprint. Do not begin future platform components to avoid a current integration problem.
 
-## S1 — Smallest real agent
+## S1 — Smallest real agent with observability
 
-Planned task budget: 30 hours; sprint reserve: 10 hours.
+Planned task budget: 40 hours; sprint reserve: 10 hours. S1.9 prepares the stack after S1.1, before the final Kind package; its ID is appended to preserve existing IDs. Instrumentation belongs to S1.2–S1.6 as those paths are implemented. S1.8 remains the closing gate.
 
 ### S1.1 — Fresh development scaffold
 
@@ -26,11 +26,21 @@ Create fresh frontend with chosen stack and FastAPI health endpoint; establish a
 
 **Acceptance:** Clean installs, frontend build/typecheck and backend health checks pass. Runtime contains no Vyom-owned MCP protocol server; upstream server pinning is tracked in S1.3.
 
+### S1.9 — Observability stack and instrumentation baseline
+
+**Depends on:** S1.1. **Budget:** 10 hours.
+
+Install pinned kube-prometheus-stack (one Grafana, Prometheus operator, kube-state-metrics and node exporter), single-binary Loki, monolithic Tempo and Alloy DaemonSet in `observability`. Use pinned vendor releases through the same reproducible environment workflow as the one Vyom chart; disable unused defaults. Inspect actual chart/image storage, retention, compaction and upgrade compatibility; no distributed stack or Kafka assumed. Configure PVCs, resource/volume bounds, initial 48-hour retention, internal store/OTLP endpoints and private authenticated Grafana localhost port-forward with privately injected credentials.
+
+Prometheus scrapes backend `/metrics`, cluster exporters and collector health. Alloy discovers allowlisted container logs on its own node once, and receives/processes/exports OTLP traces with bounded asynchronous queues/retries; no second OTLP stdout-log pipeline. Use a separate observer ServiceAccount and read-only log mounts without expanding agent RBAC. Establish payload-free OTel/JSON logging helpers for S1.2–S1.6, W3C context and initial 100% tracing for bounded demo traffic. Provision Prometheus/Loki/Tempo data sources, cluster and Vyom/agent dashboards, and bidirectional log/trace navigation by trace ID, service and time. Metric exemplars are optional.
+
+**Acceptance:** Clean Kind stack install with recorded pins, real cluster metrics/logs, no duplicate ingestion and synthetic OTLP smoke proving pipeline only. Verify authenticated private access, finite storage/buffers/resources, bounded label cardinality, prohibited-field removal and independent collector health/drop signals. Instrumentation and a real correlated chat/failure/outage demonstration remain mandatory in S1.8; synthetic spans do not close S1.
+
 ### S1.2 — Evidence, MCP client and trusted context
 
 **Depends on:** S1.1. **Budget:** 3 hours.
 
-Define shared normalized evidence/error contracts for direct SDK and MCP results. Implement minimal client connection/negotiation/discovery/call lifecycle with operator-configured endpoint registry, server-qualified tool IDs, allowlists, typed argument and output validation, time/size limits, sanitized result projection and credential references. Choose private authenticated transport to the pinned Kubernetes server without forwarding browser credentials as Kubernetes API identity.
+Define shared normalized evidence/error contracts for direct SDK and MCP results. Implement minimal client connection/negotiation/discovery/call lifecycle with operator-configured endpoint registry, server-qualified tool IDs, allowlists, typed argument and output validation, time/size limits, sanitized result projection and credential references. Choose private authenticated transport to the pinned Kubernetes server without forwarding browser credentials as Kubernetes API identity. Add stable MCP-client/normalization spans, bounded call/error/duration metrics and payload-free correlated logs; use W3C context and server/tool identities with bounded dimensions.
 
 **Acceptance:** Reject caller/model-controlled endpoint, account/cluster/namespace authority, credential switching and unsafe tools. Evidence IDs/source/time/coverage match across both paths. Discovery/schema mismatch, auth errors and oversized output fail explicitly; no automatic trust in tool annotations.
 
@@ -38,7 +48,7 @@ Define shared normalized evidence/error contracts for direct SDK and MCP results
 
 **Depends on:** S1.2. **Budget:** 4 hours.
 
-Pin and deploy containers/kubernetes-mcp-server (preferred) inside Kind; configure one read-only pod capability, dedicated ServiceAccount/namespace Role and private authenticated Streamable HTTP (or justified supported transport). Specify Deployment, conditional Service, RBAC, config/secret mounts, probes/resources and sanitized logs (NetworkPolicy is optional end-of-roadmap hardening); verify actual upstream defaults and response projection. No custom protocol implementation.
+Pin and deploy containers/kubernetes-mcp-server (preferred) inside Kind; configure one read-only pod capability, dedicated ServiceAccount/namespace Role and private authenticated Streamable HTTP (or justified supported transport). Specify Deployment, conditional Service, RBAC, config/secret mounts, probes/resources and sanitized logs (NetworkPolicy is optional end-of-roadmap hardening); verify actual upstream defaults and response projection. No custom protocol implementation. Inspect upstream logging and disable debug/payload capture before Alloy collection. Verify upstream propagation/internal spans only when supported; host-side MCP spans are mandatory.
 
 **Acceptance:** Real MCP handshake/discovery/tool call matches kubectl in demo namespace. Test forbidden namespace, writes/exec, Secret access, unauthorized MCP caller and oversized results; no literal env values/raw logs reach model, UI or telemetry. RBAC and endpoint authentication verified; pinned image/config documented.
 
@@ -46,7 +56,7 @@ Pin and deploy containers/kubernetes-mcp-server (preferred) inside Kind; configu
 
 **Depends on:** S1.2. **Budget:** 4 hours.
 
-Resolve endpoint/model; configure backend-only key and normalize messages, calls, errors and usage. Use ignored credential file/runtime injection.
+Resolve endpoint/model; configure backend-only key and normalize messages, calls, errors and usage. Use ignored credential file/runtime injection. Instrument model-client duration/errors and reported token usage; absent usage is unavailable, not zero. Never capture keys, sensitive URLs/headers, prompts/completions or unsafe exception text.
 
 **Acceptance:** Real tool-call round trip and malformed argument rejection pass; provider failure and missing key are sanitized; bundle/log inspection finds no credentials.
 
@@ -54,7 +64,7 @@ Resolve endpoint/model; configure backend-only key and normalize messages, calls
 
 **Depends on:** S1.3, S1.4. **Budget:** 5 hours.
 
-Implement propose → host policy validation → MCP client call → sanitize/normalize → answer with one bounded tool round. Restrict exposed upstream capabilities, validate citations and show server/tool identity and evidence.
+Implement propose → host policy validation → MCP client call → sanitize/normalize → answer with one bounded tool round. Restrict exposed upstream capabilities, validate citations and show server/tool identity and evidence. Instrument request → graph → model/MCP clients → normalization → response. Add sanitized JSON logs with trace/span IDs and low-cardinality route/outcome metrics; IDs stay out of metric/Loki indexed labels.
 
 **Acceptance:** A real question traverses client and upstream server. Unsupported/unsafe tool, injected tool text, missing evidence, unauthorized scope, connection failure and timeout produce bounded explicit outcomes; no hidden switch to SDK is counted as MCP success.
 
@@ -62,23 +72,23 @@ Implement propose → host policy validation → MCP client call → sanitize/no
 
 **Depends on:** S1.5. **Budget:** 3 hours.
 
-Built only after the MCP-backed agent path works end to end. Use direct Kubernetes SDK/API projection for the deterministic resource view with a separate scoped collector identity; apply the shared evidence and authorization contract. Show time/coverage/loading/empty/error states.
+Built only after the MCP-backed agent path works end to end. Use direct Kubernetes SDK/API projection for the deterministic resource view with a separate scoped collector identity; apply the shared evidence and authorization contract. Show time/coverage/loading/empty/error states. Instrument direct collector duration/outcome/freshness without raw resource fields; telemetry is independent of MCP tool access.
 
 **Acceptance:** Controlled workload changes appear in the direct table and independent MCP answer; source/resource identity agrees. Table remains usable with MCP down; browser never calls upstream MCP directly.
 
 ### S1.7 — Fresh Kind packaging
 
-**Depends on:** S1.5, S1.6. **Budget:** 4 hours.
+**Depends on:** S1.5, S1.6, S1.9. **Budget:** 4 hours.
 
-Build fresh UI/API images and one chart that pins/configures the upstream Kubernetes MCP image or chart dependency. Provide Kind values, scoped identities and private credential injection; document local access/setup/teardown. Include all deployment requirements in MCP_INTEGRATIONS.md without adding Keycloak.
+Build fresh UI/API images and one chart that pins/configures the upstream Kubernetes MCP image or chart dependency. Provide Kind values, scoped identities and private credential injection; document local access/setup/teardown. Include deployment requirements from MCP_INTEGRATIONS.md and OBSERVABILITY.md, pinned vendor releases/values, dashboards, runtime private credentials, documented port-forwards and stack teardown without adding Keycloak.
 
 **Acceptance:** Clean Kind install reaches direct resource view and real MCP chat. Deployment/Service/SA/RBAC/read-only/auth/logging checks pass, credentials remain private and production mode rejects development identity; no shared Vyom Python MCP image.
 
-### S1.8 — S1 live gate and walkthrough
+### S1.8 — S1 agent + observability live gate and walkthrough
 
 **Depends on:** S1.7. **Budget:** 4 hours.
 
-Demonstrate unhealthy pod question, evidence, table and changed workload from clean installation; explain each boundary and a failure.
+Demonstrate unhealthy pod question, evidence, table and changed workload from clean installation; explain each boundary and a failure. Inspect real chat request metrics, sanitized logs and the owned-component Tempo trace in Grafana with bidirectional log/trace navigation. Induce provider/MCP failure, then interrupt telemetry independently; prove bounded app behavior, observable drops/loss and recovery. Inspect stored signals for prohibited content and duplicates; record queries, trace ID, pins and time windows. Re-estimate capacity after the clean install.
 
 **Acceptance:** All S1 constitutional acceptance bullets recorded with exact commands/live results; offline evidence labelled separately.
 
@@ -86,11 +96,11 @@ Demonstrate unhealthy pod question, evidence, table and changed workload from cl
 
 Planned task budget: 30 hours; sprint reserve: 10 hours.
 
-### S2.1 — EKS deployment and AWS MCP connectivity
+### S2.1 — EKS, observability and AWS MCP connectivity
 
 **Depends on:** S1.8. **Budget:** 6 hours.
 
-Resolve account/budget/reuse authorization; deploy same application/chart and pinned Kubernetes MCP version to ap-south-1 EKS. Set separate scoped Kubernetes identities for MCP and deterministic collection. Validate AWS-managed endpoint (or appropriate AWS-provided capability), endpoint-region/data-handling/access requirements and unattended temporary workload credentials, preferably SigV4 via supported AWS integration. Distinguish endpoint region from resource region.
+Resolve account/budget/reuse authorization; deploy same application/chart and pinned Kubernetes MCP version to ap-south-1 EKS. Set separate scoped Kubernetes identities for MCP and deterministic collection. Validate AWS-managed endpoint (or appropriate AWS-provided capability), endpoint-region/data-handling/access requirements and unattended temporary workload credentials, preferably SigV4 via supported AWS integration. Distinguish endpoint region from resource region. Carry the same pinned observability stack to EKS with validated storage classes/PVCs/resources and private credentials/access; label inaccessible managed control-plane scrape targets rather than presenting them as healthy.
 
 **Acceptance:** Private EKS access and Kubernetes MCP auth/RBAC checks pass; real AWS MCP initialization/discovery succeeds with scoped role; expired credentials/denied calls fail. Record endpoint, offered capabilities, upstream version/SDK/proxy, quotas and retry conditions. No custom AWS MCP deployment or assumed ap-south-1 endpoint.
 
@@ -98,7 +108,7 @@ Resolve account/budget/reuse authorization; deploy same application/chart and pi
 
 **Depends on:** S2.1. **Budget:** 5 hours.
 
-Use direct AWS SDK for inventory including stopped instances, pagination, configured account/region and partial/denied states. Wire verified AWS-provided MCP capability into agent exploration; constrain any generic operation tool by allowed service/action/arguments plus IAM, not only tool name.
+Use direct AWS SDK for inventory including stopped instances, pagination, configured account/region and partial/denied states. Wire verified AWS-provided MCP capability into agent exploration; constrain any generic operation tool by allowed service/action/arguments plus IAM, not only tool name. Instrument AWS MCP/SDK timings, errors and sanitized outcomes with the existing helpers.
 
 **Acceptance:** Direct inventory reconciles with AWS and continues during MCP outage. Live agent EC2 investigation uses AWS-managed/AWS-provided MCP; wrong-account/region and write requests fail. Missing upstream coverage leaves the gate open, not replaced by a custom wrapper or SDK-only demo.
 
@@ -114,7 +124,7 @@ Add direct SDK readiness/restart/reason/availability projections and enable matc
 
 **Depends on:** S2.3. **Budget:** 4 hours.
 
-Use Kubernetes metrics API directly for dashboard samples; verify upstream metrics tools for chat and advertise only supported capabilities. No metrics time-series subsystem.
+Use Kubernetes metrics API directly for dashboard samples; verify upstream metrics tools for chat and advertise only supported capabilities. No new product metrics time-series subsystem; the S1 Prometheus operational store remains independent.
 
 **Acceptance:** Contemporary kubectl top comparison passes; missing Metrics Server is unavailable, not zero; MCP coverage gap is explicit.
 
@@ -126,13 +136,13 @@ Use bounded direct SDK CPU/status-check windows for charts and verified AWS-prov
 
 **Acceptance:** Window/period/unit/missing-series checks and live AWS comparison pass. Record exact permitted upstream operations and explicitly label any unsupported interactive metric capability.
 
-### S2.6 — S2 dual-path gate and teardown rehearsal
+### S2.6 — S2 dual-path + observability gate and teardown rehearsal
 
 **Depends on:** S2.2, S2.3, S2.4, S2.5. **Budget:** 6 hours.
 
 Demonstrate direct dashboards and AWS/Kubernetes agent investigations on the same Kind/EKS release; rehearse authorized cleanup.
 
-**Acceptance:** S2 acceptance includes both real MCP integrations, IAM/RBAC write denials, independent SDK collection under MCP failure and correct endpoint/resource-region distinction. Cost/cleanup evidence recorded.
+**Acceptance:** S2 acceptance includes both real MCP integrations, IAM/RBAC write denials, independent SDK collection under MCP failure and correct endpoint/resource-region distinction. Cost/cleanup evidence recorded, including observability resources. Repeat S1 correlated chat, failure, payload/cardinality, duplicate-ingestion and telemetry outage/recovery gates on EKS; include AWS MCP/SDK instrumentation. Metrics Server/CloudWatch product sources remain separate from Prometheus; no CloudWatch exporter or agent telemetry-store queries are introduced.
 
 ## S3 — Bedrock, runbooks and history
 
@@ -142,7 +152,7 @@ Planned task budget: 30 hours; sprint reserve: 10 hours.
 
 **Depends on:** S2.6. **Budget:** 6 hours.
 
-Verify in-region model/access/data handling; implement adapter and workload IAM; keep graph/tool/UI interfaces stable.
+Verify in-region model/access/data handling; implement adapter and workload IAM; keep graph/tool/UI interfaces stable. Add Bedrock client spans and bounded usage/error metrics using the S1 signal contract.
 
 **Acceptance:** Same live journey and failure checks pass on both adapters; usage and tool messages normalize; no silent failover.
 
@@ -150,7 +160,7 @@ Verify in-region model/access/data handling; implement adapter and workload IAM;
 
 **Depends on:** S3.1. **Budget:** 4 hours.
 
-Write about five short sourced/versioned runbooks; configure separate Bedrock embedding model/dimension; operator-only bounded ingestion.
+Write about five short sourced/versioned runbooks; configure separate Bedrock embedding model/dimension; operator-only bounded ingestion. Instrument embedding/ingest operations without document text or vector capture.
 
 **Acceptance:** Source/section/version metadata and embeddings verified; unrelated guidance remains distinguishable from observed facts.
 
@@ -158,7 +168,7 @@ Write about five short sourced/versioned runbooks; configure separate Bedrock em
 
 **Depends on:** S3.2. **Budget:** 4 hours.
 
-Deploy Qdrant; workspace/model-version collections, deterministic chunk IDs, idempotent ingestion and replacement/reindex procedure.
+Deploy Qdrant; workspace/model-version collections, deterministic chunk IDs, idempotent ingestion and replacement/reindex procedure. Instrument Qdrant/ingest duration/errors without query, vector or document bodies.
 
 **Acceptance:** Repeated ingest has no duplicate active chunks; model/version isolation and failed retrieval tests pass.
 
@@ -166,7 +176,7 @@ Deploy Qdrant; workspace/model-version collections, deterministic chunk IDs, ide
 
 **Depends on:** S3.1. **Budget:** 5 hours.
 
-Deploy Postgres and fresh migration ledger; scoped sessions/messages/evidence/observations/errors with stable connection/resource identities.
+Deploy Postgres and fresh migration ledger; scoped sessions/messages/evidence/observations/errors with stable connection/resource identities. Instrument SQL client operations without statement bodies or stored message/evidence content.
 
 **Acceptance:** Fresh migrations and upgrade pass; two-workspace repository tests and pod restart preserve history/citations.
 
@@ -174,7 +184,7 @@ Deploy Postgres and fresh migration ledger; scoped sessions/messages/evidence/ob
 
 **Depends on:** S3.3, S3.4. **Budget:** 4 hours.
 
-Add bounded retrieval inside API; separate live facts, hypotheses and cited next checks; define compact evaluation cases and thresholds.
+Add bounded retrieval inside API; separate live facts, hypotheses and cited next checks; define compact evaluation cases and thresholds. Add retrieval spans and bounded outcome metrics without raw queries/chunks.
 
 **Acceptance:** Relevant/irrelevant/stale/unavailable/injected-text cases pass agreed thresholds; all citations resolve within workspace.
 
@@ -182,7 +192,7 @@ Add bounded retrieval inside API; separate live facts, hypotheses and cited next
 
 **Depends on:** S3.4. **Budget:** 3 hours.
 
-Use deterministic SDK collectors in a bounded scheduled job through ordinary libraries/APIs; idempotent keys, freshness and scoped history. Keep Postgres/Qdrant access outside MCP.
+Use deterministic SDK collectors in a bounded scheduled job through ordinary libraries/APIs; idempotent keys, freshness and scoped history. Keep Postgres/Qdrant access outside MCP. Instrument job/collector duration, outcome and last success while preserving payload-free logs.
 
 **Acceptance:** Repeated/overlapping runs do not duplicate; MCP/model outage does not stop synchronization; collector failure is not healthy data. Tests prove scopes and distinguish SDK observations from MCP evidence.
 
@@ -192,7 +202,7 @@ Use deterministic SDK collectors in a bounded scheduled job through ordinary lib
 
 Demonstrate provider switch, workload/runbook answer, re-ingestion and restart durability.
 
-**Acceptance:** All S3 constitutional acceptance checks and commands recorded; no general metrics-history claim.
+**Acceptance:** All S3 constitutional acceptance checks and commands recorded; no general product metrics-history claim. Verify Bedrock/embedding/retrieval/SQL/vector/job spans, durations/errors and freshness without query, vector or document bodies; correlated telemetry continues through provider switch and job/retrieval failure.
 
 ## S4 — Investigation and cost
 
@@ -210,7 +220,7 @@ Enable bounded sanitized upstream Kubernetes MCP event/owner reads for investiga
 
 **Depends on:** S4.1. **Budget:** 6 hours.
 
-Extend graph to controlled health/event/resource/runbook sequences. Select only registered upstream connections with server-qualified tools and authorized credentials. Keep live MCP calls separate from normal retrieval/calculation APIs; enforce iteration/call/time/context budgets.
+Extend graph to controlled health/event/resource/runbook sequences. Select only registered upstream connections with server-qualified tools and authorized credentials. Keep live MCP calls separate from normal retrieval/calculation APIs; enforce iteration/call/time/context budgets. Extend owned investigation spans and step/outcome metrics.
 
 **Acceptance:** Demo investigation separates facts/hypotheses. Duplicate tool names, prompt-selected destinations, credential crossover, changing tool schemas, loops and stale/unavailable sources fail safely; no additional MCP integrations are required this sprint.
 
@@ -218,7 +228,7 @@ Extend graph to controlled health/event/resource/runbook sequences. Select only 
 
 **Depends on:** S3.7. **Budget:** 6 hours.
 
-Use direct Cost Explorer SDK for bounded totals/service breakdown, pagination/date/freshness and code arithmetic; persist small daily series if existing schema fits. Prefer verified AWS-provided MCP for exploratory cost reads. Agent-internal access to stored cost/calculation results is normal code, labelled distinctly from MCP.
+Use direct Cost Explorer SDK for bounded totals/service breakdown, pagination/date/freshness and code arithmetic; persist small daily series if existing schema fits. Prefer verified AWS-provided MCP for exploratory cost reads. Agent-internal access to stored cost/calculation results is normal code, labelled distinctly from MCP. Instrument cost collection/calculation timings and errors without billing payloads.
 
 **Acceptance:** Reconcile with equivalent live query and decimal/date/page tests. Record upstream cost coverage and provenance; missing MCP capability is not silently represented as supported. Billing never described as real-time; no custom AWS MCP wrapper.
 
@@ -234,7 +244,7 @@ Implement unavailable replicas and repeated recent restarts from bounded observa
 
 **Depends on:** S4.2. **Budget:** 5 hours.
 
-Implement actual intended gateway classifier behind disabled-by-default typed interface; benchmark quality/latency/failures and data boundary.
+Implement actual intended gateway classifier behind disabled-by-default typed interface; benchmark quality/latency/failures and data boundary. Instrument the optional classifier only when implemented/enabled; never capture classifier input/output bodies.
 
 **Acceptance:** On/off evidence recorded; unknown/low confidence/failure escalates to Bedrock; activation blocked until geography/retention/minimization checks pass.
 
@@ -244,7 +254,7 @@ Implement actual intended gateway classifier behind disabled-by-default typed in
 
 Demonstrate investigation and service cost explanation; record classifier activation decision.
 
-**Acceptance:** All S4 acceptance recorded; full product journey succeeds with Jev disabled.
+**Acceptance:** All S4 acceptance recorded; full product journey succeeds with Jev disabled. Investigation/cost-path timings and outcomes are observable; instrument Jev only if implemented/enabled, without classifier payloads.
 
 ## S5 — Reliability baseline
 
@@ -254,17 +264,17 @@ Planned task budget: 30 hours; sprint reserve: 10 hours.
 
 **Depends on:** S4.6. **Budget:** 5 hours.
 
-Expand CI to immutable Vyom images and pinned upstream image/chart/client/proxy versions; chart validation and Kind smoke. Add upstream schema/tool-catalog regression and controlled upgrade/rollback checks.
+Expand CI to immutable Vyom images and pinned upstream image/chart/client/proxy versions; chart validation and Kind smoke. Include pinned observability charts/values/dashboard provisioning and their compatibility/upgrade checks. Add upstream schema/tool-catalog regression and controlled upgrade/rollback checks.
 
 **Acceptance:** Clean install/upgrade pass; upstream default or capability drift fails review gates rather than automatically exposing new tools. Record versions and exact smoke commands.
 
-### S5.2 — Runtime and integration hardening
+### S5.2 — Runtime, integration and telemetry hardening
 
 **Depends on:** S5.1. **Budget:** 6 hours.
 
-Complete limits/retries/concurrency/job locks and security controls. Monitor MCP connection/auth/session failures, per-server/tool latency/errors/usage, direct collector freshness and credential renewal. Keep payload-free correlated audit metadata and least-privilege egress.
+Complete limits/retries/concurrency/job locks and security controls. Monitor MCP connection/auth/session failures, per-server/tool latency/errors/usage, direct collector freshness and credential renewal. Keep payload-free correlated audit metadata and least-privilege egress. Harden the existing S1 stack using measured volume/resources: tune sampling/retention, choose durable object storage where needed, and add tested operational alerts/dashboards for app, stores and exporters. Preserve bounded telemetry outage behavior; recovery objectives for telemetry differ from native Postgres/Qdrant backups.
 
-**Acceptance:** Dependency and token-expiry tests, restricted caller tests and recovery pass; raw prompts/secrets/tool payloads are absent from logs. Both MCP integration outages are independently observable.
+**Acceptance:** Dependency and token-expiry tests, restricted caller tests and recovery pass; raw prompts/secrets/tool payloads are absent from logs. Both MCP integration outages are independently observable. Test alerts, telemetry loss/drop/recovery and revised storage/retention/sampling settings; PVCs alone are not backup or HA.
 
 ### S5.3 — External backup and native restore
 
@@ -278,7 +288,7 @@ Choose retention/destination/recovery objectives; consistent Postgres/Qdrant bac
 
 **Depends on:** S5.2, S5.3. **Budget:** 6 hours.
 
-Run grounding suite and deliberate model/AWS MCP/Kubernetes MCP/Qdrant outages; rehearse upstream and Vyom release rollback. Verify deterministic product paths continue where independent.
+Run grounding suite and deliberate model/AWS MCP/Kubernetes MCP/Qdrant outages; rehearse upstream and Vyom release rollback, plus telemetry collector/store failures and recovery. Verify deterministic product paths continue where independent.
 
 **Acceptance:** Agreed answer thresholds met; SDK success never masks failed MCP calls. Restored data and rollback usable; protocol/session/auth/schema errors produce explicit degraded states.
 
@@ -310,11 +320,11 @@ Add users/tenants/memberships; server resolves active tenant/role; map existing 
 
 **Acceptance:** History survives migration; forged tenant inputs ignored/rejected; membership and role resolution tests pass.
 
-### S6.3 — Grants and MCP connection isolation
+### S6.3 — Grants, MCP isolation and telemetry access policy
 
 **Depends on:** S6.2. **Budget:** 5 hours.
 
-Resolve memberships/roles to tenant-owned accounts/clusters/grants. Host selects endpoint and credentials; upstream servers do not interpret Vyom tenant headers. Use separate Kubernetes MCP Deployments/ServiceAccounts per tenant grant scope initially; bind AWS temporary role/session to the authorized account. Apply identical authority to SDK collectors and UI/backend guards.
+Resolve memberships/roles to tenant-owned accounts/clusters/grants. Host selects endpoint and credentials; upstream servers do not interpret Vyom tenant headers. Use separate Kubernetes MCP Deployments/ServiceAccounts per tenant grant scope initially; bind AWS temporary role/session to the authorized account. Apply identical authority to SDK collectors and UI/backend guards. Decide and document operator-only versus tenant-visible telemetry; shared operator Grafana remains private unless exposed surfaces enforce current grants. Tenant labels/filters alone never authorize shared store queries.
 
 **Acceptance:** Two tenants cannot select each other’s MCP connection/role/session or broaden namespaces; write and credential-forwarding tests fail closed. No broad shared SA identity is claimed to provide tenant isolation; upstream implementation remains unmodified.
 
@@ -324,7 +334,7 @@ Resolve memberships/roles to tenant-owned accounts/clusters/grants. Host selects
 
 Apply current grants to sessions/citations/history/retrieval, any caches/checkpoints, direct collection jobs and ingest. Namespace/membership revocation invalidates MCP pools/credential bindings and updates associated RBAC before further reads; reauthorize persisted evidence.
 
-**Acceptance:** Two-tenant ID substitution, endpoint switching, pooled-session reuse and namespace revocation tests pass across both execution paths and retained results. No call proceeds under stale grant/identity state; absent surfaces labelled unimplemented.
+**Acceptance:** Two-tenant ID substitution, endpoint switching, pooled-session reuse and namespace revocation tests pass across both execution paths and retained results. No call proceeds under stale grant/identity state; absent surfaces labelled unimplemented. Cover any exposed telemetry query/proxy/dashboard and Grafana access in cross-tenant and revocation tests; operator-only stores remain inaccessible to tenants.
 
 ### S6.5 — Audit, credentials and identity recovery
 
@@ -340,4 +350,4 @@ Audit grants/connection changes and denials; choose segregation, add Vault only 
 
 Run complete two-tenant matrix and recovery; disable dev resolver; configure authenticated HTTPS ingress only after gates and owner deployment authorization.
 
-**Acceptance:** All S6 acceptance recorded. If incomplete, remain private; no public-alpha or production-readiness claim.
+**Acceptance:** All S6 acceptance recorded. If incomplete, remain private; no public-alpha or production-readiness claim. Record telemetry access decision and denial/revocation evidence; do not expose shared Grafana/store endpoints through application login without tested authorization.

@@ -1,6 +1,6 @@
 # MCP integration design
 
-Owner-approved planning revision, 2026-10-03. This elaborates the [constitution](../vyom-12-week-sprint-plan.md); it does not implement or deploy anything. All S1–S6 application tasks remain pending. Existing sprint order and scope are preserved.
+Owner-approved planning revision, 2026-10-03. This elaborates the [constitution](../vyom-12-week-sprint-plan.md); it does not implement or deploy anything. All S1–S6 application tasks remain pending. Sprint order is preserved; the owner-required observability scope was added on 2026-10-04. See [OBSERVABILITY.md](OBSERVABILITY.md): the full stack starts S1 and does not expand agent tool permissions.
 
 ## Responsibility boundary
 
@@ -12,6 +12,7 @@ Owner-approved planning revision, 2026-10-03. This elaborates the [constitution]
 | Kubernetes MCP | Deploy/configure/upgrade existing upstream server; scoped provider identity | Preferred `containers/kubernetes-mcp-server` in target cluster → Kubernetes API | S1 Kind; S2 EKS |
 | AWS MCP | Connect to AWS-managed MCP / suitable AWS-provided capabilities; prove resource investigation support | Authenticated remote MCP; supported AWS signing/proxy if needed | S2 |
 | Deterministic collection | Inventory, dashboards, scheduled sync, large pulls, pagination, arithmetic | Direct Kubernetes/AWS SDKs/APIs where simpler | K8s S1; AWS S2; jobs S3 |
+| Operational telemetry | Instrument owned HTTP/graph/model/MCP/SDK paths; deploy pinned vendor stack with separate observer identity | Prometheus scrape; Alloy logs/OTLP → Loki/Tempo; private Grafana | S1 Kind; S2 EKS; harden S5 |
 | Application state / RAG | Scoped persistence, retrieval, migrations and embeddings | Postgres/Qdrant/model libraries/APIs; no MCP hop | S3 |
 | Additional MCP domains | Later registered connections with capability/security review | GitHub, Terraform/IaC, docs, cost/FinOps and others | Later, not extra core deliverables |
 
@@ -41,7 +42,7 @@ These are planned requirements, not copied default chart values. Pin an upstream
 | Backend identity | Separate deterministic collector ServiceAccount with same intended namespace scope | Separate IAM permissions for deterministic AWS collector and agent AWS connection where feasible |
 | Config / secrets | Nonsecret config via mounted config; private runtime credentials/certificates; projected service tokens | Renew/rotate credential material; no credential in Git, image, frontend, logs or MCP tool parameters |
 | Network exposure | ClusterIP only, no public exposure; endpoint authentication is the control. NetworkPolicy restricting ingress/egress is optional end-of-roadmap hardening | Endpoint authentication; metrics/health exposure restricted separately |
-| Observability | Server/connection health, call count/latency/errors and sanitized logs; no raw content | Correlated server/tool/outcome metadata, auth failure and credential-expiry alerts/diagnostics; expand in S5 |
+| Observability | Prometheus rates/latency/errors; Alloy allowlisted sanitized logs and owned OTel MCP-client spans → Loki/Tempo/Grafana; no raw content | Same stack and correlation on EKS; internal upstream spans only if supported; auth/credential alerts and sizing/recovery hardened S5 |
 | Local development | Actual MCP server runs inside Kind; UI via localhost port-forward; optional backend dev connection through localhost-only forwarding | EKS uses internal Service DNS, workload credentials and private app access until S6 |
 
 Optional, end of roadmap: if NetworkPolicy is added, verify the CNI actually enforces it; policy YAML alone is not evidence. Until then make no network-isolation claim. Do not expose a raw MCP port that bypasses the authenticated proxy. Authentication at the MCP endpoint and authentication to the Kubernetes API are separate: configure the latter to always use the scoped ServiceAccount, not a client token accidentally passed through by an upstream default. No Keycloak is needed to establish workload-to-workload authentication in S1.

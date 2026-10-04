@@ -1,8 +1,8 @@
 # Vyom — intended end-of-S6 architecture
 
-**Design target, not deployed state.** The 12-week outcome remains a personal alpha with a tested initial tenant boundary. The reset remains in force. This revision adopts the owner's MCP host/client decisions while preserving the existing sprint order, frontend stack, inference progression, RAG, recovery and later Keycloak.
+**Design target, not deployed state.** The 12-week outcome remains a personal alpha with a tested initial tenant boundary. The reset remains in force. This revision adopts the owner's MCP host/client decisions and full observability from S1 while preserving sprint order, frontend stack, inference progression, RAG, recovery and later Keycloak. S1 now estimates 50 hours including reserve; the total is 250 hours/12.5 weeks at current capacity, with twelve weeks still the target.
 
-The [interactive overview](diagrams/application.html) and [editable JSON](diagrams/application.json) show the two execution paths. See [verification status](diagrams/README.md) for rendering limits and [MCP integration design](MCP_INTEGRATIONS.md) for the detailed deployment/authentication matrix and primary sources. Diagrams below are editable Mermaid source.
+The [interactive overview](diagrams/application.html) and [editable JSON](diagrams/application.json) show the two execution paths and the S1 observability branch. The [dedicated observability view](diagrams/observability.html) expands the collection/query topology described in [OBSERVABILITY.md](OBSERVABILITY.md). See [verification status](diagrams/README.md) for rendering limits and [MCP integration design](MCP_INTEGRATIONS.md) for the detailed deployment/authentication matrix and primary sources. Diagrams below are editable Mermaid source.
 
 ## 1. Components and responsibilities
 
@@ -41,6 +41,9 @@ flowchart TB
     persistence -->|SQL client| pg
     persistence -->|Qdrant client| q
     host -.->|Later, separately gated| future
+    obs[Observability namespace · S1<br/>Alloy, Prometheus, Loki, Tempo, Grafana]
+    backend -.->|Owned OTel spans + sanitized container logs| obs
+    obs -.->|Prometheus scrape /metrics| backend
 ```
 
 Vyom owns orchestration and integration policy. It does not build a production Kubernetes MCP protocol implementation or a general-purpose AWS MCP server. The upstream Kubernetes server is a separate pinned workload, not a Vyom Python entrypoint. An AWS signing proxy, if needed, is transport support for the host rather than a cloud-tool wrapper.
@@ -76,9 +79,23 @@ flowchart LR
         msa --> kapi
         sdk --> csa --> kapi
         kapi --> demo
+        subgraph observability[observability namespace · S1]
+            alloy[Alloy DaemonSet<br/>Node-local logs + OTLP traces]
+            prom[Prometheus + cluster exporters]
+            stores[Loki + Tempo<br/>PVCs / initial 48h retention]
+            grafana[Grafana<br/>Provisioned data sources + two dashboards]
+            alloy -->|Logs + traces| stores
+            grafana -->|Query logs / traces| stores
+            grafana -->|Query metrics| prom
+        end
+        app -.->|OTLP traces| alloy
+        logs[Allowlisted node-local container logs] -->|Read once per node| alloy
+        prom -.->|Scrape /metrics| app
+        prom -.->|Scrape health| alloy
     end
     dev -->|Localhost port-forward| ui
     lg -->|Backend-only model key| model
+    dev -->|Authenticated localhost port-forward| grafana
 ```
 
 The MCP endpoint is private and authenticated without requiring early Keycloak. Prefer supported Streamable HTTP; the Service is conditional on network transport. If an existing authentication/TLS proxy is selected, the raw server port must not bypass it. The MCP server uses its ServiceAccount for Kubernetes API access; do not forward a frontend token as Kubernetes authority. No developer-admin kubeconfig is mounted.
@@ -100,6 +117,7 @@ flowchart TB
             csa[Collector ServiceAccount / minimal RBAC]
             kapi[Kubernetes API / metrics API]
             irsa[Temporary IAM workload identities<br/>Separate agent and collector scopes]
+            telemetry[Observability namespace · S2 carryover<br/>Prometheus, Loki, Tempo, Alloy, Grafana]
             state[Postgres + Qdrant · S3<br/>Keycloak durable state · S6]
             entry --> api
             api -->|MCP| kmcp --> ksa --> kapi
@@ -121,11 +139,15 @@ flowchart TB
     api -->|Model SDK/API| bedrock
     state -->|Native consistent backups| backup
     backup -->|Clean restore drill| state
+    api -.->|Owned traces + sanitized logs| telemetry
+    collect -.->|SDK/job traces + sanitized logs| telemetry
+    telemetry -.->|Prometheus scrape| api
+    user -->|Operator-only authenticated port-forward| telemetry
 ```
 
 AWS-managed MCP is outside the EKS deployment, not a pod or custom wrapper. Endpoint region is distinct from the platform and monitored-resource region; source checks currently list a `us-east-1` managed endpoint. S2 verifies availability, routing/data handling, credentials and capability coverage before activation. See [AWS endpoint reference](https://docs.aws.amazon.com/general/latest/gr/aws-mcp.html).
 
-Kind and EKS share chart structure and pinned upstream version with environment-specific values. Kubernetes RBAC and AWS IAM are different authorization systems. IRSA for AWS credentials does not grant Kubernetes reads. Bedrock reasoning/embedding permissions start S3; AWS MCP uses its own verified connection authentication and least-privilege scope. Observability is basic from S1, expands in S2 and is hardened in S5.
+Kind and EKS share chart structure and pinned upstream version with environment-specific values. Kubernetes RBAC and AWS IAM are different authorization systems. IRSA for AWS credentials does not grant Kubernetes reads. Bedrock reasoning/embedding permissions start S3; AWS MCP uses its own verified connection authentication and least-privilege scope. The full observability stack starts on Kind in S1, carries the same pins to EKS in S2 with validated storage/resources, and is hardened in S5. Pinned vendor releases share the reproducible environment workflow with the one Vyom chart. Inaccessible managed control-plane targets are labelled explicitly; Metrics Server/CloudWatch product sources remain separate.
 
 The full Kubernetes deployment checklist and credential matrix live in [MCP_INTEGRATIONS.md](MCP_INTEGRATIONS.md). S6 initially isolates upstream Deployments/ServiceAccounts by tenant grant scope. No remote-cluster enrollment, broad service mesh, generic gateway or multi-region platform is introduced.
 
@@ -172,6 +194,8 @@ sequenceDiagram
     G->>R: Persist through normal SQL API from S3
     G-->>API: Answer and inspectable evidence
     API-->>U: Grounded response or explicit limitation
+    Note over API,H: Owned OTel request/graph/model/MCP/normalization spans from S1
+    Note over K,P: Upstream internal spans only if supported; external internals not promised
 ```
 
 The host resolves authority before any upstream call. Neither managed AWS MCP nor the Kubernetes upstream is assumed to interpret Vyom tenant IDs. RBAC/IAM enforce provider scope; host policy constrains capabilities, arguments, evidence and user access. Missing authorization prevents calls altogether. Provider/MCP failure yields an explicit integration limitation; a direct-SDK fallback must be intentional, labelled and cannot pass an MCP acceptance gate.
@@ -199,11 +223,15 @@ flowchart TB
     q -->|Document/section/version citations| retrieval
     retrieval --> answer[Answer and evidence panel]
     db -->|Reauthorize historical evidence| answer
+    signals[Owned OTel spans, sanitized logs and metrics<br/>Collectors / embeddings / retrieval / SQL / vector / jobs]
+    service -.->|Timing / outcome / freshness| signals
+    job -.->|Timing / outcome| signals
+    retrieval -.->|Timing / outcome| signals
 ```
 
 Database, vector, schedule and ordinary service communication never require an MCP round trip. Direct collectors and agent evidence meet at a normalized contract, not at a new universal protocol server. Record transport/provenance so observations from different collection times are not treated as contradictory automatically. Deterministic findings/calculations stay in code.
 
-Retain original S3 requirements: idempotent chunk IDs and ingest, model/dimension-version collections and reindexing, fresh migration ledger, workspace scope, observation idempotency and explicit stale/error records. Postgres is not a metrics time-series replacement. Curated retrieval remains inside the API; no upload/crawler or separate RAG service is added.
+Retain original S3 requirements: idempotent chunk IDs and ingest, model/dimension-version collections and reindexing, fresh migration ledger, workspace scope, observation idempotency and explicit stale/error records. Postgres stores product evidence/history; Prometheus stores operational time-series from S1. Neither implies general product metrics-history or agent telemetry analytics. Curated retrieval remains inside the API; no upload/crawler or separate RAG service is added.
 
 ## 5. Authentication, authorization and connection isolation
 
@@ -224,6 +252,8 @@ flowchart TD
     invalidate --> host
     invalidate --> direct
     invalidate --> history
+    grants --> telemetry[Telemetry access decision · S6<br/>Operator-only stays private; exposed queries/Grafana enforce grants]
+    invalidate --> telemetry
 ```
 
 There are distinct identities: the user accessing Vyom, Vyom authenticating to an MCP endpoint, and the endpoint accessing a provider API. Keycloak resolves the first only in S6. In-cluster ServiceAccount credentials resolve the Kubernetes provider identity from S1. An endpoint token must not accidentally change the provider identity. AWS calls use verified temporary workload/account scope; do not copy preview-era policies without checking current AWS guidance.
@@ -255,11 +285,44 @@ Vault is conditional in S6 if additional connection secrets justify it; it is no
 
 | Stage | New capability | New runtime/state complexity |
 |---|---|---|
-| S1 | One live pod question, table, citations | UI + API/agent with MCP client + upstream in-cluster Kubernetes MCP; direct pod view |
-| S2 | EC2, workload health and current metrics | Same release/upstream K8s MCP on EKS; remote AWS-managed MCP plus direct SDK paths |
-| S3 | Bedrock reasoning, curated guidance and memory | Postgres + Qdrant; operator ingest and observation job; embedding adapter |
-| S4 | Bounded investigation, daily cost and two findings | Additional upstream capabilities/graph paths; optional Jev classifier |
-| S5 | Recovery, fault handling and release confidence | Backup destination, operational telemetry and automation |
-| S6 | Tested membership and namespace isolation | Keycloak, connection/credential isolation, scoped upstream deployments and conditional Vault/HTTPS exposure |
+| S1 | One live pod question, table, citations and correlated signals | UI/API/agent/MCP + direct pod view; Prometheus, Loki, Tempo, Alloy, Grafana and OTel |
+| S2 | EC2, workload health and current metrics | Same release/upstream K8s MCP on EKS; remote AWS-managed MCP plus direct SDK paths; same observability pins on EKS |
+| S3 | Bedrock reasoning, curated guidance and memory | Postgres + Qdrant; operator ingest and observation job; embedding adapter; instrument Bedrock/RAG/state/jobs |
+| S4 | Bounded investigation, daily cost and two findings | Additional upstream capabilities/graph paths; optional Jev classifier; investigation/cost timings |
+| S5 | Recovery, fault handling and release confidence | Backup destination and automation; harden existing telemetry, storage/sampling, alerts and recovery |
+| S6 | Tested membership and namespace isolation | Keycloak, connection/credential isolation, scoped upstream deployments and conditional Vault/HTTPS exposure; tested telemetry access policy |
 
-No Azure/GCP provider APIs, remote-cluster enrollment, event streaming pipeline, Security Hub platform, compliance, SBOM, alerts or generic monitoring system is implied by the final design. Those remain outside the constitution's core timebox.
+No Azure/GCP provider APIs, remote-cluster enrollment, event streaming pipeline, Security Hub platform, compliance, SBOM, external alert channels or general-purpose agent telemetry analytics is implied by the final design. Those remain outside the constitution's core timebox.
+
+## 8. Operational telemetry from S1
+
+The collection/query arrows below do not make telemetry a synchronous application dependency. All components are planned, undelivered. The [observability design](OBSERVABILITY.md) owns detailed collection, privacy, retention and failure requirements.
+
+```mermaid
+flowchart TB
+    backend[Vyom API / LangGraph / model and MCP clients<br/>Owned OTel spans + /metrics]
+    logs[Node-local allowlisted container logs<br/>Sanitized JSON / trace_id / span_id]
+    infra[Kubernetes exporters<br/>kube-state-metrics + node exporter]
+    subgraph obs[observability namespace · S1 Kind / S2 EKS]
+        alloy[Alloy DaemonSet<br/>Separate observer SA / bounded buffers]
+        prometheus[Prometheus<br/>Single instance / PVC]
+        loki[Loki<br/>Single binary / PVC]
+        tempo[Tempo<br/>Monolithic / PVC]
+        grafana[Grafana<br/>Cluster + Vyom dashboards / data source links]
+        alloy -->|Logs| loki
+        alloy -->|Traces| tempo
+        prometheus -->|Scrape health| alloy
+        grafana -->|Query metrics| prometheus
+        grafana -->|Query logs| loki
+        grafana -->|Query traces| tempo
+    end
+    backend -.->|Async bounded OTLP traces| alloy
+    logs -->|Read once on each node| alloy
+    prometheus -->|Scrape /metrics| backend
+    prometheus -->|Scrape| infra
+    operator[Operator] -->|Private authenticated localhost port-forward| grafana
+```
+
+Initial 48-hour retention and 100% demo tracing require finite PVC/resources/volume budgets and implementation-time pin checks. Logs are collected once through Alloy, without a second OTLP stdout path. Trace IDs belong in log fields/structured metadata, not indexed Loki or metric labels; metric dimensions are bounded. Drop sensitive headers/URLs, credentials, prompts, answers, tool bodies, pod environment values and unsafe exceptions at source. Upstream debug/payload logs must be disabled before collection.
+
+S1.8 requires a real chat and induced provider/MCP failure with applicable metrics, sanitized logs and owned-component spans; demonstrate bidirectional Loki/Tempo navigation. Independently interrupt telemetry to prove bounded application behavior, observable loss/drops and recovery. S2 repeats these on EKS, S3–S4 instrument new paths, S5 tests alerts/storage/sampling/recovery, and S6 enforces the telemetry access decision. Observer log access does not authorize agent log tools. Internal Services and tenant labels alone are not endpoint authentication or tenant isolation.

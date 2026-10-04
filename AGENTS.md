@@ -16,10 +16,10 @@ Build a small, understandable AWS + Kubernetes intelligence cockpit, one working
 
 ## Scope and architecture rules
 
-- S1 must include real LLM + LangGraph MCP host + upstream Kubernetes MCP, live Kubernetes evidence, and a usable Chat/Kubernetes UI. A mock demo does not close S1.
+- S1 must include real LLM + LangGraph MCP host + upstream Kubernetes MCP, live Kubernetes evidence, and a usable Chat/Kubernetes UI. A mock demo does not close S1. Loki, Prometheus, Grafana, Tempo and OTel/Alloy also start S1; the real chat must produce queryable metrics, sanitized correlated logs and an owned-component trace. Read [observability design](docs/OBSERVABILITY.md) for S1.9 and each later observability increment.
 - React + TypeScript + Vite + Refine + shadcn/ui + Tailwind; FastAPI API/agent with MCP client; pinned upstream Kubernetes MCP server in-cluster; AWS-managed/AWS-provided MCP integrations. One chart, Kind first, EKS next.
 - MCP is the agent-facing integration boundary. Deterministic collection/sync/dashboard paths may use direct SDKs; Postgres, Qdrant, persistence and internal logic use normal libraries/APIs. Do not implement a production MCP protocol server or general-purpose AWS wrapper. Educational servers stay separate and never count as delivery.
-- The host selects registered endpoints/credentials and validates tools/results. Upstream servers do not interpret Vyom tenant headers; use scoped provider identities and isolate MCP sessions per authorized connection. Keep the current roadmap read-only.
+- The host selects registered endpoints/credentials and validates tools/results. Upstream servers do not interpret Vyom tenant headers; use scoped provider identities and isolate MCP sessions per authorized connection. Keep the current roadmap read-only. Infrastructure log collection uses a separate observer identity; it does not authorize agent pod-log tools or telemetry-store queries.
 - Add services, dependencies, abstractions, routes, and files only when a current task needs them. No speculative provider framework or placeholder domain pages.
 - Keep provider translation small. Bedrock begins S3; embeddings and RAG also begin S3. Do not silently switch from Bedrock to external inference.
 - Do not add users, memberships, Vault, persistent graph state, or remote enrollment to S1. Identity arrives S6; Vault is conditional.
@@ -31,7 +31,7 @@ Build a small, understandable AWS + Kubernetes intelligence cockpit, one working
 - Cloud/Kubernetes tools are read-only. No arbitrary shell, SQL, mutation tools, Secret contents, literal environment values, or unrestricted event payloads.
 - Validate allowlisted tools and typed arguments; enforce limits on calls, time, context, resource counts, and output. Treat collected and retrieved text as data, never instructions.
 - Evidence includes source identity, stable resource/document IDs, collection time, coverage and errors. Missing, partial, stale, denied and zero are different states.
-- Credentials stay server-side and out of Git, Vite bundles, browser payloads, logs, fixtures, and handoffs. Examples contain placeholders only.
+- Credentials stay server-side and out of Git, Vite bundles, browser payloads, logs, fixtures, and handoffs. Never capture raw prompts, answers, tool bodies, sensitive URLs/headers or unsafe exception text in telemetry. Bound export/queues and label dimensions; telemetry outages must not block requests. Examples contain placeholders only.
 - Until S6 passes, use localhost-bound port-forward access and internal Services. Production mode rejects development identity. Do not expose unauthenticated ingress.
 - From first persistence, all queries and retrieval are workspace-scoped. In S6, resolve membership after JWT verification and enforce current grants on live AND historical evidence, citations, jobs and caches.
 

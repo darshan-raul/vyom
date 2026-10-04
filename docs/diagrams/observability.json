@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Vyom \u00b7 Planned S1 observability",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      860
+    ]
+  },
+  "components": [
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "Vyom backend",
+      "sublabel": "OTel SDK / sanitized JSON logs",
+      "pos": [
+        50,
+        60
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "logs",
+      "type": "external",
+      "label": "Container logs",
+      "sublabel": "Node-local allowlisted workloads",
+      "pos": [
+        50,
+        390
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "alloy",
+      "type": "backend",
+      "label": "Grafana Alloy",
+      "sublabel": "DaemonSet / bounded OTLP pipeline",
+      "pos": [
+        400,
+        390
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "loki",
+      "type": "database",
+      "label": "Loki",
+      "sublabel": "Single binary / PVC / short retention",
+      "pos": [
+        750,
+        220
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "tempo",
+      "type": "database",
+      "label": "Tempo",
+      "sublabel": "Monolithic / PVC / short retention",
+      "pos": [
+        750,
+        560
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "prom",
+      "type": "database",
+      "label": "Prometheus",
+      "sublabel": "Cluster + application metrics / PVC",
+      "pos": [
+        400,
+        60
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "infra",
+      "type": "backend",
+      "label": "Cluster exporters",
+      "sublabel": "kube-state-metrics / node exporter",
+      "pos": [
+        750,
+        60
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "frontend",
+      "label": "Grafana",
+      "sublabel": "Private authenticated exploration",
+      "pos": [
+        1050,
+        390
+      ],
+      "size": [
+        240,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "app",
+      "to": "alloy",
+      "label": "OTLP traces"
+    },
+    {
+      "from": "logs",
+      "to": "alloy",
+      "label": "Read once per node",
+      "labelDy": 30
+    },
+    {
+      "from": "alloy",
+      "to": "loki",
+      "label": "Logs"
+    },
+    {
+      "from": "alloy",
+      "to": "tempo",
+      "label": "Traces"
+    },
+    {
+      "from": "prom",
+      "to": "app",
+      "label": "Scrape /metrics"
+    },
+    {
+      "from": "prom",
+      "to": "infra",
+      "label": "Scrape"
+    },
+    {
+      "from": "prom",
+      "to": "alloy",
+      "label": "Scrape health",
+      "labelAt": [
+        520,
+        265
+      ]
+    },
+    {
+      "from": "grafana",
+      "to": "loki",
+      "label": "Query logs"
+    },
+    {
+      "from": "grafana",
+      "to": "tempo",
+      "label": "Query traces"
+    },
+    {
+      "from": "grafana",
+      "to": "prom",
+      "label": "Query metrics",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          1170,
+          20
+        ],
+        [
+          520,
+          20
+        ]
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Live gate",
+      "items": [
+        "Real chat metrics, logs and trace in Grafana",
+        "Provider/MCP failure + telemetry loss/recovery"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Private and bounded",
+      "items": [
+        "Internal stores / OTLP; authenticated port-forward",
+        "48h initial retention; finite queues and resources"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Signal boundaries",
+      "items": [
+        "Trace IDs in log fields; no payload capture",
+        "Metrics scrape; Alloy logs/traces; no duplicate log path"
+      ]
+    }
+  ]
+}

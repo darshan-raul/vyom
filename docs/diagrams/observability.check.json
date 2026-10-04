@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "file": "/home/darshan/projects/vyom/docs/diagrams/application.html",
+  "file": "/home/darshan/projects/vyom/docs/diagrams/observability.html",
   "checks": [
     {
       "name": "single_svg",
@@ -63,15 +63,15 @@
       "ambiguousCorridors": 0,
       "containerBorderRuns": 0,
       "labelRouteClearanceIssues": 0,
-      "minLabelRouteClearance": 86,
+      "minLabelRouteClearance": 20,
       "desktopReadabilityIssues": 0,
       "minProjectedNodeTextPx": null,
       "maxBends": 2,
       "routesOverSuggestedBends": 0,
-      "maxStretch": 1,
+      "maxStretch": 1.082,
       "routesOverSuggestedStretch": 0,
-      "minSegmentPx": 60,
-      "minInteriorSegmentPx": 60,
+      "minSegmentPx": 30,
+      "minInteriorSegmentPx": 163,
       "shortSegmentCount": 0,
       "shortEndpointSegmentCount": 0,
       "shortInteriorSegmentCount": 0,

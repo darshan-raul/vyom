@@ -2,11 +2,11 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Vyom \u00b7 Planned MCP host architecture",
+    "title": "Vyom \u00b7 Planned agent and observability",
     "quality_profile": "showcase",
     "viewBox": [
       1200,
-      690
+      940
     ]
   },
   "components": [
@@ -149,6 +149,34 @@
         210,
         80
       ]
+    },
+    {
+      "id": "telemetry",
+      "type": "backend",
+      "label": "S1 observability",
+      "sublabel": "Alloy / Prometheus / Loki / Tempo",
+      "pos": [
+        340,
+        790
+      ],
+      "size": [
+        330,
+        80
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "frontend",
+      "label": "Grafana \u00b7 S1",
+      "sublabel": "Private metrics / logs / traces",
+      "pos": [
+        850,
+        790
+      ],
+      "size": [
+        300,
+        80
+      ]
     }
   ],
   "connections": [
@@ -204,6 +232,19 @@
       "from": "api",
       "to": "state",
       "label": "Data APIs"
+    },
+    {
+      "from": "sdk",
+      "to": "telemetry",
+      "label": "Signals",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "grafana",
+      "to": "telemetry",
+      "label": "Query stores"
     }
   ],
   "cards": [
@@ -227,8 +268,16 @@
       "dot": "amber",
       "title": "Progressive, read-only alpha",
       "items": [
-        "Kind S1; AWS + EKS S2; Bedrock + RAG S3",
-        "Keycloak and tenant/connection isolation remain S6"
+        "Kind + full observability S1; AWS + EKS S2",
+        "Bedrock + RAG S3; Keycloak + isolation S6"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Operational signals from S1",
+      "items": [
+        "OTel spans + sanitized logs; Prometheus scrapes",
+        "Bounded export; no prompt/tool bodies; detail in observability view"
       ]
     }
   ]

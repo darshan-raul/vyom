@@ -1,20 +1,43 @@
 {
-  "diagram_type": "architecture",
-  "output": "docs/diagrams/application.html",
-  "revision": "2026-10-03 MCP host/client architecture",
-  "artifact_checks": "9/9 direct checker; 0 composition errors/warnings",
-  "atomic_delivery": "failed: delivery/receipt-invalid",
-  "browser_evidence": "not run: successful delivery prerequisite unmet",
-  "visual_review": "not performed",
-  "correction_rounds": 2,
-  "files": {
-    "application.json": {
-      "sha256": "27dc073a4d5fa60e6800229f58b49bbc1bd46d5e104d1d9ab9059fefacaf11cf",
-      "bytes": 4182
+  "revision": "2026-10-04 S1 observability planning",
+  "diagrams": {
+    "application": {
+      "diagram_type": "architecture",
+      "output": "docs/diagrams/application.html",
+      "artifact_checks": "9/9 direct checker; 0 composition errors; 0 warnings",
+      "atomic_delivery": "failed: delivery/receipt-invalid",
+      "browser_evidence": "not run: successful delivery prerequisite unmet",
+      "visual_review": "not performed",
+      "correction_rounds": 1,
+      "files": {
+        "application.json": {
+          "sha256": "3fe3a3c9023bf8036a8beffeae363d76898e11f605c3e18bbb10565a47c06e8d",
+          "bytes": 5175
+        },
+        "application.html": {
+          "sha256": "89cd90c33a91363bc1c32bbb058d5cbef9fff0e69bbc8b2f4336a894c663bee4",
+          "bytes": 814216
+        }
+      }
     },
-    "application.html": {
-      "sha256": "8d30d8d2a7d33ce12a6a734126064128795753f0a718f23e8a7f0235ae9bf4cd",
-      "bytes": 810104
+    "observability": {
+      "diagram_type": "architecture",
+      "output": "docs/diagrams/observability.html",
+      "artifact_checks": "9/9 direct checker; 0 composition errors; 0 warnings",
+      "atomic_delivery": "failed: delivery/receipt-invalid",
+      "browser_evidence": "not run: successful delivery prerequisite unmet",
+      "visual_review": "not performed",
+      "correction_rounds": 1,
+      "files": {
+        "observability.json": {
+          "sha256": "8196a2fbf0a6daaab461ab474015f3eb0a9d0286371693c5aaf6b55eb83d6e96",
+          "bytes": 3935
+        },
+        "observability.html": {
+          "sha256": "e41f4d984ecc9292b679c9c9d3246a88b37b71aba4391de5a8aee371dedc2ba6",
+          "bytes": 808946
+        }
+      }
     }
   }
 }
