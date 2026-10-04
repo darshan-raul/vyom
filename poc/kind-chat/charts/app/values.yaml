@@ -1,0 +1,26 @@
+# Values are configuration only. Create credential Secrets separately.
+images:
+  api:
+    repository: vyom-kind-chat-api
+    tag: "0.1.0"
+  frontend:
+    repository: vyom-kind-chat-ui
+    tag: "0.1.0"
+  pullPolicy: IfNotPresent
+model:
+  baseUrl: https://api.openai.com/v1
+  name: "" # Required: a model ID supported by your compatible endpoint.
+  existingSecret: vyom-poc-model
+  secretKey: api-key
+target:
+  server: "" # Required: target control-plane Docker IP, https://IP:6443.
+  namespace: demo
+  label: kind-target
+  existingSecret: vyom-poc-target
+resources:
+  api:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+  frontend:
+    requests: {cpu: 25m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}

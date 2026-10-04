@@ -1,0 +1,10 @@
+# Copy to ignored values.local.yaml; replace the placeholders. No credentials here.
+model:
+  baseUrl: https://api.openai.com/v1
+  name: REPLACE_WITH_YOUR_MODEL_ID
+  existingSecret: vyom-poc-model
+target:
+  server: https://REPLACE_WITH_TARGET_CONTROL_PLANE_IP:6443
+  namespace: demo
+  label: kind-target
+  existingSecret: vyom-poc-target

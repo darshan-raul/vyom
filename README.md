@@ -6,7 +6,7 @@
 
 A progressively built AWS + Kubernetes intelligence cockpit: ask a question, inspect live read-only evidence, and understand the answer.
 
-**Current state:** documentation and architecture planning only. The previous implementation was removed. No application, deployment, or live integration is delivered yet.
+**Current state:** the main roadmap remains at documentation and architecture planning. A separate [two-Kind-cluster chat POC](poc/kind-chat/README.md) provides a shadcn UI, direct Kubernetes reads, a LangChain backend using an OpenAI-compatible model and Helm packaging. Its code checks pass; deployment and live integrations remain owner-run and unverified. It gives no S1–S6 completion credit.
 
 ## Planned service overview
 

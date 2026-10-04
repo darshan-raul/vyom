@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kindchat.name" . }}-api
+  labels:
+    {{- include "kindchat.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "kindchat.labels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: api
+          image: "{{ .Values.images.api.repository }}:{{ .Values.images.api.tag }}"
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - {name: http, containerPort: 8000}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "model.existingSecret is required" .Values.model.existingSecret | quote }}
+                  key: {{ .Values.model.secretKey | quote }}
+            - {name: MODEL_BASE_URL, value: {{ .Values.model.baseUrl | quote }}}
+            - {name: MODEL_NAME, value: {{ required "model.name is required" .Values.model.name | quote }}}
+            - {name: TARGET_SERVER, value: {{ required "target.server is required" .Values.target.server | quote }}}
+            - {name: TARGET_NAMESPACE, value: {{ .Values.target.namespace | quote }}}
+            - {name: TARGET_LABEL, value: {{ .Values.target.label | quote }}}
+            - {name: TARGET_TOKEN_FILE, value: /var/run/target/token}
+            - {name: TARGET_CA_FILE, value: /var/run/target/ca.crt}
+          volumeMounts:
+            - {name: target-credentials, mountPath: /var/run/target, readOnly: true}
+          readinessProbe:
+            httpGet: {path: /api/health, port: http}
+            initialDelaySeconds: 3
+          livenessProbe:
+            httpGet: {path: /api/health, port: http}
+            initialDelaySeconds: 10
+          resources:
+            {{- toYaml .Values.resources.api | nindent 12 }}
+      volumes:
+        - name: target-credentials
+          secret:
+            secretName: {{ required "target.existingSecret is required" .Values.target.existingSecret | quote }}
+            defaultMode: 0440
+            items:
+              - {key: token, path: token}
+              - {key: ca.crt, path: ca.crt}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kindchat.name" . }}-api
+  labels:
+    {{- include "kindchat.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/component: api
+  ports:
+    - {name: http, port: 8000, targetPort: http}

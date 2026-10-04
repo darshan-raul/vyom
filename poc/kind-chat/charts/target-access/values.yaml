@@ -1,0 +1,5 @@
+serviceAccountName: vyom-poc-reader
+# Optional benign workload to inspect; enable only if wanted.
+demo:
+  enabled: false
+  image: nginx:1.28-alpine

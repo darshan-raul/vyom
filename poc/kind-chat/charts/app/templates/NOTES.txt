@@ -1,0 +1,5 @@
+Private local POC access:
+  kubectl --context kind-app -n {{ .Release.Namespace }} port-forward --address 127.0.0.1 service/{{ include "kindchat.name" . }}-frontend 8080:80
+Open http://127.0.0.1:8080
+/api/health checks app configuration only, not target/model connectivity.
+The target token is short-lived: refresh the existing target Secret when it expires.

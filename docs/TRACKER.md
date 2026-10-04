@@ -90,3 +90,10 @@ S1 estimate: 40 task hours + 10 reserve; S2–S6: 30 + 10 each. Total 250h / 12.
 | S6.4 | Persisted and asynchronous isolation | S6.3 | pending | — | — |
 | S6.5 | Audit, credentials and identity recovery | S6.4 | pending | — | — |
 | S6.6 | S6 isolation and exposure gate | S6.5 | pending | — | — |
+
+## Separate owner-requested POC — outside S1–S6
+
+| ID | Task | Status | Session | Evidence / next action |
+|---|---|---|---|---|
+| POC1 | Two-Kind-cluster shadcn chat, direct Kubernetes reads and Helm packaging | done | [2026-10-04-09](sessions/2026-10-04-09.md) | Code deliverable: 11 backend fixture tests, frontend typecheck/build pass; [owner setup](../poc/kind-chat/README.md). Docker/Kind/Helm/live model unverified by owner request. No RAG/MCP or sprint completion credit |
+| POC2 | Use LangChain for POC model integration | done | [2026-10-04-10](sessions/2026-10-04-10.md) | 14 backend fixtures pass using real LangChain/SDK with mocked HTTP; response limits and disabled tracing verified. Sandbox harness bounds selector polling; Docker/Kind/Helm/live model checks remain owner-run |

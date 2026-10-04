@@ -1,30 +1,21 @@
 # Current handoff
 
-Updated: 2026-10-04. Latest session: [2026-10-04-08](sessions/2026-10-04-08.md).
+Updated: 2026-10-04. Latest session: [2026-10-04-10](sessions/2026-10-04-10.md).
 
 ## Current state
 
-Planning only. README architecture now explicitly labels RAG inside the backend from S3, runbook ingestion, scoped Qdrant retrieval and citations, retaining the same five connectors. README prose explains Bedrock embeddings and live-evidence versus runbook citations. The owner-supplied logo is canonical at `assets/branding/vyom-logo.png`, displayed in README and embedded unchanged in the architecture SVG. Follow [branding guidance](BRANDING.md) for future app/site/doc branding. README now embeds a standalone architecture SVG with deployment boundaries, service icons, sprint labels and five primary connections. Individual workloads, stores, observability services and external dependencies are visible. Mermaid flowcharts were removed from README; detailed request/collection diagrams remain linked. Observability scope is synchronized across the constitution, 39-task implementation plan/tracker, architecture, verification, decisions, agent guidance and diagrams. The owner-supplied observability design moved to [OBSERVABILITY.md](OBSERVABILITY.md), matching the constitution's existing link. No runtime scaffold or deployed telemetry exists; all S1–S6 implementation tasks remain pending.
+The separate [Kind chat POC](../poc/kind-chat/README.md) is implemented at `poc/kind-chat/`: branded React/TypeScript/Vite/shadcn chat and evidence UI, FastAPI direct Kubernetes collector and LangChain ChatPromptTemplate/ChatOpenAI using compatible Chat Completions, Dockerfiles, app Helm chart and target-reader Helm chart. Credentials are supplied via existing Secrets; target access is list-only in one namespace. No RAG/MCP or persistence. The main roadmap remains planning only; all S1–S6 tasks are pending and no sprint gate is closed.
 
-S1 requires real LLM/LangGraph/upstream Kubernetes MCP chat and live evidence plus Prometheus, Loki, Tempo, Grafana and OTel/Alloy. S1.9 (10h) prepares the stack after S1.1; S1.2–S1.6 instrument their owned paths. S1.7 depends on S1.9 as well as chat/table. S1.8 closes with real correlated chat/failure signals and independent telemetry loss/recovery, alongside the existing agent/RBAC gates. S2 repeats on EKS; S3–S4 instrument new paths; S5 hardens telemetry; S6 decides and tests telemetry access.
+Backend fixture tests (14) pass after the LangChain revision; frontend typecheck/build passed in the preceding session and its code is unchanged. The backend suite exercised real LangChain with mocked HTTP and bounded selector polling in a temporary sandbox harness; plain pytest stalled on thread wakeups. Owner explicitly reserved Docker/Kind/kubectl/Helm and live model checks: none were run, including image builds and chart lint/render. No application deployment or working live integration is claimed. No commit or push was performed.
 
-S1 estimates 40 task hours + 10 reserve; S2–S6 retain 30 + 10 each. At 20h/week, total 250h means 12.5 weeks, with twelve weeks still the target. Re-estimate after the first clean Kind stack installation; later-sprint instrumentation/hardening fits provisional budgets only. Do not drop either S1 gate to fit dates.
+## Next action
 
-## Next task and first action
+Owner: follow the POC README from `poc/kind-chat/` to create `app` and `target` Kind clusters, install target reader RBAC, supply target token/CA and model key Secrets, build/load images, set the reachable target API address and model configuration, install the app chart and open the localhost port-forward. A first question proves actual target/model connectivity; `/api/health` only proves startup configuration. Renew an expired target token; restart the API after model key rotation.
 
-**S1.1 — fresh development scaffold**, when implementation is requested. Inspect local tooling/dependency documentation, then scaffold only frontend, FastAPI, existing-SDK MCP client module and minimal health/build checks. This session authorized branding asset and documentation updates only; it does not schedule the future website. Use the canonical logo when the frontend is scaffolded.
+When main-roadmap implementation is requested, start **S1.1**, then prepare **S1.9**, following the constitution and implementation plan. Do not treat this direct-API POC as delivery of the required LangGraph/MCP/observability stack.
 
-Next prepare **S1.9**: inspect/pin vendor charts/images and actual defaults, storage/retention and access controls; install the stack on Kind and establish bounded instrumentation helpers. Follow [implementation plan](IMPLEMENTATION_PLAN.md) and observability design. Preserve upstream MCP/private transport/scoped identities and the independent direct-SDK table sequence after S1.5. No telemetry-store agent tools are scheduled.
+## Limits / environment
 
-## Unresolved inputs / limits
+No browser/visual, container, chart or live checks were run. Kind cross-cluster routing, target TLS certificate coverage, image startup and provider compatibility await owner verification. Dependencies were installed from existing local caches because shell registry DNS was unavailable; the npm lockfile records normal registry URLs/integrity. Python tests ran in a temporary Python 3.12 environment backed by cached package archives, including langchain-core 1.4.7, langchain-openai 1.3.2 openai 2.41.1 and langsmith 0.8.15. Temporary code-check files under `/tmp/vyom-poc-*` are not product dependencies.
 
-- Model endpoint/tool-call compatibility and private key injection; upstream MCP version, safe projection and transport auth remain S1 inputs.
-- Observability versions, PVC/storage, retention/compaction support, node-local log discovery, finite resources/queues and private Grafana credentials require implementation-time checks. Initial 48h retention/100% bounded-demo tracing is unmeasured.
-- Telemetry observer identity does not widen agent RBAC. No prompts, answers, tool bodies, sensitive headers/URLs or unsafe exception text enter telemetry; trace IDs are fields, not indexed labels.
-- EKS/AWS provisioning authority, budget, endpoint/data-handling/capability checks remain S2 inputs. Telemetry visibility policy remains S6; shared operator stores stay private until exposed surfaces pass grant/revocation checks.
-
-## Checks / external effects
-
-`python scripts/check-docs.py`, `git diff --check`, PNG integrity/dimensions and embedded-SVG byte checks passed. The RAG-labelled SVG was rendered at 760px through `rsvg-convert` and visually inspected; XML/label checks verified five connectors and the unchanged embedded canonical logo. README browser rendering was not exercised. Earlier source-to-artifact bindings and both direct Archify checkers passed 9/9 with zero errors/warnings. Standard validation/atomic delivery failed due to child-process/empty-checker-receipt behavior; browser/visual acceptance for those HTML drafts and Mermaid rendering were not performed. See [diagram limits and retry commands](diagrams/README.md).
-
-No application code, deployment manifests, live integrations, cloud resources, running application processes or new commits/tags/pushes were created for branding/RAG documentation. Prior planning commit `1cd99df` exists locally; its push failed on system SSH permissions, then GitHub DNS when bypassing that config. Current branding/RAG documentation changes are uncommitted. S1.1 remains pending; documentation completion is not runtime acceptance.
+Earlier architecture/branding/RAG documentation remains in place. See [tracker](TRACKER.md) for sprint states and [POC decision](DECISIONS.md#separate-local-chat-poc--2026-10-04) for the owner-authorized exception.

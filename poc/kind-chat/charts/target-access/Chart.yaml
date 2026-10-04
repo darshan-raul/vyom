@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kind-chat-target-access
+version: 0.1.0
+appVersion: "0.1.0"
+description: Namespace-scoped read-only target identity for the separate Kind chat POC
+type: application

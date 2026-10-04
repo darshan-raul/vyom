@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kind-chat
+version: 0.1.0
+appVersion: "0.1.0"
+description: Separate local two-Kind-cluster chat POC
+type: application

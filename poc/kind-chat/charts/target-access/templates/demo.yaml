@@ -1,0 +1,22 @@
+{{- if .Values.demo.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: "{{ .Release.Name }}-demo"}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: "{{ .Release.Name }}-demo"}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: web
+          image: {{ .Values.demo.image | quote }}
+          ports: [{containerPort: 80}]
+          resources:
+            requests: {cpu: 25m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+{{- end }}
