@@ -1,0 +1,93 @@
+# Four pods in one namespace: two healthy, two broken on purpose,
+# plus the read-only identity the Python app will use.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+---
+# Healthy: a web server.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: web, namespace: shop}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: web}}
+  template:
+    metadata: {labels: {app: web}}
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.28-alpine
+          ports: [{containerPort: 80}]
+---
+# Healthy: a process that just stays up.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api, namespace: shop}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: api}}
+  template:
+    metadata: {labels: {app: api}}
+    spec:
+      containers:
+        - name: api
+          image: busybox:1.37
+          command: [sh, -c, "echo api started; sleep 86400"]
+---
+# Broken: starts, exits with an error after 5 seconds, gets restarted -> CrashLoopBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: worker, namespace: shop}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: worker}}
+  template:
+    metadata: {labels: {app: worker}}
+    spec:
+      containers:
+        - name: worker
+          image: busybox:1.37
+          command: [sh, -c, "echo cannot reach queue; sleep 5; exit 1"]
+---
+# Broken: the image tag does not exist -> ErrImagePull / ImagePullBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: reports, namespace: shop}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: reports}}
+  template:
+    metadata: {labels: {app: reports}}
+    spec:
+      containers:
+        - name: reports
+          image: nginx:this-tag-does-not-exist
+---
+# The identity the app authenticates as. It can read pods and events in
+# `shop` and nothing else, so "read-only" is enforced by the cluster,
+# not just by what the Python code happens to call.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: agent-reader, namespace: shop}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: agent-reader, namespace: shop}
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: agent-reader, namespace: shop}
+subjects:
+  - {kind: ServiceAccount, name: agent-reader, namespace: shop}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: agent-reader
