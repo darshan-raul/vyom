@@ -8,10 +8,10 @@ images:
     tag: "0.1.0"
   pullPolicy: IfNotPresent
 model:
-  baseUrl: https://api.openai.com/v1
-  name: "" # Required: a model ID supported by your compatible endpoint.
+  baseUrl: https://openrouter.ai/api/v1
+  name: anthropic/claude-haiku-5.5 # Any OpenRouter model ID.
   existingSecret: vyom-poc-model
-  secretKey: api-key
+  secretKey: OPENROUTER_API_KEY
 target:
   server: "" # Required: target control-plane Docker IP, https://IP:6443.
   namespace: demo

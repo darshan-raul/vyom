@@ -56,9 +56,9 @@ class Settings:
             target_label=os.environ.get("TARGET_LABEL", "kind-target"),
             token_file=os.environ.get("TARGET_TOKEN_FILE", "/var/run/target/token"),
             ca_file=os.environ.get("TARGET_CA_FILE", "/var/run/target/ca.crt"),
-            model_base_url=os.environ.get("MODEL_BASE_URL", "https://api.openai.com/v1").rstrip("/"),
-            model=os.environ["MODEL_NAME"],
-            api_key=os.environ["OPENAI_API_KEY"].strip(),
+            model_base_url=os.environ.get("MODEL_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/"),
+            model=os.environ.get("MODEL_NAME", "anthropic/claude-haiku-5.5"),
+            api_key=os.environ["OPENROUTER_API_KEY"].strip(),
         )
 
 

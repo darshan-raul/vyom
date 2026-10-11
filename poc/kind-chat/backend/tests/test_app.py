@@ -165,6 +165,20 @@ def test_tls_required_and_credentials_not_in_repr(config):
     assert "PLACEHOLDER" not in repr(config)
 
 
+def test_settings_read_the_openrouter_key_and_defaults_from_env(monkeypatch):
+    for name in ("MODEL_BASE_URL", "MODEL_NAME", "OPENAI_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("TARGET_SERVER", "https://target.invalid:6443")
+    monkeypatch.setenv("OPENROUTER_API_KEY", " PLACEHOLDER_MODEL_KEY\n")
+    settings = Settings.from_env()
+    assert settings.api_key == "PLACEHOLDER_MODEL_KEY"
+    assert settings.model_base_url == "https://openrouter.ai/api/v1"
+    assert settings.model == "anthropic/claude-haiku-5.5"
+    monkeypatch.delenv("OPENROUTER_API_KEY")
+    with pytest.raises(KeyError):
+        Settings.from_env()
+
+
 def test_malformed_resource_reports_unavailable_instead_of_crashing(config):
     async def run():
         malformed = {"metadata": {"uid": "pod-1"}, "status": {"phase": []}}

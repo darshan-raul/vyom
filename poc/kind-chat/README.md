@@ -2,23 +2,23 @@
 
 A separate, small experiment outside the six-sprint delivery plan. Run a React/TypeScript/Vite + shadcn/ui frontend and FastAPI backend in **Kind cluster `app`**, then ask questions about pods and deployments in one namespace in **Kind cluster `target`**. No RAG, MCP, LangGraph, databases, observability stack or persistent history. This does not close any Vyom sprint gate.
 
-The backend collects a fresh read-only snapshot through the target Kubernetes REST API, projects allowed status fields, and uses LangChain’s `ChatPromptTemplate` + `ChatOpenAI` to send that evidence to a configured OpenAI-compatible Chat Completions endpoint. The browser shows the answer, resource details, collection time and complete/partial/unavailable coverage. The last four browser messages can accompany a question for follow-up context; fresh evidence supplies facts. Clearing/reloading the page loses conversation history.
+The backend collects a fresh read-only snapshot through the target Kubernetes REST API, projects allowed status fields, and uses LangChain’s `ChatPromptTemplate` + `ChatOpenAI` to send that evidence to OpenRouter's OpenAI-compatible Chat Completions endpoint, using the same `OPENROUTER_API_KEY` as the two learning exercises. The browser shows the answer, resource details, collection time and complete/partial/unavailable coverage. The last four browser messages can accompany a question for follow-up context; fresh evidence supplies facts. Clearing/reloading the page loses conversation history.
 
 ## Layout
 
 ```text
 Browser → localhost port-forward → UI/nginx in app cluster → API in app cluster
                                                           ├─ target API: list pods/deployments
-                                                          └─ compatible model endpoint
+                                                          └─ OpenRouter (openrouter.ai)
 ```
 
 - `backend/`: application, requirements, Dockerfile and offline fixture tests.
 - `frontend/`: shadcn Button/Textarea source, chat/evidence UI, Dockerfile and nginx proxy.
-- `charts/app/`: private UI/API Deployments and ClusterIP Services. References your existing credential Secrets.
+- `charts/app/`: private UI/API Deployments and ClusterIP Services. References the two credential Secrets you create in step 4.
 - `charts/target-access/`: ServiceAccount + namespace Role/RoleBinding in the target cluster; optional demo workload.
-- `values.example.yaml`: nonsecret configuration to copy into ignored `values.local.yaml`.
+- `values.example.yaml`: nonsecret configuration (OpenRouter URL, model ID, target address) to copy into ignored `values.local.yaml`.
 
-Only code checks were run by the agent. **You run every Docker, Kind, kubectl and Helm step below.** No cluster installation, chart lint/render, image build, network check or live model call has been performed. These are setup instructions, not a record of successful deployment. Each step ends with a **Check** you can run to see what the step actually changed before moving on.
+Only offline checks were run by the agent: backend tests, frontend build, and `helm lint`/`helm template` of both charts. **You run every Docker, Kind, kubectl and Helm step below.** No cluster installation, image build, network check or live model call has been performed. These are setup instructions, not a record of successful deployment. Each step ends with a **Check** you can run to see what the step actually changed before moving on.
 
 ## How a question travels
 
@@ -105,34 +105,35 @@ curl --silent --cacert .private/target-ca.crt \
 
 A `PodList` means the token, CA and address all work. `Forbidden` means RBAC or namespace; a certificate error means the CA or address is wrong.
 
-Use the printed internal IP in `target.server`, e.g. `https://<printed-IP>:6443`. CA/token files stay under ignored `.private/`; do not use an admin kubeconfig or turn off TLS verification. The API server chooses the actual token lifetime; the requested one hour is not a perpetual credential.
+Step 6 writes the printed internal IP into `target.server` as `https://<printed-IP>:6443`. CA/token files stay under ignored `.private/`; do not use an admin kubeconfig or turn off TLS verification. The API server chooses the actual token lifetime; the requested one hour is not a perpetual credential.
 
-Put your compatible model key into `.private/api-key` with an editor or your preferred private mechanism. No key belongs in Helm values, image build arguments, source files or browser configuration. The application strips surrounding key whitespace on startup.
-
-For OpenRouter, the key is the `sk-or-...` value from your OpenRouter account. One way to store it without it reaching shell history:
-
-```sh
-read -rs KEY && printf '%s' "$KEY" > .private/api-key && unset KEY
-```
+Keep this shell open: steps 4 and 6 reuse `$TARGET_IP`. The address can change when Docker restarts or the cluster is recreated; rerun the `TARGET_IP=` line if so.
 
 ## 4. Create the app-cluster Secrets
 
-Create the app namespace and two Secrets from those private files:
+Load your OpenRouter key into the shell exactly as in the learning exercises (paste, press Enter; nothing is echoed):
+
+```sh
+read -rs OPENROUTER_API_KEY && export OPENROUTER_API_KEY
+```
+
+Create the app namespace and two Secrets. The model Secret gets one key, also named `OPENROUTER_API_KEY`; the target Secret comes from the step-3 files:
 
 ```sh
 kubectl --context kind-app create namespace vyom-poc --dry-run=client -o yaml \
   | kubectl --context kind-app apply -f -
-kubectl --context kind-app --namespace vyom-poc create secret generic vyom-poc-model \
-  --from-file=api-key=.private/api-key --dry-run=client -o yaml \
+printf '%s' "$OPENROUTER_API_KEY" \
+  | kubectl --context kind-app --namespace vyom-poc create secret generic vyom-poc-model \
+      --from-file=OPENROUTER_API_KEY=/dev/stdin --dry-run=client -o yaml \
   | kubectl --context kind-app apply -f -
 kubectl --context kind-app --namespace vyom-poc create secret generic vyom-poc-target \
   --from-file=token=.private/target-token --from-file=ca.crt=.private/target-ca.crt \
   --dry-run=client -o yaml | kubectl --context kind-app apply -f -
 ```
 
-**Check:** `kubectl --context kind-app -n vyom-poc get secrets` lists `vyom-poc-model` and `vyom-poc-target`. `kubectl --context kind-app -n vyom-poc describe secret vyom-poc-target` shows key names and byte sizes only.
+**Check:** `kubectl --context kind-app -n vyom-poc get secrets` lists `vyom-poc-model` and `vyom-poc-target`. `kubectl --context kind-app -n vyom-poc describe secret vyom-poc-model` shows the key name `OPENROUTER_API_KEY` and a byte size (an OpenRouter key is about 73 bytes; `0 bytes` means the variable was empty in this shell).
 
-The model key is injected into the backend with `secretKeyRef`. Target token/CA are mounted read-only; the token is reread on every question. Both workloads disable the app cluster's automatic ServiceAccount token mount; the POC never falls back to app-cluster credentials.
+The key is piped on stdin so it never appears in a command line, a file, Helm values, an image or the browser bundle. The chart injects it into the API container as the `OPENROUTER_API_KEY` environment variable with `secretKeyRef`; the backend strips surrounding whitespace. Target token/CA are mounted read-only; the token is reread on every question. Both workloads disable the app cluster's automatic ServiceAccount token mount; the POC never falls back to app-cluster credentials.
 
 ## 5. Build and load your images
 
@@ -149,21 +150,14 @@ The API image uses Python 3.12. The UI builds with Node 22 and serves from unpri
 
 ## 6. Configure and install the app with Helm
 
+The example values already point at OpenRouter and `anthropic/claude-haiku-5.5`, the model the learning exercises use. Only the target address is missing; fill it in from step 3:
+
 ```sh
-cp values.example.yaml values.local.yaml
+sed "s/REPLACE_WITH_TARGET_CONTROL_PLANE_IP/$TARGET_IP/" values.example.yaml > values.local.yaml
+grep server values.local.yaml    # https://<the step-3 IP>:6443
 ```
 
-Edit the ignored `values.local.yaml`: set `target.server` to the target internal API address, `model.baseUrl` to your compatible **API base including `/v1` where required**, and `model.name` to its supported model ID. LangChain’s OpenAI integration calls `/chat/completions` with `max_completion_tokens=1200`; your endpoint must support this standard parameter. If your model server runs locally, its address must also be reachable from the API pod; `localhost` in that pod does not mean your workstation. The default endpoint in the example is only a convenience and is not automatic fallback.
-
-OpenRouter example (IDs taken from OpenRouter's public model list on 2026-10-10; confirm the one you want is still listed):
-
-```yaml
-model:
-  baseUrl: https://openrouter.ai/api/v1
-  name: anthropic/claude-haiku-5.5
-target:
-  server: https://<TARGET_IP from step 3>:6443
-```
+To use another model, change `model.name` in the ignored `values.local.yaml` to any ID from OpenRouter's model list. It does not need tool calling: this POC makes one plain chat call with `max_completion_tokens=1200`. `model.baseUrl` accepts any other OpenAI-compatible API base (including `/v1` where required), but the Secret key and environment variable stay named `OPENROUTER_API_KEY`, and a model server on your workstation is not reachable as `localhost` from the API pod.
 
 The target namespace must match the namespace where the target-access release grants permissions. If you change image tags, change the chart values and load matching images into `app`.
 
@@ -215,7 +209,7 @@ Also ask it to do something outside its authority ("delete the demo pod", "show 
 
 ## Refresh an expired target token
 
-When questions show `unauthorized`, generate a fresh token in `target`, update `vyom-poc-target` in `app` using the step-4 command, and wait for the projected Secret volume to refresh. The backend rereads the token without restart. If you rotate the **model key**, update its Secret and restart the API Deployment because environment variables do not refresh automatically:
+When questions show `unauthorized`, generate a fresh token in `target`, update `vyom-poc-target` in `app` using the step-4 command, and wait for the projected Secret volume to refresh. The backend rereads the token without restart. If you rotate the **OpenRouter key**, rerun the step-4 `read` and `vyom-poc-model` commands, then restart the API Deployment because environment variables do not refresh automatically:
 
 ```sh
 kubectl --context kind-app --namespace vyom-poc rollout restart deployment/vyom-poc-api
@@ -225,10 +219,11 @@ Browser “Stop waiting” aborts the browser request, not a Kubernetes/model op
 
 ## Troubleshooting and cleanup — owner-run
 
-- Startup failure: verify both Secrets/keys exist, target CA is valid, and required model/target settings are set.
+- API image build fails with `Could not find a version ... (from versions: none)` on a different package each time: the build container cannot reliably reach PyPI over Docker's IPv4-only bridge. Build with `docker build --network=host -t vyom-kind-chat-api:0.1.0 ./backend` so pip uses the host's network.
+- Startup failure: `CreateContainerConfigError` on the API pod means `vyom-poc-model` or its `OPENROUTER_API_KEY` key is missing; a crash at start means the key was empty, the target CA is invalid or `target.server` is not an `https://` origin.
 - `connection_failed` / TLS failure: confirm target IP is current, app pods can reach it, and `ca.crt` belongs to `target`. Recreated clusters require a fresh IP/CA/token. Do not disable verification.
 - `denied`: namespace must match the target Role/RoleBinding. `unauthorized` usually means the temporary token expired.
-- Provider unavailable: confirm base URL, model ID, key, compatibility with Chat Completions and pod egress. Error bodies and keys are not returned to the browser or logged.
+- Model `unauthorized`: the key in `vyom-poc-model` is wrong or revoked. `upstream_error`: usually a model ID OpenRouter does not list, or no credit. `connection_failed`/`timeout`: the API pod cannot reach `openrouter.ai`. Error bodies and keys are not returned to the browser or logged.
 - Empty complete sources: add a workload in the configured target namespace; the model has no unobserved data.
 
 ```sh
@@ -236,11 +231,13 @@ helm uninstall vyom-poc --kube-context kind-app --namespace vyom-poc
 helm uninstall vyom-reader --kube-context kind-target --namespace demo
 ```
 
-The Secrets you created separately remain until you remove them. For clusters created only for this POC, remove them when finished:
+The Secrets you created separately remain until you remove them. For clusters created only for this POC, remove them when finished, along with the local credential files and the key in your shell:
 
 ```sh
 kind delete cluster --name app
 kind delete cluster --name target
+rm -rf .private values.local.yaml
+unset OPENROUTER_API_KEY
 ```
 
 Do not run these deletion commands against clusters you want to keep.

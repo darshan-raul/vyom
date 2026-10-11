@@ -1,7 +1,7 @@
-# Copy to ignored values.local.yaml; replace the placeholders. No credentials here.
+# Copy to ignored values.local.yaml; replace the placeholder. No credentials here.
 model:
-  baseUrl: https://api.openai.com/v1
-  name: REPLACE_WITH_YOUR_MODEL_ID
+  baseUrl: https://openrouter.ai/api/v1
+  name: anthropic/claude-haiku-5.5
   existingSecret: vyom-poc-model
 target:
   server: https://REPLACE_WITH_TARGET_CONTROL_PLANE_IP:6443

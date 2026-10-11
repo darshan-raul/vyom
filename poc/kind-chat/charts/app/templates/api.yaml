@@ -33,11 +33,11 @@ spec:
             readOnlyRootFilesystem: true
             capabilities: {drop: [ALL]}
           env:
-            - name: OPENAI_API_KEY
+            - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ required "model.existingSecret is required" .Values.model.existingSecret | quote }}
-                  key: {{ .Values.model.secretKey | quote }}
+                  key: {{ required "model.secretKey is required" .Values.model.secretKey | quote }}
             - {name: MODEL_BASE_URL, value: {{ .Values.model.baseUrl | quote }}}
             - {name: MODEL_NAME, value: {{ required "model.name is required" .Values.model.name | quote }}}
             - {name: TARGET_SERVER, value: {{ required "target.server is required" .Values.target.server | quote }}}

@@ -1,21 +1,21 @@
 # Current handoff
 
-Updated: 2026-10-10. Latest session: [2026-10-10-01](sessions/2026-10-10-01.md).
+Updated: 2026-10-11. Latest session: [2026-10-11-01](sessions/2026-10-11-01.md).
 
 ## Current state
 
-The separate [Kind chat POC](../poc/kind-chat/README.md) at `poc/kind-chat/` is code-complete and has not been run live. The owner is driving the live run (POC3, in progress) with OpenRouter and `anthropic/claude-haiku-5.5`. The main roadmap remains planning only; all S1–S6 tasks are pending and no sprint gate is closed.
+The separate [Kind chat POC](../poc/kind-chat/README.md) is closed: POC1–POC3 are done. The owner ran it live with OpenRouter and confirmed completion on 2026-10-11; the agent did not observe that run. The POC takes its model key as `OPENROUTER_API_KEY` (Secret key and environment variable), as do the two learning exercises under `poc/`. None of this is sprint delivery.
 
-This session regenerated `frontend/package-lock.json`: the committed one failed `npm ci` with `Invalid Version`, which would have broken the UI image build. The README gained a request-path section, a check after each step, OpenRouter values and failure experiments. These changes are uncommitted.
+The main roadmap is still planning only: all S1–S6 tasks are pending and no sprint gate is closed.
 
 ## Next action
 
-Owner: follow the POC README from `poc/kind-chat/`, steps 1–6. The step-6 `curl /api/chat` returning `"status":"ok"` with two `complete` sources closes POC3; record the result in the tracker. `/api/health` only proves startup configuration. Renew an expired target token (requested lifetime one hour); restart the API after model key rotation.
-
-When main-roadmap implementation is requested, start **S1.1**, then prepare **S1.9**, following the constitution and implementation plan. Do not treat this direct-API POC as delivery of the required LangGraph/MCP/observability stack.
+Start **S1.1** (fresh development scaffold) when the owner asks: mark it in progress, then create new `frontend/` and `backend/` per the constitution and [implementation plan](IMPLEMENTATION_PLAN.md). Prepare **S1.9** next. Do not copy the POC's direct-API design into the S1 agent path; S1 requires LangGraph, the MCP client, the upstream Kubernetes MCP server and the observability stack.
 
 ## Limits / environment
 
-Checks run: backend `pytest -q` (14 passed, Python 3.14.6, plain pytest with no harness) and frontend clean `npm ci` + typecheck/build (Node 26.1.0). Not run: image builds (including `npm ci` inside `node:22-alpine`), chart lint/render, any cluster or browser step, any model call. Kind cross-cluster routing, target TLS certificate coverage, image startup and OpenRouter compatibility await the owner's run. Docker, kind 0.31.0, kubectl 1.36.0 and Helm 4.2.2 are installed; no Kind clusters existed at session end.
+Docker 29.7.2, kind 0.31.0, kubectl 1.36.0 and Helm 4.2.2 are installed. Kind clusters `app`, `target` and `lc-basics` existed at session end; they belong to the POC and exercises and can be deleted by the owner.
+
+On 2026-10-11 this machine's IPv4 path to PyPI dropped packets while IPv6 was clean, so `pip install` inside default-bridge Docker builds failed. `docker build --network=host` worked around it. Check this before debugging any S1 image build that fails in pip.
 
 See [tracker](TRACKER.md) for sprint states and [POC decision](DECISIONS.md#separate-local-chat-poc--2026-10-04) for the owner-authorized exception.
