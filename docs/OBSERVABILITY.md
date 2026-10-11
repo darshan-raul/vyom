@@ -1,6 +1,6 @@
 # Observability from S1
 
-Owner requirement, 2026-10-04: Loki, Prometheus, Grafana and OpenTelemetry-based tracing belong in the first working project. This is a planned design; runtime and telemetry remain undelivered. The [constitution](../vyom-12-week-sprint-plan.md) governs scope; [implementation tasks](IMPLEMENTATION_PLAN.md) carry budgets and gates.
+Owner requirement, 2026-10-04: Loki, Prometheus, Grafana and OpenTelemetry-based tracing belong in the first working project. The stack and the backend telemetry baseline were installed and checked on Kind in S1.9 ([what is installed](#installed-on-kind-in-s19)); a correlated trace of a real chat is still undelivered and closes in S1.8. Sections below the installed summary remain the design. The [constitution](../vyom-12-week-sprint-plan.md) governs scope; [implementation tasks](IMPLEMENTATION_PLAN.md) carry budgets and gates.
 
 ## Initial stack
 
@@ -14,6 +14,27 @@ Owner requirement, 2026-10-04: Loki, Prometheus, Grafana and OpenTelemetry-based
 | OTel SDK | Request, graph-step, model-client, MCP-client and collector spans | Inside the existing backend |
 
 Alloy supports native OpenTelemetry pipelines and OTLP reception, so it fills the collector role. Prometheus owns metric scraping; Alloy owns logs and trace forwarding. Do not collect the same stdout stream through a second OTLP log pipeline. Use `vyom` and `observability` namespaces, one application chart and pinned vendor releases in a single reproducible Kind/EKS workflow. Disable unused chart components; avoid a second Grafana or a distributed stack in S1.
+
+## Installed on Kind in S1.9
+
+`scripts/observability-up.sh` installs four pinned charts into `observability` from [charts.lock](../deploy/observability/charts.lock), each with a values file beside it; `scripts/observability-check.sh` verifies the result through localhost port-forwards.
+
+| Release | Chart | Application | Notes |
+|---|---|---|---|
+| kube-prometheus-stack | prometheus-community 92.3.0 | Operator v0.94.1, Prometheus v3.15.0, Grafana 13.2.3, kube-state-metrics v2.20.0, node exporter v1.12.1 | Alertmanager, default rules and default dashboards off. etcd, scheduler, controller-manager, kube-proxy and API server scrapes off |
+| loki | grafana-community 18.15.1 | Loki 3.7.8 | Monolithic, filesystem on a PVC, gateway/caches/canary off |
+| tempo | grafana-community 3.1.0 | Tempo 3.1.0 | Single binary, local storage on a PVC, no Kafka |
+| alloy | grafana 1.13.1 | Alloy v1.20.1 | DaemonSet; pipeline in [config.alloy](../deploy/observability/config.alloy) |
+
+- **Chart sources changed.** `grafana/loki` is now maintained for Enterprise Logs only and `grafana/tempo` is marked deprecated; both moved to `grafana-community/helm-charts`. Alloy is still published under `grafana`.
+- **Bounds.** Retention is 48 hours in all three stores. Prometheus also has a 3 GB size cap. Loki has ingestion-rate, line-size, label-count and stream limits; Tempo has ingestion limits. Every workload has a memory limit. PVCs request 4 Gi each, but Kind's local-path provisioner does not enforce PVC size, so on Kind the time and rate limits are the real bounds.
+- **Logs.** Alloy discovers pods on its own node in `vyom` and `observability` only and reads their files from a read-only `/var/log` mount. Indexed labels are `namespace`, `service_name`, `container` and `stream`; the pod name is structured metadata. A redaction stage replaces values after `authorization`, `api_key`, `password`, `token` and `secret` keys. Read positions persist on the node at `/var/lib/vyom-alloy`.
+- **Traces.** Alloy receives OTLP on 4317/4318, applies a memory limiter, deletes header, URL-query and prompt/completion attributes, batches, and exports to Tempo with a 200-batch queue and a one-minute retry budget; after that spans are dropped and counted in `otelcol_exporter_send_failed_spans_total`.
+- **Observer identity.** The `alloy` ServiceAccount has a namespaced Role in `vyom` and `observability` allowing `get/list/watch` on pods, and no ClusterRole.
+- **Grafana.** ClusterIP only; the admin password is generated into the ignored `.local/grafana-admin-password` and injected as the `grafana-admin` Secret. Data sources (Prometheus, Loki, Tempo) and both dashboards are provisioned as code, with log-to-trace and trace-to-log links by trace ID.
+- **Backend baseline** in `backend/src/vyom/telemetry.py`: JSON logs restricted to an allowlist of fields with `trace_id`/`span_id`; `vyom_http_requests_total` and `vyom_http_request_duration_seconds` labelled by route template; `/metrics`; request spans exported over OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, through an exporter wrapper that strips URL queries, headers and exception text, with a 512-span queue.
+
+Known gaps: Prometheus does not scrape the backend until the Vyom chart deploys it with a ServiceMonitor (S1.7), so the API panels of the second dashboard are empty; graph, model and MCP-client panels arrive with those metrics (S1.2–S1.5); the pinned Tempo chart cannot render without its Jaeger receivers, which stay open on the internal Service; no chat trace or log-to-trace navigation in the Grafana UI has been demonstrated.
 
 ## Collection topology
 

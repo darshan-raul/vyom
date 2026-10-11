@@ -1,0 +1,6 @@
+# Pinned vendor charts: release  chart  version  archive URL  sha256 of the archive
+# Loki and Tempo are published by grafana-community; the grafana/* copies are frozen or deprecated.
+kube-prometheus-stack  kube-prometheus-stack  92.3.0   https://github.com/prometheus-community/helm-charts/releases/download/kube-prometheus-stack-92.3.0/kube-prometheus-stack-92.3.0.tgz  48399b911fa91b353e0c3d5e32c1cb7a67a168566549723553154ffd7be5d1fa
+loki                   loki                   18.15.1  https://github.com/grafana-community/helm-charts/releases/download/loki-18.15.1/loki-18.15.1.tgz  bfa767447d2ebcae3f0a24836b1a0813104a32fcf8a2eabae5461f6d79edbe0a
+tempo                  tempo                  3.1.0    https://github.com/grafana-community/helm-charts/releases/download/tempo-3.1.0/tempo-3.1.0.tgz  cbc39dcd0f63ec244d4fea1c346dbecdd099ca8b0a9272240400ad0a91f8cc09
+alloy                  alloy                  1.13.1   https://github.com/grafana/helm-charts/releases/download/alloy-1.13.1/alloy-1.13.1.tgz  6c2b7df23e39438bb11f1e1fcf19eb9eb7c8bfeab7d49b7c975b6212abd0f99a

@@ -24,8 +24,8 @@ States: `pending`, `in_progress`, `blocked`, `done`, `deferred`. `blocked` requi
 
 | ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
 |---|---|---|---|---|---|
-| S1.1 | Fresh development scaffold | — | pending | — | — |
-| S1.9 | Observability stack and instrumentation baseline | S1.1 | pending | — | 10h added; prepare after scaffold, real correlation closes in S1.8 |
+| S1.1 | Fresh development scaffold | — | done | [2026-10-11-02](sessions/2026-10-11-02.md) | Clean `npm ci` + typecheck + lint + build; clean `uv sync --locked` + ruff + 3 tests; live `/api/health` 200 direct and through the dev proxy; browser render checked up and down; no MCP server import in `backend/src`. CI workflow written but never run (nothing pushed) |
+| S1.9 | Observability stack and instrumentation baseline | S1.1 | done | [2026-10-11-03](sessions/2026-10-11-03.md) | Clean Kind install from four checksum-pinned charts; `scripts/observability-check.sh` 5/5; single log ingestion, redaction, namespace allowlist, observer RBAC, Tempo and collector outage signals and recovery verified live; 7 backend tests. Not yet possible: Prometheus scraping the backend (needs the S1.7 chart). Dashboards and log/trace links checked through APIs only, not in the Grafana UI. Real correlation closes in S1.8 |
 | S1.2 | Evidence, MCP client and trusted context | S1.1 | pending | — | — |
 | S1.3 | Upstream Kubernetes MCP on Kind | S1.2 | pending | — | — |
 | S1.4 | Initial reasoning adapter | S1.2 | pending | — | — |

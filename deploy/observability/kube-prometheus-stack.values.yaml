@@ -1,0 +1,133 @@
+# kube-prometheus-stack 92.3.0: Prometheus operator, one Prometheus, one Grafana,
+# kube-state-metrics and node exporter. Everything else is switched off.
+fullnameOverride: kps
+
+alertmanager:
+  enabled: false # alerts are S5
+defaultRules:
+  create: false # no Alertmanager to receive them; dashboards use raw series
+
+# Kind binds these control-plane components to localhost, so the targets would stay down.
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+# Large series count for little S1 value; cluster availability comes from `up` and node state.
+kubeApiServer:
+  enabled: false
+
+kube-state-metrics:
+  # Workload state only. Secrets and ConfigMaps are not listed, so no RBAC for them is created.
+  collectors:
+    - daemonsets
+    - deployments
+    - jobs
+    - namespaces
+    - nodes
+    - persistentvolumeclaims
+    - pods
+    - replicasets
+    - statefulsets
+  resources:
+    requests: { cpu: 10m, memory: 64Mi }
+    limits: { memory: 128Mi }
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 64Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+    limits: { memory: 192Mi }
+  prometheusConfigReloader:
+    resources:
+      requests: { cpu: 10m, memory: 32Mi }
+      limits: { memory: 64Mi }
+
+prometheus:
+  prometheusSpec:
+    retention: 48h
+    retentionSize: 3GB
+    # Pick up ServiceMonitors from the other releases and the Vyom chart, not only this release's.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 4Gi
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 1Gi }
+
+grafana:
+  fullnameOverride: grafana
+  # Created by scripts/observability-up.sh from a private local file; never in Git or values.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  service:
+    type: ClusterIP # reach it with a localhost-bound port-forward only
+  grafana.ini:
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+      check_for_plugin_updates: false
+    auth.anonymous:
+      enabled: false
+    users:
+      allow_sign_up: false
+  defaultDashboardsEnabled: false # the two Vyom dashboards are provisioned from deploy/observability/dashboards
+  sidecar:
+    resources:
+      requests: { cpu: 10m, memory: 64Mi }
+      limits: { memory: 128Mi }
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+    datasources:
+      enabled: true
+      uid: prometheus
+      alertmanager:
+        enabled: false
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.observability.svc:3100
+      jsonData:
+        derivedFields:
+          # Log line -> trace. Vyom logs are JSON with a trace_id field.
+          - name: trace_id
+            matcherRegex: '"trace_id":\s*"([0-9a-f]{32})"'
+            datasourceUid: tempo
+            url: "$${__value.raw}"
+            urlDisplayLabel: Open trace
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.observability.svc:3200
+      jsonData:
+        # Trace -> logs of the same service, filtered by trace ID, around the span's time.
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "-5m"
+          spanEndTimeShift: "5m"
+          customQuery: true
+          query: '{service_name="$${__span.tags["service.name"]}"} | json | trace_id="$${__trace.traceId}"'
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 384Mi }

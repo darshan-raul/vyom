@@ -1,0 +1,176 @@
+// Vyom S1 collection pipeline: node-local container logs -> Loki, OTLP traces -> Tempo.
+// Prometheus scrapes metrics itself; there is no OTLP log or metric pipeline here, so each
+// stdout line is ingested exactly once.
+
+logging {
+  level  = "info"
+  format = "json"
+}
+
+// ---- Logs ----------------------------------------------------------------------------
+
+// Only pods on this collector's node, and only in the allowlisted namespaces.
+discovery.kubernetes "pods" {
+  role = "pod"
+
+  selectors {
+    role  = "pod"
+    field = "spec.nodeName=" + sys.env("HOSTNAME")
+  }
+
+  namespaces {
+    names = ["vyom", "observability"]
+  }
+}
+
+discovery.relabel "pod_logs" {
+  targets = discovery.kubernetes.pods.targets
+
+  // Indexed labels stay few and bounded: namespace, service_name, container.
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label  = "namespace"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+    target_label  = "service_name"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    target_label  = "container"
+  }
+
+  // Unbounded pod name: moved from label to structured metadata in loki.process below.
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label  = "pod"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+    separator     = "/"
+    regex         = "(.+)/(.+)"
+    target_label  = "__path__"
+    replacement   = "/var/log/pods/*$1/$2/*.log"
+  }
+}
+
+local.file_match "pod_logs" {
+  path_targets = discovery.relabel.pod_logs.output
+}
+
+loki.source.file "pod_logs" {
+  targets    = local.file_match.pod_logs.targets
+  forward_to = [loki.process.pod_logs.receiver]
+}
+
+loki.process "pod_logs" {
+  stage.cri { }
+
+  // Defence in depth; owned services must not log these in the first place.
+  // Only the captured value is replaced.
+  stage.replace {
+    expression = "(?i)(?:authorization|x-api-key|api[_-]?key|password|token|secret)\"?\\s*[:=]\\s*\"?(?:bearer\\s+)?([^\\s\",}]+)"
+    replace    = "[REDACTED]"
+  }
+
+  // Moves the pod label out of the index.
+  stage.structured_metadata {
+    values = { pod = "" }
+  }
+
+  stage.label_drop {
+    values = ["filename"]
+  }
+
+  forward_to = [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+  endpoint {
+    url                 = "http://loki.observability.svc:3100/loki/api/v1/push"
+    batch_wait          = "2s"
+    batch_size          = "512KiB"
+    remote_timeout      = "5s"
+    min_backoff_period  = "500ms"
+    max_backoff_period  = "30s"
+    max_backoff_retries = 5 // then the batch is dropped and counted, not retried forever
+  }
+}
+
+// ---- Traces --------------------------------------------------------------------------
+
+otelcol.receiver.otlp "vyom" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    traces = [otelcol.processor.memory_limiter.traces.input]
+  }
+}
+
+otelcol.processor.memory_limiter "traces" {
+  check_interval = "1s"
+  limit          = "96MiB"
+
+  output {
+    traces = [otelcol.processor.attributes.scrub.input]
+  }
+}
+
+// Remove attributes that may carry credentials or payloads if an SDK default ever adds them.
+otelcol.processor.attributes "scrub" {
+  action {
+    pattern = "^http\\.(request|response)\\.header\\..*"
+    action  = "delete"
+  }
+
+  action {
+    key    = "url.query"
+    action = "delete"
+  }
+
+  action {
+    pattern = "^(gen_ai|llm)\\.(prompt|completion|input|output).*"
+    action  = "delete"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.traces.input]
+  }
+}
+
+otelcol.processor.batch "traces" {
+  timeout             = "2s"
+  send_batch_size     = 256
+  send_batch_max_size = 512
+
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo.observability.svc:4317"
+
+    tls {
+      insecure = true // in-cluster, internal Service
+    }
+  }
+
+  sending_queue {
+    queue_size = 200 // batches; beyond this spans are dropped and counted
+  }
+
+  retry_on_failure {
+    max_elapsed_time = "1m"
+  }
+}

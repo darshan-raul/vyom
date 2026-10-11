@@ -1,0 +1,56 @@
+# grafana/alloy 1.13.1 (Alloy v1.20.1): one collector per node. The pipeline is config.alloy,
+# passed with --set-file alloy.configMap.content=config.alloy.
+fullnameOverride: alloy
+
+controller:
+  type: daemonset
+  volumes:
+    extra:
+      - name: alloy-state
+        hostPath:
+          path: /var/lib/vyom-alloy
+          type: DirectoryOrCreate
+
+alloy:
+  enableReporting: false
+  # Read positions live on the node so a collector restart resumes instead of re-reading
+  # (and re-ingesting) every log file.
+  storagePath: /var/lib/alloy
+  mounts:
+    varlog: true # read-only /var/log from the node, for container log files
+    extra:
+      - name: alloy-state
+        mountPath: /var/lib/alloy
+  extraPorts:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+  resources:
+    requests: { cpu: 20m, memory: 128Mi }
+    limits: { memory: 384Mi }
+
+configReloader:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 64Mi }
+
+# Observer identity: pod discovery only. It reads log files from the node mount, so it needs
+# no pods/log, Secret or ConfigMap access. This is not the agent's or the MCP server's identity.
+# Namespaced Roles in the allowlisted namespaces only; no ClusterRole is created.
+rbac:
+  namespaces: [vyom, observability]
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["get", "list", "watch"]
+
+service:
+  internalTrafficPolicy: Local # OTLP goes to the collector on the sender's node
+
+serviceMonitor:
+  enabled: true

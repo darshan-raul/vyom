@@ -51,3 +51,20 @@ S1.9 adds 10 task hours and is a prerequisite of S1.7, while S1.8 remains the li
 The owner supplies Secrets and runs all Docker, Kind, kubectl and Helm steps. Agent verification is limited to code. Two small charts package the UI/API and the target namespace reader respectively. Credentials stay server-side; TLS verification, fixed namespace authority, bounded status projections and list-only RBAC preserve read-only access. A short-lived target token is reread from its Secret volume each question; model key rotation requires an API restart. [Setup and limitations](../poc/kind-chat/README.md), [verification](sessions/2026-10-04-09.md).
 
 **POC02 — Accepted by owner, 2026-10-04:** use LangChain for this experiment's inference. `ChatPromptTemplate` formats policy, bounded browser history and the question; `ChatOpenAI.ainvoke` performs one compatible Chat Completions call. Kubernetes collection stays deterministic and namespace-scoped, with no RAG or MCP. The request limits, Secret injection and Helm interface are retained. Disable automatic retries and LangSmith tracing; retain response byte/context/output limits and sanitized provider failures. [Code evidence](sessions/2026-10-04-10.md). This revises POC01's inference implementation only.
+
+## S1.1 scaffold tooling — 2026-10-11
+
+**SCAF01 — Accepted by owner (proposed before S1.1 started, owner proceeded without changes):** backend uses `uv` with a committed `uv.lock` on Python 3.13 (`>=3.13,<3.14`); frontend uses npm with `package-lock.json`; the MCP client is the official `mcp` Python SDK used directly, not `langchain-mcp-adapters`, so S1.2 owns validation and limits itself; CI is one GitHub Actions workflow. Resolved versions are in the lockfiles; [evidence](sessions/2026-10-11-02.md). Routing (`react-router`), LangGraph and model libraries are not installed until the tasks that need them.
+
+## S1.9 observability pins and deviations — 2026-10-11
+
+Implementation decisions made while installing the owner-required stack; none changes scope. Evidence: [session 2026-10-11-03](sessions/2026-10-11-03.md); detail: [installed summary](OBSERVABILITY.md#installed-on-kind-in-s19).
+
+| ID | Status | Decision | Why |
+|---|---|---|---|
+| OBS01 | Accepted (implementation) | Take Loki and Tempo from `grafana-community/helm-charts` (18.15.1 and 3.1.0); kube-prometheus-stack 92.3.0 and `grafana/alloy` 1.13.1 from their existing publishers | The `grafana/*` Loki chart is Enterprise-only and the `grafana/*` Tempo chart is deprecated since early 2026 |
+| OBS02 | Accepted (implementation) | Install from checksum-pinned chart archives listed in `deploy/observability/charts.lock`, fetched by one script, instead of a Helm umbrella chart or helmfile | Keeps one reproducible workflow with no extra tool; retried downloads survive this machine's slow GitHub path |
+| OBS03 | Accepted (implementation) | Disable Alertmanager, default rules and the bundled dashboards; disable etcd, scheduler, controller-manager, kube-proxy and API-server scrapes | Alerts are S5; the first four cannot be scraped on Kind; API-server series are large for no S1 use. Revisit API-server and control-plane targets on EKS in S2 |
+| OBS04 | Accepted (implementation) | Collector log allowlist is the `vyom` and `observability` namespaces; the demo namespace is not collected | Infrastructure log access must not become agent pod-log access. Add the upstream MCP server only after S1.3 confirms its logging is payload-free |
+| OBS05 | Proposed, needs owner view before S5 | PVC sizes are not enforced by Kind's provisioner, so S1 storage is bounded by 48-hour retention, Prometheus's 3 GB cap and ingestion limits only | A hard size bound for Loki and Tempo needs a provisioner that enforces capacity (EKS in S2) or size-based retention work in S5 |
+

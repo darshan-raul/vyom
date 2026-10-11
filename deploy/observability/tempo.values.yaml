@@ -1,0 +1,28 @@
+# grafana-community/tempo 3.1.0 (Tempo 3.1.0): single binary, local storage on a PVC, no Kafka.
+fullnameOverride: tempo
+
+tempo:
+  reportingEnabled: false
+  retention: 48h
+  # The chart applies `retention` to the scheduler only; the worker keeps its own 14-day default.
+  backendWorker:
+    compaction:
+      block_retention: 48h
+  # Receivers keep the chart defaults. Alloy sends OTLP gRPC on 4317. The chart cannot render
+  # with the Jaeger receivers removed, so they stay open on the internal Service, unused.
+  overrides:
+    defaults:
+      ingestion:
+        rate_limit_bytes: 2000000
+        burst_size_bytes: 4000000
+        max_traces_per_user: 2000
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits: { memory: 768Mi }
+
+persistence:
+  enabled: true
+  size: 4Gi
+
+serviceMonitor:
+  enabled: true
