@@ -39,7 +39,25 @@ Host side only, proven against an offline fixture server; no upstream Kubernetes
 - **Tool definitions** (`mcp_client/tools.py`): a `ToolSpec` holds Vyom's description, the argument model, the reviewed schema digest, the projector, scope arguments and an item limit. None is registered for a real server yet.
 - **Telemetry**: spans `mcp.client.discover`, `mcp.client.call` and `evidence.normalize`; `vyom_mcp_client_operations_total{server,tool,operation,outcome}` and `vyom_mcp_client_operation_duration_seconds{server,tool,operation}`; one `vyom.mcp` log line per operation. Unconfigured server or tool names are recorded as `unlisted`. The SDK adds its own `MCP send …` client spans and W3C context in request metadata.
 
-Not done here: the operator file is not loaded by the API (S1.5, S1.7).
+The API loads the operator file from S1.5 (`VYOM_CONFIG`); S1.7 mounts it in the cluster.
+
+## Chat workflow in S1.5
+
+`backend/src/vyom/agent/graph.py` is a LangGraph graph with three steps and no loop. The host stays the only place that decides tool policy.
+
+| Step | What happens | Ends early with |
+|---|---|---|
+| `propose` | The model sees the question, a system prompt naming the configured namespace, and the host's enabled tools (Vyom's descriptions, scope arguments not offered) | `model_unavailable`; `no_tool_used` when the model proposes no call (whatever it wrote instead is dropped) |
+| `collect` | The first proposed call goes to `McpHost.call` with the trusted context; further calls in the same reply are answered "not called" without reaching the host. The model is shown a projection of the evidence: state, collection time, completeness, error texts and up to 50 items, each with a ref number | `no_evidence` when the call was refused or failed (no second model request) |
+| `answer` | The model answers from that projection. A second tool proposal is refused. The answer must be non-empty, not cut off, cite only refs that were shown, and cite at least one when items exist | `tool_round_limit`, `invalid_answer`, `model_unavailable` (the collected evidence is still returned) |
+
+- One deadline (60 s) covers the whole question: `timeout`.
+- `POST /api/chat` accepts `{"question": "..."}` only (1–500 characters; any other field is a 422) and returns `outcome`, `answer` or `limitation`, `citations` (ref → evidence ID and item ID), the full `evidence` and the request's `trace_id`. Every outcome is HTTP 200.
+- `GET /api/agent` returns what is configured: scope (connection and namespace), model provider and ID, enabled tool IDs. It probes nothing.
+- There is no other read path in the workflow. When MCP fails the answer is `no_evidence`; nothing switches to an SDK.
+- Telemetry: spans `chat.graph`, `graph.propose`, `graph.collect`, `graph.answer` above the existing model-client and MCP-client spans, in the request's trace; `vyom_chat_requests_total{outcome}`, `vyom_chat_duration_seconds`, `vyom_graph_step_duration_seconds{step}`; one `vyom.chat` log line per question with the outcome. No question, answer or evidence content in any of them.
+
+Run it locally with `scripts/chat-up.sh`; verify it live with `scripts/chat-check.sh`.
 
 ## Deployed on Kind in S1.3
 

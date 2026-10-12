@@ -9,10 +9,17 @@ const unsupported = (operation: string) => () =>
 // Same-origin backend API. Resource methods are added with the views that need them.
 export const dataProvider: DataProvider = {
   getApiUrl: () => '/api',
-  custom: async ({ url, method }) => {
+  custom: async ({ url, method, payload }) => {
     let response: Response
     try {
-      response = await fetch(url, { method, headers: { Accept: 'application/json' } })
+      response = await fetch(url, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          ...(payload === undefined ? {} : { 'Content-Type': 'application/json' }),
+        },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      })
     } catch {
       throw { message: 'The backend is unreachable', statusCode: 0 } satisfies HttpError
     }

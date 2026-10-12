@@ -1,12 +1,12 @@
 # LangGraph basics: the same agent as a graph
 
-The second learning exercise, also separate from the Vyom plan and `poc/kind-chat/`. It takes the tool loop you wrote by hand in [`../langchain-basics/agent.py`](../langchain-basics/agent.py) and rebuilds it with LangGraph, then adds what the loop could not do: conversations that survive a restart, a pause for human approval, and step-by-step streaming.
+The second learning exercise, also separate from the Vyom plan and `learning/kind-chat/`. It takes the tool loop you wrote by hand in [`../langchain-basics/agent.py`](../langchain-basics/agent.py) and rebuilds it with LangGraph, then adds what the loop could not do: conversations that survive a restart, a pause for human approval, and step-by-step streaming.
 
 - [`graph_agent.py`](graph_agent.py): the whole app. Section 0 is the LangChain part you know; sections 1–7 are new.
 - [`CONCEPTS.md`](CONCEPTS.md): LangGraph explained, numbered to match the code.
 - [`rbac-logs.yaml`](rbac-logs.yaml): one extra permission, for the new log tool.
 
-It uses the cluster, workloads and kubeconfig from the first exercise. Run everything from `poc/langgraph-basics/`.
+It uses the cluster, workloads and kubeconfig from the first exercise. Run everything from `learning/langgraph-basics/`.
 
 ## What is different from `agent.py`
 

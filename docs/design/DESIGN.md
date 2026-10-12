@@ -25,8 +25,8 @@ namespace.
 
 | Sprint | What the UI gains | Spec elements it uses |
 |---|---|---|
-| S1 (built so far) | App shell, tokens and fonts, Today with the API's own liveness, the Ask Vyom panel in its not-connected state, the question-path strip | §2, §3, `SectionLabel`, `PipelineStrip`, §4.1 frame |
-| S1.5 | Ask Vyom goes live: one question, one tool round, an answer with the tool called, the resources read and the collection time | §4.1, `Citation`, `EvidenceItem` |
+| S1 (built) | App shell, tokens and fonts, Today with the API's own liveness, the question-path strip | §2, §3, `SectionLabel`, `PipelineStrip` |
+| S1.5 (built) | Ask Vyom is live: one question, one tool call, an answer with citations, the tool called, the resources read, the collection time and the trace ID; a fixed reason when there is no answer | §4.1, `Citation`, evidence rows |
 | S1.6 | Kubernetes view: pods table from the direct collector with time, coverage, loading, empty and error states | `StatusBadge`, `SegmentedTabs`, header ticker counts for pods |
 | S2 | AWS view: EC2 inventory and CloudWatch CPU/status charts; workload and node health; current CPU and memory | `MetricCard`, `Delta`, annotated line, scope tabs All / AWS / EKS |
 | S3 | Runbook citations in answers, chat history ("last answer", continue thread), freshness of scheduled observations | `Citation` source chips, last-answer column |
@@ -232,7 +232,7 @@ Use **visx** or plain SVG/flex for the custom patterns (diff strips, dot matrix,
 ## 6. Screens
 
 ### 6.1 Today (`/`)
-The end state below is the mockup's. Built so far: items 1–4, with real API state only. Items 5–7
+The end state below is the mockup's. Built so far: items 1–4, with real API, agent and evidence state only. Items 5–7
 arrive per §0, with posture and findings narrowed to what Vyom collects (workload health, restarts,
 unavailable replicas, EC2 state, daily cost).
 

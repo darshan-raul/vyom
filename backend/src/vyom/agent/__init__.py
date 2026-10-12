@@ -1,1 +1,1 @@
-"""Reasoning adapter (S1.4). The LangGraph workflow arrives in S1.5."""
+"""Reasoning adapter (``model``, S1.4) and the bounded chat workflow (``graph``, S1.5)."""

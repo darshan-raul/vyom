@@ -6,7 +6,7 @@
 
 A progressively built AWS + Kubernetes intelligence cockpit: ask a question, inspect live read-only evidence, and understand the answer.
 
-**Current state:** S1.1 and S1.9 are done: a fresh [frontend](frontend/) and [backend](backend/) scaffold with a health endpoint, an MCP client module and a telemetry baseline, plus a pinned Prometheus/Grafana, Loki, Tempo and Alloy stack that installs on Kind. There is no chat, Kubernetes view, model, upstream MCP server or application chart yet; the rest of S1 and every sprint gate remain open. See [Run the scaffold](#run-the-scaffold) and [Run the observability stack on Kind](#run-the-observability-stack-on-kind). A separate [two-Kind-cluster chat POC](poc/kind-chat/README.md) exists outside the roadmap and gives no S1–S6 completion credit.
+**Current state:** S1.1–S1.5 and S1.9 are done: a [frontend](frontend/) and [backend](backend/) with an MCP host, a reasoning adapter and a telemetry baseline; the pinned upstream Kubernetes MCP server on Kind; and a pinned Prometheus/Grafana, Loki, Tempo and Alloy stack. S1.5 is done too: the chat (question → model → one MCP tool call → cited answer) passed its live check on Kind. There is no direct Kubernetes view or application chart yet; the rest of S1 and every sprint gate remain open. See [Run the scaffold](#run-the-scaffold), [Run the observability stack on Kind](#run-the-observability-stack-on-kind) and [Ask a question](#ask-a-question). The [learning exercises](learning/kind-chat/README.md) are outside the roadmap and give no S1–S6 completion credit.
 
 ## Planned service overview
 
@@ -66,7 +66,7 @@ npm ci
 npm run dev
 ```
 
-Open the UI: the header and the sidebar show `● API NOMINAL`, and the first cell of the question-path strip shows the service name, version and `ok`. `curl http://127.0.0.1:8000/api/health` returns the same data. Stop the backend and they turn to `■ API UNREACHABLE` within 10 seconds, then recover when the backend returns. The Ask Vyom panel is disabled until the chat route exists. The UI follows the [design spec](docs/design/DESIGN.md).
+Open the UI: the header and the sidebar show `● API NOMINAL`, and the first cell of the question-path strip shows the service name, version and `ok`. `curl http://127.0.0.1:8000/api/health` returns the same data. Stop the backend and they turn to `■ API UNREACHABLE` within 10 seconds, then recover when the backend returns. Started this way the backend has no agent configuration, so the Ask Vyom panel is disabled and says so; [Ask a question](#ask-a-question) connects it. The UI follows the [design spec](docs/design/DESIGN.md).
 
 Checks, also run by [CI](.github/workflows/ci.yml):
 
@@ -99,6 +99,22 @@ export OPENROUTER_API_KEY=...             # in your own terminal; or instead:
 ./scripts/model-check.sh                  # live: tool-call round trip, refused arguments, wrong and missing key, no key in telemetry or bundle
 ```
 
+### Ask a question
+
+With the cluster and `mcp-up.sh` in place, run the backend against Kind and ask through the UI. The backend reads the model key the same way as above.
+
+```sh
+./scripts/chat-up.sh                 # terminal 1: port-forward to the MCP endpoint, operator config in .local/, API on 127.0.0.1:8000
+cd frontend && npm run dev           # terminal 2: UI on http://127.0.0.1:5173
+
+curl -s 127.0.0.1:8000/api/chat -H 'content-type: application/json' \
+  -d '{"question":"Which pods are unhealthy in the demo namespace?"}'
+
+./scripts/chat-check.sh              # live gate for S1.5: real model and real MCP, plus the failure paths
+```
+
+The answer names the failing pod and cites it; the response also carries the evidence (tool, namespace, collection time, items) and a trace ID. If the model, the MCP endpoint or the evidence is unavailable the response says which, with no answer. Workflow and outcomes: [chat workflow](docs/MCP_INTEGRATIONS.md#chat-workflow-in-s15).
+
 The first install pulls about ten images and takes several minutes. `kind delete cluster --name vyom` removes everything, including stored telemetry. What is installed and its limits: [observability](docs/OBSERVABILITY.md#installed-on-kind-in-s19).
 
-Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK with the endpoint registry, tool allowlist, limits and the reviewed Kubernetes pod-list tool; Vyom serves no MCP protocol), `evidence.py` and `context.py` (shared evidence contract and server-side scope), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` (the reasoning adapter: LangChain `ChatOpenAI` against one OpenAI-compatible endpoint; the LangGraph workflow arrives in S1.5), `credentials.py` (credential references) and `collectors` (empty until S1.6).
+Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK with the endpoint registry, tool allowlist, limits and the reviewed Kubernetes pod-list tool; Vyom serves no MCP protocol), `evidence.py` and `context.py` (shared evidence contract and server-side scope), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` (`model.py`, the reasoning adapter: LangChain `ChatOpenAI` against one OpenAI-compatible endpoint; `graph.py`, the LangGraph chat workflow with one bounded tool call), `credentials.py` (credential references) and `collectors` (empty until S1.6).

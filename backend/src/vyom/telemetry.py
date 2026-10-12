@@ -67,6 +67,7 @@ _SILENCED_LOGGERS = (
     "langchain",
     "langchain_core",
     "langchain_openai",
+    "langgraph",
     "langsmith",
 )
 
@@ -269,6 +270,43 @@ def record_model_request(
         "model request finished",
         extra=fields,
     )
+
+
+CHAT_REQUESTS = Counter(
+    "vyom_chat_requests_total", "Chat questions by how they ended.", ["outcome"]
+)
+CHAT_DURATION = Histogram(
+    "vyom_chat_duration_seconds",
+    "Time from question to result, whatever the outcome.",
+    buckets=(0.5, 1, 2, 5, 10, 20, 30, 60, 120),
+)
+GRAPH_STEP_DURATION = Histogram(
+    "vyom_graph_step_duration_seconds",
+    "Duration of one step of the chat graph.",
+    ["step"],
+    buckets=(0.05, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60),
+)
+
+_chat_log = logging.getLogger("vyom.chat")
+
+
+def record_chat(outcome: str, duration: float) -> None:
+    """Count, time and log one chat question. ``outcome`` is one of the graph's fixed outcomes.
+
+    The question, the answer and the evidence are never passed here.
+    """
+    CHAT_REQUESTS.labels(outcome).inc()
+    CHAT_DURATION.observe(duration)
+    _chat_log.log(
+        logging.INFO if outcome == "answered" else logging.WARNING,
+        "chat finished",
+        extra={"operation": "chat", "outcome": outcome, "duration_ms": round(duration * 1000, 1)},
+    )
+
+
+def record_graph_step(step: str, duration: float) -> None:
+    """``step`` is one of the graph's node names."""
+    GRAPH_STEP_DURATION.labels(step).observe(duration)
 
 
 def _metrics() -> Response:

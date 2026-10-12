@@ -1,12 +1,12 @@
 # LangChain basics: chat with a Kind cluster from your terminal
 
-A learning exercise, separate from the Vyom plan and from `poc/kind-chat/`. One Python file runs on your machine, talks to a model through OpenRouter and answers questions about four pods in a local Kind cluster using three read-only tools.
+A learning exercise, separate from the Vyom plan and from `learning/kind-chat/`. One Python file runs on your machine, talks to a model through OpenRouter and answers questions about four pods in a local Kind cluster using three read-only tools.
 
 - [`agent.py`](agent.py): the whole app, commented section by section.
 - [`CONCEPTS.md`](CONCEPTS.md): the LangChain ideas behind each section. Read it with the code open.
 - [`workloads.yaml`](workloads.yaml): the namespace, four pods and the read-only identity.
 
-Run everything from `poc/langchain-basics/`.
+Run everything from `learning/langchain-basics/`.
 
 ## 1. Create the cluster and workloads
 

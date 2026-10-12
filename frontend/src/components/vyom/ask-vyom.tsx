@@ -1,9 +1,35 @@
+import { useState, type FormEvent } from 'react'
+import { cn } from 'cn'
+
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Answer } from '@/components/vyom/answer'
+import type { AgentStatus, Ask } from '@/lib/agent'
 
-// The agent panel (DESIGN.md §4.1). The chat route does not exist yet, so the form is
-// disabled and says so; it never pretends to send a question.
-export function AskVyom() {
+// The agent panel (DESIGN.md §4.1). It sends a question and nothing else: scope and tools
+// are the server's, and are shown here, not chosen.
+export function AskVyom({
+  agent,
+  chat,
+  unavailable,
+}: {
+  agent?: AgentStatus
+  chat: Ask
+  unavailable: string // why nothing can be sent, when the agent is not ready
+}) {
+  const [question, setQuestion] = useState('')
+  const ready = agent?.configured === true
+  const limit = agent?.max_question_chars ?? 500
+  const suggestion = agent?.scope
+    ? `Which pods are unhealthy in the ${agent.scope.namespace} namespace?`
+    : undefined
+  const sendable = ready && !chat.pending && question.trim().length > 0
+
+  const submit = (event?: FormEvent) => {
+    event?.preventDefault()
+    if (sendable) chat.ask(question.trim())
+  }
+
   return (
     <section
       aria-label="Ask Vyom"
@@ -12,8 +38,14 @@ export function AskVyom() {
       <div className="flex min-w-0 flex-[3_1_520px] flex-col gap-4 px-6 py-5.5">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <span className="vy-label flex items-center gap-2.5 text-vy-agent">
-            <span aria-hidden="true" className="size-2 rounded-full border border-current" />
-            Ask Vyom · agent not connected
+            <span
+              aria-hidden="true"
+              className={cn(
+                'size-2 rounded-full',
+                ready ? 'vy-live-dot bg-current' : 'border border-current',
+              )}
+            />
+            Ask Vyom · {ready ? 'agent ready' : 'agent not connected'}
           </span>
           <span className="font-mono text-[11px] text-vy-text-4">
             read-only · cites every answer
@@ -21,7 +53,7 @@ export function AskVyom() {
         </div>
 
         <form
-          onSubmit={(event) => event.preventDefault()}
+          onSubmit={submit}
           className="flex flex-col rounded-lg border border-vy-agent-line bg-vy-surface-1"
         >
           <label htmlFor="vy-ask" className="sr-only">
@@ -30,41 +62,79 @@ export function AskVyom() {
           <Textarea
             id="vy-ask"
             rows={2}
-            disabled
+            disabled={!ready}
+            maxLength={limit}
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                submit()
+              }
+            }}
             aria-describedby="vy-ask-state"
-            placeholder="Which pods are unhealthy in the demo namespace?"
+            placeholder={suggestion ?? 'Which pods are unhealthy?'}
             className="rounded-none border-0 px-4.5 pt-4 pb-1.5 text-[17px] leading-normal focus-visible:ring-0"
           />
           <div className="flex flex-wrap items-center justify-between gap-2.5 py-2 pr-2.5 pl-4.5">
             <span className="flex flex-wrap gap-x-3.5 gap-y-1 font-mono text-[11px] text-vy-text-3">
               <span>
-                scope: <span className="text-vy-text">set by the server</span>
+                scope:{' '}
+                <span className="text-vy-text">
+                  {agent?.scope
+                    ? `${agent.scope.connection_id} / ns ${agent.scope.namespace}`
+                    : 'set by the server'}
+                </span>
               </span>
               <span>
-                tools: <span className="text-vy-text-4">none connected</span>
+                tools:{' '}
+                {agent?.tools.length ? (
+                  <span className="text-vy-text">
+                    {agent.tools.map((tool) => tool.id).join(' · ')}
+                  </span>
+                ) : (
+                  <span className="text-vy-text-4">none connected</span>
+                )}
               </span>
             </span>
-            <Button type="submit" variant="agent" disabled>
-              Ask ↵
+            <Button type="submit" variant="agent" disabled={!sendable}>
+              {chat.pending ? 'Asking…' : 'Ask ↵'}
             </Button>
           </div>
         </form>
 
-        <p id="vy-ask-state" className="max-w-[68ch] text-[13px] leading-[1.55] text-vy-text-3">
-          The chat route is not built yet, so nothing can be sent from here. The first question
-          Vyom will answer is pod health in one namespace, from a live read through the Kubernetes
-          MCP server.
-        </p>
+        {ready ? (
+          <div id="vy-ask-state" className="flex flex-col gap-2">
+            <span className="vy-micro tracking-[0.14em] text-vy-text-4">
+              What it can answer now
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {suggestion ? (
+                <button
+                  type="button"
+                  onClick={() => setQuestion(suggestion)}
+                  className="min-h-9 rounded-full border border-vy-agent-line bg-vy-agent-bg px-3 py-1.5 text-left text-[13px] text-vy-text-2 hover:bg-vy-surface-sel"
+                >
+                  {suggestion}
+                </button>
+              ) : null}
+              <span className="text-xs text-vy-text-4">
+                One read of the pods in this namespace per question.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p id="vy-ask-state" className="max-w-[68ch] text-[13px] leading-[1.55] text-vy-text-3">
+            {unavailable}
+          </p>
+        )}
       </div>
 
-      <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-3 border-t border-vy-agent-line/60 px-6 py-5.5 lg:border-t-0 lg:border-l">
-        <span className="vy-micro tracking-[0.14em] text-vy-text-4">Last answer</span>
-        <span className="text-sm text-vy-text-2">No answer yet.</span>
-        <p className="text-[13px] leading-[1.6] text-vy-text-3">
-          Each answer will name the tool that was called, the resources it read and when they were
-          collected. If the model or the tool is unavailable, the answer says so instead of
-          guessing.
-        </p>
+      <div
+        aria-live="polite"
+        className="flex min-w-0 flex-[2_1_340px] flex-col gap-3 border-t border-vy-agent-line/60 px-6 py-5.5 lg:border-t-0 lg:border-l"
+      >
+        <Answer chat={chat} />
       </div>
     </section>
   )

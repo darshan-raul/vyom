@@ -34,7 +34,7 @@ Only offline checks were run by the agent: backend tests, frontend build, and `h
 Use Python 3.12+ and Node 22.12+ with npm:
 
 ```sh
-cd poc/kind-chat/backend
+cd learning/kind-chat/backend
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m pytest -q
@@ -48,7 +48,7 @@ Tests use HTTPX MockTransport and ASGI application code; they do not contact Kub
 
 ## 1. Create your two local clusters
 
-From `poc/kind-chat/`, with Docker running and `kind`, `kubectl`, and `helm` installed:
+From `learning/kind-chat/`, with Docker running and `kind`, `kubectl`, and `helm` installed:
 
 ```sh
 kind create cluster --name app
