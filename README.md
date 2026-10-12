@@ -83,6 +83,8 @@ Needs Docker, kind, kubectl, Helm, curl and openssl. Nothing is published on hos
 kind create cluster --config deploy/kind/cluster.yaml   # cluster "vyom", context kind-vyom
 ./scripts/observability-up.sh      # pinned Prometheus/Grafana, Loki, Tempo and Alloy; safe to re-run
 ./scripts/observability-check.sh   # login required, targets up, logs bounded, synthetic trace in Tempo
+./scripts/mcp-up.sh                # pinned upstream Kubernetes MCP server behind an authenticating proxy, plus demo pods
+./scripts/mcp-check.sh             # live: handshake, pod list equal to kubectl, callers and scope refused
 
 kubectl --context kind-vyom -n observability port-forward svc/grafana 3000:80 --address 127.0.0.1
 # http://127.0.0.1:3000  user admin, password in .local/grafana-admin-password
@@ -90,4 +92,4 @@ kubectl --context kind-vyom -n observability port-forward svc/grafana 3000:80 --
 
 The first install pulls about ten images and takes several minutes. `kind delete cluster --name vyom` removes everything, including stored telemetry. What is installed and its limits: [observability](docs/OBSERVABILITY.md#installed-on-kind-in-s19).
 
-Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK; Vyom serves no MCP protocol), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` and `collectors` (empty until S1.4–S1.6).
+Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK with the endpoint registry, tool allowlist, limits and the reviewed Kubernetes pod-list tool; Vyom serves no MCP protocol), `evidence.py` and `context.py` (shared evidence contract and server-side scope), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` and `collectors` (empty until S1.4–S1.6).

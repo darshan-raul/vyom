@@ -1,30 +1,17 @@
-import asyncio
-import socket
+import re
 from pathlib import Path
 
-import pytest
-
 import vyom
-from vyom.mcp_client import client_for
 
-
-def test_unreachable_endpoint_fails_instead_of_hanging():
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
-
-    async def connect():
-        async with client_for(f"http://127.0.0.1:{port}/mcp", read_timeout_seconds=2):
-            pass
-
-    # The SDK surfaces transport failures as an exception group; S1.2 normalizes them.
-    with pytest.raises(ExceptionGroup) as raised:
-        asyncio.run(asyncio.wait_for(connect(), timeout=5))
-
-    assert [type(error).__name__ for error in raised.value.exceptions] == ["ConnectError"]
+_SERVER_IMPORT = re.compile(r"^\s*(from|import)\s+mcp\.server\b", re.MULTILINE)
 
 
 def test_backend_never_imports_the_mcp_server_side():
     sources = Path(vyom.__file__).parent.rglob("*.py")
 
-    assert [str(path) for path in sources if "mcp.server" in path.read_text()] == []
+    assert [str(path) for path in sources if _SERVER_IMPORT.search(path.read_text())] == []
+
+
+def test_the_guard_recognizes_a_server_import():
+    assert _SERVER_IMPORT.search("import os\nfrom mcp.server.mcpserver import MCPServer\n")
+    assert not _SERVER_IMPORT.search('attributes = {"vyom.mcp.server": server}\n')

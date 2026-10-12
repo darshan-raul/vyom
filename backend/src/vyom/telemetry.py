@@ -2,7 +2,8 @@
 
 Rules every caller relies on:
 - Logs carry a constant message plus fields from ``LOG_FIELDS`` only; anything else is dropped.
-- Metric labels are bounded: route templates, known methods and status codes.
+- Metric labels are bounded: route templates, known methods and status codes, configured MCP
+  server and tool IDs, and fixed outcome names.
 - Spans never export URL queries, headers or exception text.
 - Export is asynchronous and bounded; a telemetry outage costs spans, never a request.
 """
@@ -42,8 +43,21 @@ LOG_FIELDS = frozenset(
         "http_route",
         "http_status",
         "error_type",
+        # Configured IDs only; a tool name a model made up is logged as "unlisted".
+        "mcp_server",
+        "mcp_tool",
     }
 )
+
+# Client libraries log free text (endpoint URLs, upstream error bodies). Their records are
+# dropped; the owning Vyom module logs the same event with allowlisted fields instead.
+_SILENCED_LOGGERS = ("mcp", "httpx2", "httpcore2", "httpx", "httpcore")
+
+
+def _owned_or_safe(record: logging.LogRecord) -> bool:
+    return not any(
+        record.name == name or record.name.startswith(name + ".") for name in _SILENCED_LOGGERS
+    )
 
 
 class JsonFormatter(logging.Formatter):
@@ -71,6 +85,7 @@ class JsonFormatter(logging.Formatter):
 def configure_logging() -> None:
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
+    handler.addFilter(_owned_or_safe)
     root = logging.getLogger()
     root.handlers = [handler]
     root.setLevel(logging.INFO)
@@ -127,6 +142,52 @@ async def _observe_request(request: Request, call_next) -> Response:
                     "http_status": status,
                 },
             )
+
+
+MCP_OPERATIONS = Counter(
+    "vyom_mcp_client_operations_total",
+    "MCP client operations by configured server and tool.",
+    ["server", "tool", "operation", "outcome"],
+)
+MCP_DURATION = Histogram(
+    "vyom_mcp_client_operation_duration_seconds",
+    "MCP client operation duration.",
+    ["server", "tool", "operation"],
+)
+
+_mcp_log = logging.getLogger("vyom.mcp")
+
+
+def record_mcp_operation(
+    operation: str,
+    *,
+    server: str,
+    tool: str,
+    outcome: str,
+    duration: float,
+    error_type: str | None = None,
+) -> None:
+    """Count, time and log one MCP client operation.
+
+    ``server`` and ``tool`` must already be bounded to configured IDs by the caller, and
+    ``outcome`` to ``ok`` or an error kind. Arguments and results are never passed here.
+    """
+    MCP_OPERATIONS.labels(server, tool, operation, outcome).inc()
+    MCP_DURATION.labels(server, tool, operation).observe(duration)
+    fields: dict[str, object] = {
+        "operation": f"mcp.{operation}",
+        "outcome": outcome,
+        "duration_ms": round(duration * 1000, 1),
+        "mcp_server": server,
+        "mcp_tool": tool,
+    }
+    if error_type is not None:
+        fields["error_type"] = error_type
+    _mcp_log.log(
+        logging.INFO if outcome == "ok" else logging.WARNING,
+        "mcp operation finished",
+        extra=fields,
+    )
 
 
 def _metrics() -> Response:
@@ -221,6 +282,10 @@ def tracer_provider() -> TracerProvider:
         )
     trace.set_tracer_provider(provider)
     return provider
+
+
+def tracer() -> trace.Tracer:
+    return tracer_provider().get_tracer("vyom")
 
 
 def instrument(app: FastAPI) -> None:

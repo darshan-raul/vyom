@@ -1,0 +1,44 @@
+# Controlled demo workloads for the S1 question "which pods are unhealthy?".
+# web is healthy; broken can never pull its image; web carries a literal env value that
+# must never reach the model, the UI or telemetry.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: web}
+  template:
+    metadata:
+      labels: {app: web}
+    spec:
+      containers:
+        - name: web
+          image: registry.k8s.io/pause:3.10
+          env:
+            - name: DEMO_LITERAL_ENV
+              value: vyom-demo-literal-env-value
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: broken}
+  template:
+    metadata:
+      labels: {app: broken}
+    spec:
+      containers:
+        - name: broken
+          image: registry.invalid/vyom/does-not-exist:0

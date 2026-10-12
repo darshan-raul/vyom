@@ -1,0 +1,118 @@
+"""Operator configuration: the trusted context and the MCP endpoints Vyom may connect to.
+
+Loaded once from a file the operator mounts. Nothing in a request or a model reply can add
+an endpoint, change a URL or pick a credential: callers name a tool ID and the registry
+decides where it goes and what is presented there.
+"""
+
+import json
+import os
+import re
+from pathlib import Path
+from urllib.parse import urlsplit
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from vyom.context import TrustedContext
+
+SERVER_ID = r"^[a-z][a-z0-9]{0,30}$"  # no underscore: "__" separates server from tool
+_TOOL_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
+_CREDENTIAL_REF = re.compile(r"^(file:/[^\0]+|env:[A-Z][A-Z0-9_]*)$")
+
+
+def tool_id(server_id: str, tool_name: str) -> str:
+    """Server-qualified tool identity, safe as a model-facing function name."""
+    return f"{server_id}__{tool_name}"
+
+
+class CredentialUnavailable(Exception):
+    """The referenced credential could not be read. Carries no path or value."""
+
+
+class Limits(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    connect_timeout_seconds: float = Field(default=5, gt=0, le=30)
+    call_timeout_seconds: float = Field(default=15, gt=0, le=120)
+    max_response_bytes: int = Field(default=262_144, gt=0, le=4_194_304)
+
+
+class ServerConfig(BaseModel):
+    # Validation errors must not echo a mistakenly pasted credential.
+    model_config = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
+
+    id: str = Field(pattern=SERVER_ID)
+    connection_id: str  # the authorized connection this endpoint serves
+    url: str
+    # Cleartext is an explicit operator choice (an in-cluster Service without TLS).
+    allow_cleartext: bool = False
+    ca_file: str | None = None
+    # Where the host reads its bearer credential at connect time: "file:/path" or
+    # "env:NAME". The value itself never appears in configuration.
+    credential_ref: str
+    enabled_tools: frozenset[str] = frozenset()  # upstream tool names
+    limits: Limits = Limits()
+
+    @field_validator("url")
+    @classmethod
+    def _plain_endpoint(cls, url: str) -> str:
+        parts = urlsplit(url)
+        if parts.scheme not in ("http", "https") or not parts.hostname:
+            raise ValueError("url must be an http(s) endpoint")
+        if parts.username or parts.password or parts.query or parts.fragment:
+            raise ValueError("url must not carry credentials, a query or a fragment")
+        return url
+
+    @field_validator("credential_ref")
+    @classmethod
+    def _reference_only(cls, ref: str) -> str:
+        if not _CREDENTIAL_REF.fullmatch(ref):
+            # Do not echo the input: a pasted token must not reach an error message.
+            raise ValueError("credential_ref must be 'file:/absolute/path' or 'env:NAME'")
+        return ref
+
+    @field_validator("enabled_tools")
+    @classmethod
+    def _tool_names(cls, names: frozenset[str]) -> frozenset[str]:
+        if not all(_TOOL_NAME.fullmatch(name) for name in names):
+            raise ValueError("enabled_tools must be upstream tool names")
+        return names
+
+    @model_validator(mode="after")
+    def _transport_security(self) -> "ServerConfig":
+        if urlsplit(self.url).scheme == "http" and not self.allow_cleartext:
+            raise ValueError("an http url requires allow_cleartext: true")
+        return self
+
+    def read_credential(self) -> str:
+        """Resolve the reference now, so a rotated token is picked up on the next connect."""
+        scheme, _, target = self.credential_ref.partition(":")
+        try:
+            value = Path(target).read_text() if scheme == "file" else os.environ[target]
+        except (OSError, KeyError):
+            raise CredentialUnavailable() from None
+        value = value.strip()
+        if not value or any(character.isspace() for character in value):
+            raise CredentialUnavailable()
+        return value
+
+
+class OperatorConfig(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
+
+    context: TrustedContext
+    mcp_servers: tuple[ServerConfig, ...] = ()
+
+    @model_validator(mode="after")
+    def _unique_server_ids(self) -> "OperatorConfig":
+        ids = [server.id for server in self.mcp_servers]
+        if len(ids) != len(set(ids)):
+            raise ValueError("mcp server ids must be unique")
+        return self
+
+    def server(self, server_id: str) -> ServerConfig | None:
+        return next((server for server in self.mcp_servers if server.id == server_id), None)
+
+
+def load_operator_config(path: str | Path) -> OperatorConfig:
+    return OperatorConfig.model_validate(json.loads(Path(path).read_text()))

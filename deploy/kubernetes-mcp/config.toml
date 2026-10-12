@@ -1,0 +1,27 @@
+# Upstream kubernetes-mcp-server v0.0.67 configuration for Vyom (Kind).
+# Every line is a deliberate departure from, or confirmation of, an upstream default.
+
+port = "8080"
+stateless = true
+log_level = 0                 # level 6+ logs MCP parameters and results; never raise it here
+
+# Reachable only from inside the pod. The sidecar proxy in manifests.yaml is the one
+# network entry point and authenticates every caller before forwarding.
+bind_address = "127.0.0.1"
+
+# Kubernetes identity: always the server's own ServiceAccount. The upstream default,
+# "passthrough", would send the caller's Authorization header to the Kubernetes API.
+# v0.0.67 refuses to start with require_oauth = true in this mode, which is why caller
+# authentication is done by the proxy and not here.
+cluster_provider_strategy = "in-cluster"
+cluster_auth_mode = "kubeconfig"
+
+# Capabilities: one read-only pod listing tool.
+read_only = true
+toolsets = ["core"]
+enabled_tools = ["pods_list_in_namespace"]
+
+[[denied_resources]]
+group = ""
+version = "v1"
+kind = "Secret"

@@ -28,6 +28,38 @@ Normalize direct and MCP results to workspace/connection/source IDs, account/reg
 
 Kubernetes RBAC controls objects/verbs, not individual pod fields. Even a read-only pod response can contain literal environment values or sensitive annotations. Do not equate `get pods` with safe model output: verify upstream projection and host minimization, avoid raw-object tools where unnecessary, and test sensitive-field removal before exposure. Trusted API processing may encounter raw fields; they must not be forwarded, persisted or logged. Secret objects, pod logs and exec are not part of the initial authorized capability set.
 
+## Implemented in S1.2
+
+Host side only, proven against an offline fixture server; no upstream Kubernetes MCP server has been contacted. Code is in `backend/src/vyom/`.
+
+- **Evidence contract** (`evidence.py`): `build_evidence` is the single constructor for both paths. Evidence carries a collection ID, source (trusted scope plus either MCP server/tool/upstream identity or a direct collector name), host-clock UTC collection time, coverage, projected items and errors with fixed text. States are `complete`, `zero`, `partial`, `stale`, `denied` and `missing`; `stale` is decided by the reader's freshness budget. A source timestamp is present only when the source supplied one.
+- **Trusted context** (`context.py`): workspace, connection, cluster UID and one namespace, from operator configuration behind a resolver that S6 replaces.
+- **Registry** (`mcp_client/registry.py`): servers with ID, bound connection, URL without credentials or query, credential reference, enabled upstream tool names and limits (connect and call time, response bytes).
+- **Host** (`mcp_client/host.py`): `discover(server_id)` and `call(tool_id, arguments, context)`. Tool IDs are `<server>__<tool>`. Each operation opens and closes its own session. The host sends only its own credential, stops reading a response at the byte limit, applies one deadline, validates typed arguments with unknown fields refused, sets scope arguments itself, checks the advertised schema against the reviewed digest, projects the result and returns evidence. Transport exception groups, HTTP 401/403, timeouts, oversized bodies, schema mismatch and unexpected shapes each map to their own error kind.
+- **Tool definitions** (`mcp_client/tools.py`): a `ToolSpec` holds Vyom's description, the argument model, the reviewed schema digest, the projector, scope arguments and an item limit. None is registered for a real server yet.
+- **Telemetry**: spans `mcp.client.discover`, `mcp.client.call` and `evidence.normalize`; `vyom_mcp_client_operations_total{server,tool,operation,outcome}` and `vyom_mcp_client_operation_duration_seconds{server,tool,operation}`; one `vyom.mcp` log line per operation. Unconfigured server or tool names are recorded as `unlisted`. The SDK adds its own `MCP send …` client spans and W3C context in request metadata.
+
+Not done here: the operator file is not loaded by the API (S1.5, S1.7).
+
+## Deployed on Kind in S1.3
+
+`scripts/mcp-up.sh` applies [manifests.yaml](../deploy/kubernetes-mcp/manifests.yaml), [config.toml](../deploy/kubernetes-mcp/config.toml) and the [demo workloads](../deploy/kind/demo.yaml); `scripts/mcp-check.sh` verifies the result live through a localhost port-forward.
+
+| Item | Value |
+|---|---|
+| MCP server | `quay.io/containers/kubernetes_mcp_server@sha256:e47f6ccc5347e1ea6be495d8d9ab55ac8a995fe87800fb984fa770cebe14ad44` (v0.0.67, 2026-09-18) |
+| Authenticating proxy | `quay.io/brancz/kube-rbac-proxy@sha256:a6075902738eaf1780390561ea998a53a056ef1d2b312bcbf0e2e81fec084b3c` (v0.23.0, 2026-09-24) |
+| Placement | One Deployment `kubernetes-mcp` in `vyom`, two containers; Service `kubernetes-mcp` ClusterIP port 8443 |
+| Server settings | HTTP on `127.0.0.1:8080`, stateless, `log_level = 0`, in-cluster provider, `cluster_auth_mode = "kubeconfig"`, `read_only = true`, toolset `core`, `enabled_tools = ["pods_list_in_namespace"]`, Secrets in `denied_resources` |
+| Kubernetes identity | ServiceAccount `kubernetes-mcp`: `list` on pods in `demo` only, plus `create` on `tokenreviews` and `subjectaccessreviews` for the proxy |
+| Caller identity | ServiceAccount `vyom-api` (no Kubernetes read access), token audience `vyom-mcp`, granted `mcpendpoints.vyom.dev/kubernetes` in `vyom` |
+| Negotiated protocol | `2026-07-28`; the server reports name `kubernetes-mcp-server` and an empty version |
+| Reviewed tool | `kubernetes__pods_list_in_namespace`, input-schema sha256 `1c2a5fed…e394d` in `backend/src/vyom/mcp_client/kubernetes.py`; the model may set `labelSelector` only |
+
+Why a proxy: v0.0.67 does not start with `require_oauth = true` and `cluster_auth_mode = "kubeconfig"` together ([MCPK01](DECISIONS.md#s13-upstream-kubernetes-mcp-on-kind--2026-10-12)). The token the backend presents is refused by the Kubernetes API itself (wrong audience), and a denied list names `system:serviceaccount:vyom:kubernetes-mcp` as the actor, so the caller's credential is not the Kubernetes identity.
+
+The in-cluster backend (S1.7) needs a projected ServiceAccount token volume for `vyom-api` with audience `vyom-mcp`, the endpoint certificate as `ca_file`, and `https://kubernetes-mcp.vyom.svc:8443/mcp` as the URL. None of that is deployed or tested yet.
+
 ## Kubernetes deployment contract
 
 These are planned requirements, not copied default chart values. Pin an upstream release and inspect its documentation/config/schema at implementation time. If the preferred implementation cannot meet a gate, evaluate another existing implementation with recorded evidence; do not build our own production protocol server.
