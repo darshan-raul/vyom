@@ -1,8 +1,8 @@
-# Vyom S1.1–S1.4: concepts and code reading guide
+# Guide 1 — MCP and observability: the foundations (S1.1–S1.4, S1.9)
 
-A study note, kept with the other learning material in `learning/`. It is not referenced by the tracker, handoff or any session record. It describes the code as of 2026-10-12 (S1.1, S1.9, S1.2, S1.3, S1.4). Delete it whenever you like.
+A study note, kept with the other learning material in `learning/`. This is the first of four guides; [README.md](README.md) has the reading order. It covers the pieces built in S1.1, S1.9, S1.2, S1.3 and S1.4: the MCP host, the upstream Kubernetes MCP server, the model adapter and the telemetry rules. Guides 2–4 build on it: [the chat](chat-graph.md) (S1.5), [the direct pod view](direct-pod-view.md) (S1.6) and [the frontend](frontend-console.md). Updated 2026-10-13, after S1.6.
 
-How to use it: read Part 1 for the map, Parts 2 and 3 for the two topics that are new to you, then follow Part 4 with the files open. Part 5 has things to run so you can see each idea happen.
+How to use it: read Part 1 for the map, Parts 2 and 3 for the two topics that are new to you, then follow Part 4 with the files open. Part 5 has things to run so you can see each idea happen. Parts 2 and 3 each end with questions to answer out loud; if you cannot explain an answer in your own words without looking, that is the section to reread.
 
 Where the samples come from:
 
@@ -13,10 +13,10 @@ Where the samples come from:
 
 ## Part 1 — What exists right now
 
-Four pieces have been built. They are not yet joined into a chat; S1.5 does that.
+This guide is about four pieces. Since S1.5 they are joined into a chat by a small LangGraph workflow ([guide 2](chat-graph.md)), and since S1.6 a second, independent path reads pods directly ([guide 3](direct-pod-view.md)). Here they are on their own:
 
 ```
-                (S1.5 will add: LangGraph + /api/chat route)
+                (guide 2: LangGraph + POST /api/chat sit here)
                          |                     |
                          v                     v
    ModelClient (S1.4)                     McpHost (S1.2)
@@ -42,9 +42,9 @@ Four pieces have been built. They are not yet joined into a chat; S1.5 does that
 | S1.3 | The real upstream Kubernetes MCP server on Kind, one pod-list tool | Live on Kind |
 | S1.4 | The model adapter (LangChain `ChatOpenAI` to OpenRouter) | Live, your run |
 
-Two gaps to keep in mind while reading:
+Two things to keep in mind while reading:
 
-- `backend/src/vyom/api/app.py` only has `/api/health`. Nothing in the API calls the host or the model yet.
+- When this guide was first written the API had only `/api/health`. It now also has `/api/chat`, `/api/agent` (guide 2) and `/api/kubernetes/pods` (guide 3). The host and the model adapter described here did not change when those were added; that is the point of having them as separate pieces.
 - Prometheus does not scrape the backend yet (the backend is not deployed in the cluster until S1.7), so backend metrics exist in the process but not in Grafana. For the same reason there are no `vyom-api` logs in Loki yet; the only Vyom-related logs there come from the MCP pod.
 
 One sentence that explains most design choices in the code: **the model and the MCP server are both treated as untrusted, and telemetry is treated as a place secrets must never reach.** Parts 2 and 3 are those two ideas in detail.
@@ -176,7 +176,7 @@ A typical tutorial does "connect, list tools, give them all to the model". Vyom 
 | **The model chooses scope** | The model passes `namespace: kube-system` | Scope arguments are removed from what the model sees and filled in by the host from trusted config. A different value is refused before any network request | `_bind_arguments` |
 | **Results are raw** | A pod row carries IP, node, labels; other tools return env values | The result is parsed and reduced to a few named fields; anything unexpected is discarded as `invalid_output` | `project_pod_table` |
 
-A fifth, quieter one: **result text can itself contain instructions** ("pod name: ignore-your-rules…"). The projection reduces what gets through, and the project rule is that collected text is data, never instructions. How the answer step treats evidence is S1.5's job.
+A fifth, quieter one: **result text can itself contain instructions** ("pod name: ignore-your-rules…"). The projection reduces what gets through, and the project rule is that collected text is data, never instructions. What the answer step does about it (one tool call only, and an answer that must cite the evidence) is in [guide 2, section 4](chat-graph.md#4-what-stops-the-model-from-going-further-than-the-evidence).
 
 **The three conditions.** A tool can be called only if all three hold:
 
@@ -303,7 +303,7 @@ call("kubernetes__pods_delete", {})         -> state denied,  errors [tool_not_a
 
 Errors are a fixed list (`ErrorKind`) with fixed messages (`_MESSAGES`). Upstream error text and exception text never enter evidence, because both can contain resource names, URLs or tokens, and evidence goes to the model and later to the browser.
 
-`build_evidence` is the only constructor either path should use. That is what will make an MCP answer and a direct-SDK answer about the same pods comparable in S1.6.
+`build_evidence` is the only constructor either path should use. That is what makes an MCP answer and a direct read of the same pods comparable: [guide 3](direct-pod-view.md) shows the second path producing the same item IDs.
 
 ### 2.7 How the caller is authenticated on Kind (S1.3)
 
@@ -361,6 +361,35 @@ In the host, a 401 or 403 seen by `_GuardedTransport` becomes error `auth` and s
 - To let the proxy check callers, the pod's ServiceAccount holds cluster-wide `create` on TokenReviews and SubjectAccessReviews. Those read no cluster resources, but they are cluster-scoped grants.
 - `/healthz` goes through the proxy without authentication so the kubelet can probe it.
 - On Kind the check scripts mint a 10-minute token with `kubectl create token`. The in-cluster way (a projected token volume mounted into the backend pod, refreshed automatically) arrives with S1.7 and is untested until then.
+
+### 2.8 Say it back
+
+Explain each of these out loud, as if to someone who has used LangChain but never heard of MCP. Then open the answer.
+
+<details><summary>1. In one breath: what is MCP, and what does Vyom add on top of it?</summary>
+
+MCP is a way to call tools that live in another program: you ask the server what tools it has and you ask it to run one. Vyom adds the rules MCP does not have: which tools may be used, with which arguments, in which namespace, and what part of the result is kept. Those rules live in the host.
+</details>
+
+<details><summary>2. The model asks for <code>namespace: kube-system</code>. Walk through what happens.</summary>
+
+The model never sees a `namespace` argument, so it has to invent one. `_bind_arguments` finds a scope argument whose value differs from the trusted context and raises `scope_violation` before any network request. `build_evidence` turns that into evidence with state `denied`. Even if the host had a bug here, the server's ServiceAccount may only list pods in `demo`, so Kubernetes would refuse.
+</details>
+
+<details><summary>3. Why is "the namespace is empty" a different state from "I could not reach the cluster"?</summary>
+
+Because a reader, human or model, draws opposite conclusions from them. An empty list read as complete means "nothing is unhealthy". A failed read means "I do not know". `zero` and `missing` keep those apart so that a failure can never be reported as good news.
+</details>
+
+<details><summary>4. Someone steals the token the backend sends to the MCP endpoint. What can they do with it?</summary>
+
+Call the MCP endpoint, which will list pods in `demo` and nothing else. The token is issued for the audience `vyom-mcp`, so the Kubernetes API rejects it, and the identity it names (`vyom-api`) has no Kubernetes permissions anyway. The Kubernetes reads are done by the server's own identity.
+</details>
+
+<details><summary>5. The upstream server is upgraded and its tool gains a new argument. What happens on the next call, and why is that the right behaviour?</summary>
+
+The advertised schema no longer hashes to the reviewed digest, so the call ends as `schema_mismatch` and nothing is called. A tool that changed is a tool nobody has reviewed; failing closed forces a person to look before the model can use it.
+</details>
 
 ---
 
@@ -424,7 +453,7 @@ Prometheus also records a series called `up` for every target: 1 if the last scr
 
 - A **counter** only goes up (and resets to 0 on restart). Its absolute value is rarely interesting; you ask how fast it is growing with `rate(...)`. Names end in `_total`.
 - A **histogram** records durations. It is really several counters: one per **bucket** (`_bucket{le="0.5"}` counts observations that took at most 0.5 s; buckets are cumulative), plus `_count` and `_sum`. From bucket growth Prometheus can estimate percentiles. The estimate is only as fine as the buckets, which is why the model histogram defines its own (0.25 s up to 120 s) rather than the defaults that stop at 10 s.
-- A **gauge** goes up and down (queue length, memory). Vyom defines none yet.
+- A **gauge** goes up and down (queue length, memory). Vyom has one since S1.6: `vyom_collector_last_success_timestamp_seconds`, the time of the collector's last good run, so "how stale is this view" is `time() - that`.
 
 **Cardinality: the one rule that shapes the code.** Every distinct combination of label values is a separate series that Prometheus keeps in memory and on disk. The number of series for a metric is the product of the distinct values of each label.
 
@@ -458,8 +487,14 @@ The same reasoning is why request IDs, pod names and trace IDs are never labels.
 | `vyom_model_request_duration_seconds` | histogram | provider, model |
 | `vyom_model_tokens_total` | counter | provider, model, direction |
 | `vyom_model_usage_unavailable_total` | counter | provider, model |
+| `vyom_chat_requests_total` (S1.5) | counter | outcome |
+| `vyom_chat_duration_seconds` (S1.5) | histogram | none |
+| `vyom_graph_step_duration_seconds` (S1.5) | histogram | step |
+| `vyom_collector_runs_total` (S1.6) | counter | collector, outcome |
+| `vyom_collector_duration_seconds` (S1.6) | histogram | collector |
+| `vyom_collector_last_success_timestamp_seconds` (S1.6) | gauge | collector |
 
-The last one exists because of the rule "unavailable is not zero". If a provider answers without a usage report, adding 0 to the token counter would make the token total look complete when it is not. Instead nothing is added to tokens and this counter goes up, so a dashboard can show "token count is missing N replies".
+`vyom_model_usage_unavailable_total` exists because of the rule "unavailable is not zero". If a provider answers without a usage report, adding 0 to the token counter would make the token total look complete when it is not. Instead nothing is added to tokens and this counter goes up, so a dashboard can show "token count is missing N replies".
 
 **PromQL, the query language.** Four patterns cover most needs:
 
@@ -600,16 +635,21 @@ If neither `OTEL_EXPORTER_OTLP_ENDPOINT` nor `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
 
 **Resource attributes** describe the process, not the step: `service.name=vyom-api`, `service.version`. Tempo and Grafana use `service.name` to group spans.
 
-What a chat request will look like once S1.5 exists (the spans marked * exist today):
+What a chat request looks like (the graph spans were added in S1.5; the rest are from this guide):
 
 ```
 POST /api/chat                      (FastAPI instrumentation, kind SERVER)
-  graph step ...                    (S1.5)
-    model.client.chat *             provider, model, outcome, tool_calls, input/output tokens
-    mcp.client.call *               server, tool, outcome, evidence.state
-      evidence.normalize *          evidence.state, evidence.items
-    model.client.chat *             (answer from the evidence)
+  chat.graph                        outcome, number of tool calls
+    graph.propose
+      model.client.chat             provider, model, outcome, tool_calls, input/output tokens
+    graph.collect
+      mcp.client.call               server, tool, outcome, evidence.state
+        evidence.normalize          evidence.state, evidence.items
+    graph.answer
+      model.client.chat             (answer from the evidence)
 ```
+
+The MCP SDK adds a few client spans of its own under `mcp.client.call`. Your live run of `chat-check.sh` found 12 spans in this one trace.
 
 Notice what the attributes are: IDs from configuration, counts and fixed outcome names. No argument, result, prompt or answer.
 
@@ -658,6 +698,33 @@ How this is proven, not just intended: the tests and live checks plant **markers
 
 And telemetry must never block a request: metrics are in-memory increments, logs are a write to stdout, and span export is asynchronous with a bounded queue. If Tempo, Loki or Alloy is down, data is dropped and counted, and the request still succeeds.
 
+### 3.7 Say it back
+
+<details><summary>1. You have one number, one line and one tree. Which signal is which, and which do you open first when "chat feels slow"?</summary>
+
+Metrics are numbers over time, logs are one line per event, traces are a tree of timed steps for one request. Start with metrics to see whether it is slow for everything or one step (`vyom_graph_step_duration_seconds` by step), find one slow request's log line, then open its trace to see where the time went.
+</details>
+
+<details><summary>2. Why is a pod name never a metric label, when it is fine in evidence and in the UI?</summary>
+
+Every distinct label value creates a new time series that Prometheus keeps. Pod names change on every rollout, so the number of series would grow without limit. It is also a payload: telemetry stores are read with coarser access control than the application. Evidence goes to the person who asked; metrics go to whoever operates Prometheus.
+</details>
+
+<details><summary>3. A developer adds <code>extra={"question": text}</code> to a log call. What ends up in Loki?</summary>
+
+Nothing from that field. `JsonFormatter` copies only the names in `LOG_FIELDS`, and `question` is not one of them. The mistake is harmless by construction, which is the point of an allowlist over a blocklist.
+</details>
+
+<details><summary>4. Tempo is down for ten minutes. What does a user asking a question notice?</summary>
+
+Nothing. Finished spans go into a bounded in-memory queue and are exported on a background thread; when the queue is full they are dropped. The request never waits for the export. What is lost is the traces for those ten minutes.
+</details>
+
+<details><summary>5. How does clicking a log line in Grafana open the right trace?</summary>
+
+Every log line written inside a request carries `"trace_id": "<32 hex>"`. The Loki data source has a derived field with a regular expression for exactly that text, linked to Tempo. The formatter's output format is a small contract with that configuration.
+</details>
+
 ---
 
 ## Part 4 — Reading the code
@@ -677,7 +744,7 @@ All backend paths are under `backend/src/vyom/`. Suggested order: small data typ
 | 7 | `mcp_client/host.py` | `McpHost.tools`, `discover`, `call`. The core of S1.2 | large |
 | 8 | `agent/model.py` | `ModelClient.chat` around `ChatOpenAI` | medium |
 | 9 | `telemetry.py` | Logs, metrics, traces and the scrubbing rules | medium |
-| 10 | `api/app.py` | Just health, plus `telemetry.instrument(app)` | tiny |
+| 10 | `api/app.py` | `create_app`: health, plus the routes of guides 2 and 3, and `telemetry.instrument(app)` | small |
 
 Notes on the small files before the walkthroughs:
 
@@ -717,7 +784,7 @@ Start at `McpHost.call(tool, arguments, context)` in `mcp_client/host.py`. `tool
    - computes `state` (2.6).
 8. **Record.** The span `mcp.client.call` (with child `evidence.normalize`) ends, then `telemetry.record_mcp_operation` writes the counter, histogram and log line.
 
-`call` never raises for expected failures: it always returns `Evidence`, with errors inside. That keeps the S1.5 graph simple: a tool step always produces evidence, and the answer step decides what to say about its state.
+`call` never raises for expected failures: it always returns `Evidence`, with errors inside. That keeps the chat graph simple: its tool step always gets evidence back, and only has to look at the state ([guide 2](chat-graph.md)).
 
 Two neighbours to read right after:
 
@@ -742,7 +809,7 @@ Start at `ModelClient.chat(messages, tools)` in `agent/model.py`. You will recog
    - any exception → `_classify` → a `ModelError` with a fixed kind. `raise ... from None` cuts the chain so the original exception, with the provider's text, is not attached.
 3. `_usage(message)`: token counts from the provider's own report in `response_metadata["token_usage"]`. Deliberately not `usage_metadata`, because LangChain fills a missing report with zeros and the project rule is "unavailable is not zero". Usage is read before the well-formedness check, so tokens you paid for are counted even if the reply is then rejected.
 4. `_well_formed(message)`: rejects a reply with `invalid_tool_calls` (LangChain's holding place for calls whose arguments were not valid JSON), or a call without an ID or a name → `MALFORMED_TOOL_CALL`.
-5. Return `Reply(message, finish, usage)`. `message` is the ordinary LangChain `AIMessage`, so S1.5's graph can append it to its message list directly. `finish` is `tool_calls`, `stop`, `length` (cut off at `max_output_tokens`) or `other`.
+5. Return `Reply(message, finish, usage)`. `message` is the ordinary LangChain `AIMessage`, so the chat graph appends it to its message list directly. `finish` is `tool_calls`, `stop`, `length` (cut off at `max_output_tokens`) or `other`.
 6. `finally`: set span attributes and call `telemetry.record_model_request`.
 
 How `_classify` maps failures, by class and status code only:
@@ -771,7 +838,7 @@ In `telemetry.py`, top to bottom:
 - `LOG_FIELDS`, `_SILENCED_LOGGERS`, `JsonFormatter`: read `format` to see the allowlist and how `trace_id`/`span_id` are taken from the current span.
 - `configure_logging`: one stdout handler on the root logger, the library filter, uvicorn's access log disabled.
 - `_observe_request`: FastAPI middleware wrapping every request. The `finally` block guarantees a count even when the handler raises (status stays 500). Note `_route_template` (the label is `/api/health` or `unmatched`, never the raw path).
-- `record_mcp_operation`, `record_model_request`: the only two places MCP and model telemetry are written. Callers pass already-bounded labels.
+- `record_mcp_operation`, `record_model_request`: the only two places MCP and model telemetry are written. Callers pass already-bounded labels. `record_chat`, `record_graph_step` (S1.5) and `record_collector_run` (S1.6) follow the same pattern.
 - `ScrubbingExporter`: wraps the OTLP exporter. A finished span is read-only, so `_scrub` builds a new one with cleaned attributes (`_scrub_attributes`) and events (`_scrub_event`, which keeps only `exception.type`).
 - `tracer_provider`: created once per process; attaches the exporter only if an OTLP endpoint variable is set; note the bounded queue.
 - `instrument(app)`: attaches the middleware, `/metrics`, and FastAPI's automatic request spans (one server span per request; health and metrics excluded).
@@ -809,13 +876,15 @@ Both images in the Deployment are pinned by digest (`@sha256:…`), not by tag, 
 | `scripts/mcp-up.sh` | Generate the endpoint certificate once into `.local/mcp-tls/`, apply the manifests and demo workloads |
 | `scripts/mcp-check.sh` + `mcp_live_check.py` | 22 live checks: RBAC, who is refused, pod list equals `kubectl`, nothing sensitive in telemetry |
 | `scripts/model-check.sh` + `model_live_check.py` | The live model checks you ran |
+| `scripts/dev-up.sh` | Run the backend on your machine against Kind (guides 2 and 3) |
+| `scripts/chat-check.sh`, `scripts/pods-check.sh` | The live gates for the chat and the pod view |
 | `scripts/check-docs.py` | Consistency of the docs and tracker |
 
-The `*_live_check.py` files are also the shortest complete examples of how to build an `OperatorConfig`, an `McpHost` and a `ModelClient` and call them. `model_live_check.py` in particular is very close to what the S1.5 graph will do: propose, validate with the host, feed a result back, answer.
+The `*_live_check.py` files are also the shortest complete examples of how to build an `OperatorConfig`, an `McpHost` and a `ModelClient` and call them. `model_live_check.py` does by hand what the chat graph now does: propose, validate with the host, feed a result back, answer.
 
 ### 4.7 Frontend
 
-`frontend/src/App.tsx` shows one card that polls `/api/health` through `dataProvider.ts`. Nothing else yet.
+See [guide 4](frontend-console.md).
 
 ---
 
@@ -871,7 +940,7 @@ kubectl --context kind-vyom -n observability port-forward svc/grafana 3000:80 --
 # http://127.0.0.1:3000  user admin, password in .local/grafana-admin-password
 ```
 
-In Explore, pick Loki and run `{namespace="vyom"}` to see the MCP pod's collected logs. Pick Prometheus and run `up` to see what is being scraped. Backend metrics and chat traces will not be there yet (see the gaps in Part 1).
+In Explore, pick Loki and run `{namespace="vyom"}` to see the MCP pod's collected logs. Pick Prometheus and run `up` to see what is being scraped. Backend metrics and chat traces are not there yet: the backend runs on your machine, outside the cluster, until S1.7.
 
 ---
 
@@ -890,7 +959,7 @@ In Explore, pick Loki and run `{namespace="vyom"}` to see the MCP pod's collecte
 | Trusted context | Server-side scope (workspace, connection, cluster, namespace); never from the browser or the model |
 | Scope argument | A tool argument (here `namespace`) that the host fills in and the model never sees |
 | Evidence | The normalized result of one collection: source, time, state, coverage, items, errors |
-| Operator config | One JSON file: context, MCP servers, model. Loaded by `load_operator_config` (nothing loads it in the API yet) |
+| Operator config | One JSON file: context, MCP servers, model, Kubernetes API. The API loads the file named by `VYOM_CONFIG` at start |
 | Credential reference | `file:/path` or `env:NAME`; the secret itself is read at call time |
 | ServiceAccount | A Kubernetes identity for a program |
 | Audience | Who a token is meant for; `vyom-mcp` for the MCP endpoint |
@@ -899,7 +968,7 @@ In Explore, pick Loki and run `{namespace="vyom"}` to see the MCP pod's collecte
 | Time series | One metric name plus one set of label values, with samples over time |
 | Cardinality | Number of distinct label combinations; kept small on purpose |
 | Scrape | Prometheus fetching `/metrics` from a target |
-| Counter / histogram | A number that only rises / bucketed counts of durations |
+| Counter / histogram / gauge | A number that only rises / bucketed counts of durations / a number that goes up and down |
 | Stream (Loki) | All log lines sharing one label set |
 | Structured metadata | Per-line fields in Loki that are queryable but not indexed (the pod name) |
 | Span / trace | One timed step / all steps of one request, linked by a trace ID |
