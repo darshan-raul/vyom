@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vyom — Blast radius</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#050C1F}
+a{color:#6CB4FF}a:hover{color:#D3E5FF}
+button{font-family:inherit}
+.vy-grid{background-color:#050C1F;background-image:radial-gradient(ellipse at 30% 50%,rgba(108,180,255,0.07),transparent 60%),linear-gradient(rgba(110,150,230,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(110,150,230,0.045) 1px,transparent 1px);background-size:auto,32px 32px,32px 32px}
+</style>
+</helmet>
+
+<div class="vy-grid" style="font-family: 'Archivo', system-ui, sans-serif; color: #EAF1FF; min-height: 100vh; box-sizing: border-box; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px">
+
+  <!-- top bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 14px; min-width: 0">
+      <a href="Main.dc.html" aria-label="Back to Today" style="width: 44px; height: 44px; border-radius: 6px; border: 1px solid #1C2F57; background: #0C1A3A; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #EAF1FF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      </a>
+      <img src="/_blob/5719a3a9743193f7215d8904bbe66c49" alt="Vyom logo" style="width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(108,180,255,0.25), 0 0 20px rgba(76,155,242,0.3)">
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #FF6F5E">■ ALERT · BLAST RADIUS</span>
+        <span style="font-size: 20px; font-weight: 600">RDS port 5432 open to 0.0.0.0/0</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+      <div role="group" aria-label="View" style="display: flex; border: 1px solid #1C2F57; border-radius: 6px; padding: 3px; gap: 2px">
+        <button type="button" style="height: 38px; padding: 0 12px; border: 0; border-radius: 4px; background: #1A2C55; color: #EAF1FF; font-size: 13px; cursor: pointer">Graph</button>
+        <button type="button" style="height: 38px; padding: 0 12px; border: 0; border-radius: 4px; background: transparent; color: #93A4C8; font-size: 13px; cursor: pointer">Table</button>
+      </div>
+      <button type="button" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #1C2F57; background: #0C1A3A; color: #EAF1FF; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; cursor: pointer">DEPTH 2 ▾</button>
+      <button type="button" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: #6CB4FF; color: #04122E; font-size: 14px; font-weight: 600; cursor: pointer">Ask Vyom about this path</button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: stretch">
+
+    <!-- GRAPH -->
+    <div style="flex: 999 1 640px; min-width: 0; overflow-x: auto; border: 1px solid #16264A; border-radius: 10px; background: rgba(8,11,16,0.6)">
+      <div style="position: relative; width: 1080px; height: 780px">
+
+        <svg width="1080" height="780" viewBox="0 0 1080 780" style="position: absolute; inset: 0" aria-hidden="true">
+          <circle cx="180" cy="390" r="150" fill="none" stroke="#1A2433" stroke-width="1"></circle>
+          <circle cx="540" cy="390" r="440" fill="none" stroke="#141C27" stroke-width="1"></circle>
+          <sc-for list="{{trunks}}" as="t" hint-placeholder-count="5">
+            <path d="{{t.d}}" fill="none" stroke="{{t.stroke}}" stroke-width="{{t.w}}"></path>
+          </sc-for>
+          <sc-for list="{{leaves}}" as="l" hint-placeholder-count="9">
+            <path d="{{l.d}}" fill="none" stroke="{{l.stroke}}" stroke-width="1.2" stroke-opacity="0.75"></path>
+          </sc-for>
+        </svg>
+
+        <!-- core orb -->
+        <div style="position: absolute; left: 80px; top: 250px; width: 200px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #93A4C8; text-align: center">rds:[prod-billing-db]</span>
+          <div style="width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle at 38% 34%, #FFB3A6 0%, #FF6F5E 38%, #6E1D16 78%, #2A0C0A 100%); box-shadow: 0 0 0 10px rgba(255,111,94,0.07), 0 0 0 22px rgba(255,111,94,0.04), 0 0 60px rgba(255,111,94,0.35); display: flex; align-items: center; justify-content: center">
+            <span style="font-size: 30px; font-weight: 700; color: #FFFFFF">94</span>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #FF6F5E; border: 1px solid #5A2621; border-radius: 4px; padding: 3px 7px">PUBLIC · PII</span>
+        </div>
+
+        <!-- category cards -->
+        <sc-for list="{{cats}}" as="c" hint-placeholder-count="5">
+          <button type="button" onClick="{{c.pick}}" style="{{c.style}}">
+            <span style="{{c.iconStyle}}">{{c.code}}</span>
+            <span style="display: flex; flex-direction: column; gap: 2px; text-align: left">
+              <span style="font-size: 22px; font-weight: 600; line-height: 1">{{c.count}}</span>
+              <span style="font-size: 12px; color: #93A4C8">{{c.label}}</span>
+            </span>
+          </button>
+        </sc-for>
+
+        <!-- leaves -->
+        <sc-for list="{{leaves}}" as="l" hint-placeholder-count="9">
+          <div style="{{l.pos}}">
+            <span style="{{l.dot}}"></span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #EAF1FF; white-space: nowrap">{{l.name}}</span>
+              <span style="display: flex; gap: 4px">
+                <span style="{{l.tagStyle}}">{{l.tag}}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7083AB; border: 1px solid #1C2F57; border-radius: 3px; padding: 1px 4px">{{l.acct}}</span>
+              </span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- AGENT READOUT -->
+    <aside aria-label="Agent readout" style="flex: 1 1 300px; min-width: 0; max-width: 380px; border: 1px solid #2A4A85; border-radius: 10px; background: linear-gradient(180deg, #0B1D42, #081633); padding: 20px; display: flex; flex-direction: column; gap: 16px">
+      <span style="display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #6CB4FF"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6CB4FF; box-shadow: 0 0 0 4px rgba(108,180,255,0.15)"></span>VYOM READOUT</span>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #D8E4FA">{{readout}}</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #7083AB">SHORTEST EXPOSURE PATH</span>
+        <div style="display: flex; flex-direction: column; gap: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px">
+          <span style="padding: 8px 10px; border: 1px solid #5A2621; border-radius: 4px 4px 0 0; color: #FF6F5E">internet 0.0.0.0/0</span>
+          <span style="padding: 8px 10px; border: 1px solid #1C2F57; border-top: 0; color: #EAF1FF">igw-[id] → subnet/[public-b]</span>
+          <span style="padding: 8px 10px; border: 1px solid #1C2F57; border-top: 0; color: #EAF1FF">sg-[id] :5432</span>
+          <span style="padding: 8px 10px; border: 1px solid #1C2F57; border-top: 0; border-radius: 0 0 4px 4px; color: #EAF1FF">rds:[prod-billing-db]</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #7083AB">IF YOU RESTRICT INGRESS</span>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #BCC9E3"><span>Workloads still connected</span><span style="font-family: 'JetBrains Mono', monospace; color: #4FD1A5">9 / 9</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #BCC9E3"><span>Paths from internet</span><span style="font-family: 'JetBrains Mono', monospace; color: #4FD1A5">0</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #BCC9E3"><span>Unknown client IPs (7d)</span><span style="font-family: 'JetBrains Mono', monospace; color: #F5B84A">3</span></div>
+      </div>
+
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+        <button type="button" style="height: 44px; border-radius: 6px; border: 0; background: #EAF1FF; color: #050C1F; font-size: 14px; font-weight: 600; cursor: pointer">Draft Terraform fix ↗</button>
+        <button type="button" style="height: 44px; border-radius: 6px; border: 1px solid #2A4A85; background: transparent; color: #6CB4FF; font-size: 14px; cursor: pointer">Show the 3 unknown IPs</button>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { cat: 2 }; }
+  renderVals() {
+    var me = this;
+    var mono = "font-family: 'JetBrains Mono', monospace; ";
+    var catDefs = [
+      { code: 'SG', label: 'Security groups', leaves: [
+        { name: 'sg-[id] db-ingress', tag: 'OPEN', kind: 'alert', acct: 'BILLING' },
+        { name: 'sg-[id] app-tier', tag: 'REF', kind: 'ok', acct: 'BILLING' } ],
+        read: 'Two groups attach to the instance. Only db-ingress has the 0.0.0.0/0 rule; app-tier is the one the workloads actually use.' },
+      { code: 'NET', label: 'Network paths', leaves: [
+        { name: 'internet → igw', tag: 'PUBLIC', kind: 'alert', acct: 'BILLING' },
+        { name: 'tgw/[shared] → vpc', tag: 'PRIVATE', kind: 'ok', acct: 'NETWORK' },
+        { name: 'vpn/[office]', tag: 'PRIVATE', kind: 'ok', acct: 'NETWORK' },
+        { name: 'peering/[reporting]', tag: 'PRIVATE', kind: 'warn', acct: 'DATA' } ],
+        read: 'Four ways in. One is from the internet and was opened today; the reporting peering is older and has no flow logs.' },
+      { code: 'APP', label: 'Workloads', leaves: [
+        { name: 'eks/billing-api', tag: 'WRITE', kind: 'ok', acct: 'PAYMENTS' },
+        { name: 'eks/recon-job', tag: 'WRITE', kind: 'ok', acct: 'PAYMENTS' },
+        { name: 'eks/ledger-export', tag: 'READ', kind: 'ok', acct: 'PAYMENTS' },
+        { name: 'ecs/invoice-worker', tag: 'WRITE', kind: 'ok', acct: 'BILLING' },
+        { name: 'ecs/dunning', tag: 'READ', kind: 'ok', acct: 'BILLING' },
+        { name: 'lambda/ledger-sync', tag: 'READ', kind: 'ok', acct: 'BILLING' },
+        { name: 'ec2/reporting-01', tag: 'READ', kind: 'warn', acct: 'DATA' },
+        { name: 'ec2/bastion-b', tag: 'ADMIN', kind: 'warn', acct: 'BILLING' },
+        { name: '[unknown] 3 IPs', tag: 'PUBLIC', kind: 'alert', acct: '—' } ],
+        read: 'Nine clients reached this database in the last 7 days. Eight are your own workloads inside the VPC; three connections came from IPs Vyom cannot attribute.' },
+      { code: 'IAM', label: 'IAM principals', leaves: [
+        { name: 'role/ci-deploy', tag: 'CHANGED', kind: 'alert', acct: 'BILLING' },
+        { name: 'role/db-admin', tag: 'ADMIN', kind: 'warn', acct: 'BILLING' },
+        { name: 'role/billing-api', tag: 'IAM AUTH', kind: 'ok', acct: 'PAYMENTS' } ],
+        read: 'role/ci-deploy made today\'s change. Three principals can authenticate to the instance through IAM.' },
+      { code: 'DATA', label: 'Data classes', leaves: [
+        { name: 'customers.pii', tag: 'PII', kind: 'alert', acct: 'BILLING' },
+        { name: 'invoices', tag: 'FINANCIAL', kind: 'warn', acct: 'BILLING' } ],
+        read: 'Tags mark two tables as PII and financial data, which is why this ranks 94 instead of a routine open port.' }
+    ];
+    var colors = { ok: '#6CB4FF', warn: '#F5B84A', alert: '#FF6F5E' };
+
+    var cardX = 360, cardW = 210, cardH = 64, gap = 26;
+    var top0 = 390 - (5 * cardH + 4 * gap) / 2;
+    var sel = this.state.cat;
+    var cats = catDefs.map(function (c, i) {
+      var y = top0 + i * (cardH + gap);
+      var on = i === sel;
+      return {
+        code: c.code, label: c.label, count: c.leaves.length,
+        cy: y + cardH / 2,
+        pick: function () { me.setState({ cat: i }); },
+        iconStyle: mono + 'font-size: 9px; letter-spacing: 0.1em; width: 34px; height: 34px; border-radius: 4px; display: flex; align-items: center; justify-content: center; ' + (on ? 'background: #6CB4FF; color: #04122E' : 'border: 1px solid #27406F; color: #93A4C8'),
+        style: 'position: absolute; left: ' + cardX + 'px; top: ' + y + 'px; width: ' + cardW + 'px; height: ' + cardH + 'px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-radius: 8px; cursor: pointer; color: #EAF1FF; ' +
+          (on ? 'background: #10234A; border: 1px solid #6CB4FF; box-shadow: 0 0 0 4px rgba(108,180,255,0.08), 0 10px 40px -10px rgba(108,180,255,0.4)' : 'background: #0B1736; border: 1px solid #1C2F57')
+      };
+    });
+
+    var trunks = cats.map(function (c, i) {
+      var on = i === sel;
+      return {
+        d: 'M 240 390 C 310 390, 300 ' + c.cy + ', ' + cardX + ' ' + c.cy,
+        stroke: on ? '#6CB4FF' : '#27406F',
+        w: on ? 1.6 : 1
+      };
+    });
+
+    var list = catDefs[sel].leaves;
+    var n = list.length;
+    var span = Math.min(120, 15 * Math.max(n - 1, 1));
+    var cx = 540, cy0 = 390, R = 400;
+    var oy = cats[sel].cy;
+    var leaves = list.map(function (l, i) {
+      var a = n === 1 ? 0 : (-span / 2 + span * i / (n - 1));
+      var rad = a * Math.PI / 180;
+      var x = Math.round(cx + R * Math.cos(rad));
+      var y = Math.round(cy0 + R * Math.sin(rad));
+      var col = colors[l.kind];
+      return {
+        name: l.name, acct: l.acct, tag: l.tag,
+        d: 'M ' + (cardX + cardW) + ' ' + oy + ' C ' + (cardX + cardW + 150) + ' ' + oy + ', ' + (x - 170) + ' ' + y + ', ' + x + ' ' + y,
+        stroke: col,
+        pos: 'position: absolute; left: ' + (x - 6) + 'px; top: ' + (y - 6) + 'px; display: flex; align-items: flex-start; gap: 10px',
+        dot: 'width: 12px; height: 12px; flex: 0 0 12px; border-radius: 50%; background: ' + col + '; box-shadow: 0 0 12px ' + col,
+        tagStyle: mono + 'font-size: 9px; letter-spacing: 0.08em; color: ' + col + '; border: 1px solid ' + col + '55; border-radius: 3px; padding: 1px 4px'
+      };
+    });
+
+    return { cats: cats, trunks: trunks, leaves: leaves, readout: catDefs[sel].read };
+  }
+}
+</script>
+</body>
+</html>

@@ -66,7 +66,7 @@ npm ci
 npm run dev
 ```
 
-Open the UI: the Backend card shows `ok` with the service name and version. `curl http://127.0.0.1:8000/api/health` returns the same data. Stop the backend and the card turns to `Unreachable` within 10 seconds, then recovers when the backend returns.
+Open the UI: the header and the sidebar show `● API NOMINAL`, and the first cell of the question-path strip shows the service name, version and `ok`. `curl http://127.0.0.1:8000/api/health` returns the same data. Stop the backend and they turn to `■ API UNREACHABLE` within 10 seconds, then recover when the backend returns. The Ask Vyom panel is disabled until the chat route exists. The UI follows the [design spec](docs/design/DESIGN.md).
 
 Checks, also run by [CI](.github/workflows/ci.yml):
 

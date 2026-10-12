@@ -1,26 +1,38 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/archivo";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
+    --font-sans: 'Archivo Variable', sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+    --color-vy-bg: var(--vy-bg);
+    --color-vy-surface-1: var(--vy-surface-1);
+    --color-vy-surface-2: var(--vy-surface-2);
+    --color-vy-surface-3: var(--vy-surface-3);
+    --color-vy-surface-sel: var(--vy-surface-sel);
+    --color-vy-line-faint: var(--vy-line-faint);
+    --color-vy-line: var(--vy-line);
+    --color-vy-line-strong: var(--vy-line-strong);
+    --color-vy-text: var(--vy-text);
+    --color-vy-text-2: var(--vy-text-2);
+    --color-vy-text-3: var(--vy-text-3);
+    --color-vy-text-4: var(--vy-text-4);
+    --color-vy-agent: var(--vy-agent);
+    --color-vy-agent-ink: var(--vy-agent-ink);
+    --color-vy-agent-line: var(--vy-agent-line);
+    --color-vy-agent-bg: var(--vy-agent-bg);
+    --color-vy-agent-bg-2: var(--vy-agent-bg-2);
+    --color-vy-royal: var(--vy-royal);
+    --color-vy-alert: var(--vy-alert);
+    --color-vy-caution: var(--vy-caution);
+    --color-vy-ok: var(--vy-ok);
+    --color-vy-quiet: var(--vy-quiet);
+    --color-vy-quiet-2: var(--vy-quiet-2);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -48,73 +60,63 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Vyom is dark-only. Tokens follow docs/design/DESIGN.md §2; components use them, never a hex. */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-}
+    /* Surfaces (logo night-sky navy) */
+    --vy-bg: #050C1F;
+    --vy-surface-1: #061230;
+    --vy-surface-2: #0A1633;
+    --vy-surface-3: #0C1A3A;
+    --vy-surface-sel: #1A2C55;
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    /* Lines */
+    --vy-line-faint: #16264A;
+    --vy-line: #1C2F57;
+    --vy-line-strong: #27406F;
+
+    /* Text */
+    --vy-text: #EAF1FF;
+    --vy-text-2: #BCC9E3;
+    --vy-text-3: #93A4C8;
+    --vy-text-4: #7083AB;
+
+    /* Brand + agent (logo sky blue) */
+    --vy-agent: #6CB4FF;
+    --vy-agent-ink: #04122E;
+    --vy-agent-line: #2A4A85;
+    --vy-agent-bg: #0B1D42;
+    --vy-agent-bg-2: #081633;
+    --vy-royal: #1E4FB8;
+
+    /* Status */
+    --vy-alert: #FF6F5E;
+    --vy-caution: #F5B84A;
+    --vy-ok: #4FD1A5;
+    --vy-quiet: #4C6FB0;
+    --vy-quiet-2: #2B4A88;
+
+    /* shadcn mapping */
+    --background: var(--vy-bg);
+    --foreground: var(--vy-text);
+    --card: var(--vy-surface-2);
+    --card-foreground: var(--vy-text);
+    --popover: var(--vy-surface-3);
+    --popover-foreground: var(--vy-text);
+    --primary: var(--vy-text);
+    --primary-foreground: var(--vy-bg);
+    --secondary: var(--vy-surface-3);
+    --secondary-foreground: var(--vy-text);
+    --muted: var(--vy-surface-3);
+    --muted-foreground: var(--vy-text-3);
+    --accent: var(--vy-surface-sel);
+    --accent-foreground: var(--vy-text);
+    --destructive: var(--vy-alert);
+    --border: var(--vy-line);
+    --input: var(--vy-line);
+    --ring: var(--vy-agent);
+    --radius: 8px;
+
+    color-scheme: dark;
 }
 
 @layer base {
@@ -122,9 +124,36 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply min-h-svh text-foreground;
+    background-color: var(--vy-bg);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 70% -10%, color-mix(in srgb, var(--vy-royal) 35%, transparent), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 0% 100%, color-mix(in srgb, var(--vy-agent) 8%, transparent), transparent 70%);
     }
   html {
     @apply font-sans;
     }
+}
+
+@layer components {
+  /* Mono uppercase labels (DESIGN.md §2.3): section label 11px, micro label 10px. */
+  .vy-label {
+    @apply font-mono text-[11px] uppercase tracking-[0.16em];
+    }
+  .vy-micro {
+    @apply font-mono text-[10px] uppercase tracking-[0.12em];
+    }
+}
+
+/* Glow is reserved for live things; the pulse stops for reduced motion. */
+@keyframes vy-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 4%, transparent); }
+}
+.vy-live-dot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
+  animation: vy-pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vy-live-dot { animation: none; }
 }

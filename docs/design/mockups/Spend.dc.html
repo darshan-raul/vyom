@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vyom — Spend</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#050C1F}
+a{color:#6CB4FF}a:hover{color:#D3E5FF}
+button{font-family:inherit}
+.vy-grid{background-color:#050C1F;background-image:radial-gradient(ellipse 80% 50% at 70% -10%,rgba(30,79,184,0.35),transparent 70%),linear-gradient(rgba(110,150,230,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(110,150,230,0.05) 1px,transparent 1px);background-size:auto,32px 32px,32px 32px}
+.vy-hatch{background-image:repeating-linear-gradient(135deg,rgba(108,180,255,0.22) 0 2px,transparent 2px 7px)}
+</style>
+</helmet>
+
+<div class="vy-grid" style="font-family: 'Archivo', system-ui, sans-serif; color: #EAF1FF; min-height: 100vh; box-sizing: border-box; padding: 20px 28px 40px">
+<div style="max-width: 1360px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px">
+
+  <!-- top bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <a href="Main.dc.html" aria-label="Back to Today" style="width: 44px; height: 44px; border-radius: 6px; border: 1px solid #1C2F57; background: #0C1A3A; display: flex; align-items: center; justify-content: center; color: #EAF1FF; text-decoration: none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      </a>
+      <img src="/_blob/5719a3a9743193f7215d8904bbe66c49" alt="Vyom logo" style="width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(108,180,255,0.25), 0 0 20px rgba(76,155,242,0.3)">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #93A4C8">03 / SPEND</span>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <sc-for list="{{orgChips}}" as="c" hint-placeholder-count="4">
+        <button type="button" onClick="{{c.pick}}" style="{{c.style}}"><span style="{{c.dot}}"></span>{{c.label}}</button>
+      </sc-for>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center">
+      <button type="button" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #1C2F57; background: #0C1A3A; color: #EAF1FF; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em; cursor: pointer">OCT 1 – OCT 12 ▾</button>
+      <button type="button" aria-label="Export" style="width: 44px; height: 44px; border-radius: 6px; border: 1px solid #1C2F57; background: #0C1A3A; color: #EAF1FF; cursor: pointer; display: flex; align-items: center; justify-content: center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- headline row -->
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+    <div style="flex: 2 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 10px; justify-content: flex-end">
+      <span style="font-size: 15px; color: #BCC9E3">Spend, month to date</span>
+      <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+        <span style="font-size: 64px; font-weight: 600; letter-spacing: -0.03em; line-height: 1">$[48,206]<span style="color: #4C6290">.40</span></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #F5B84A; border: 1px solid rgba(245,184,74,0.4); border-radius: 999px; padding: 3px 9px">▲ 6.1%</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #050C1F; background: #F5B84A; border-radius: 999px; padding: 3px 9px">+$[2,780] vs fcst</span>
+      </div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #7083AB">vs prev. $[45,426] · CUR line items · refreshed 6m ago</span>
+    </div>
+
+    <div style="flex: 1 1 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633">
+      <span style="font-size: 13px; color: #93A4C8">Top account</span>
+      <span style="font-size: 26px; font-weight: 600">$[9,840]</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #BCC9E3">[prod-billing] ›</span>
+    </div>
+
+    <div style="flex: 1 1 220px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 12px; background: #EAF1FF; color: #050C1F">
+      <span style="display: flex; justify-content: space-between; font-size: 13px; color: #27406F"><span>Biggest mover</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #B4321F">▲ 38%</span></span>
+      <span style="font-size: 26px; font-weight: 700">+$[1,912]</span>
+      <span style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 500"><span>NAT Gateway · [shared-network]</span><span style="width: 26px; height: 26px; border-radius: 6px; background: #050C1F; color: #EAF1FF; display: flex; align-items: center; justify-content: center; font-size: 12px">›</span></span>
+    </div>
+
+    <div style="flex: 2 1 330px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633">
+        <span style="font-size: 13px; color: #93A4C8">Forecast</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #1C2F57; border-radius: 999px; padding: 3px 10px">$[121K]</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #F5B84A">▲ 4.2%</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: 1px solid #6CB4FF; border-radius: 12px; background: #0B1D42; box-shadow: 0 0 0 3px rgba(108,180,255,0.1)">
+        <span style="font-size: 13px; color: #93A4C8">Savings found</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #04122E; background: #6CB4FF; border-radius: 999px; padding: 3px 10px">$[3.4K]/mo</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #6CB4FF">11 items</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633">
+        <span style="font-size: 13px; color: #93A4C8">Untagged</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #1C2F57; border-radius: 999px; padding: 3px 10px">14%</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #4FD1A5">▼ 2.0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- org share strip -->
+  <div role="list" aria-label="Share of spend by organization" style="display: flex; gap: 8px; flex-wrap: wrap">
+    <sc-for list="{{share}}" as="s" hint-placeholder-count="6">
+      <div role="listitem" style="{{s.style}}">
+        <span style="{{s.badge}}">{{s.code}}</span>
+        <span style="font-size: 14px; font-weight: 500">{{s.amount}}</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #93A4C8">{{s.pct}}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- body -->
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+    <!-- LEFT -->
+    <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px">
+        <section aria-label="By service" style="flex: 1 1 250px; min-width: 0; border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #93A4C8">BY SERVICE</span>
+            <button type="button" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #1C2F57; background: transparent; color: #BCC9E3; font-size: 12px; cursor: pointer">Filters ≡</button>
+          </div>
+          <sc-for list="{{services}}" as="v" hint-placeholder-count="5">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: #0C1A3A">
+              <span style="{{v.icon}}">{{v.code}}</span>
+              <span style="flex: 1; font-size: 13px">{{v.name}}</span>
+              <span style="font-size: 13px; font-weight: 600">{{v.amount}}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A4C8; background: #1C2F57; border-radius: 999px; padding: 2px 6px; min-width: 26px; text-align: center">{{v.pct}}</span>
+            </div>
+          </sc-for>
+        </section>
+
+        <section aria-label="Spend by environment" style="flex: 1 1 220px; min-width: 0; border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #93A4C8">BY ENVIRONMENT</span>
+          <div role="img" aria-label="Spend by environment: prod highest, then shared, data, dev, sandbox" style="display: flex; align-items: flex-end; gap: 8px; height: 170px">
+            <sc-for list="{{envs}}" as="e" hint-placeholder-count="5">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #BCC9E3">{{e.amount}}</span>
+                <span class="{{e.cls}}" style="{{e.style}}"></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <sc-for list="{{envs}}" as="e" hint-placeholder-count="5">
+              <span style="flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #93A4C8">{{e.name}}</span>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+
+      <section aria-label="Per-org average" style="border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633; display: flex; flex-wrap: wrap; overflow: hidden">
+        <div style="flex: 1 1 200px; padding: 20px; background: linear-gradient(160deg, #1E4FB8, #11275A); display: flex; flex-direction: column; gap: 14px">
+          <span style="font-size: 13px; color: #D3E5FF">Daily run rate · {{focus.name}}</span>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #93A4C8">Cost / day</span><span style="font-size: 24px; font-weight: 600">{{focus.rate}}</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #93A4C8">Resources</span><span style="font-size: 18px; font-weight: 500">{{focus.res}}</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #93A4C8">Cost / resource</span><span style="font-size: 18px; font-weight: 500">{{focus.per}}</span></div>
+        </div>
+        <div style="flex: 2 1 300px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #93A4C8">LAST 3 MONTHS</span>
+            <div role="group" aria-label="Metric" style="display: flex; gap: 2px; border: 1px solid #1C2F57; border-radius: 999px; padding: 3px">
+              <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 0; background: #EAF1FF; color: #050C1F; font-size: 12px; font-weight: 600; cursor: pointer">Cost</button>
+              <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: #93A4C8; font-size: 12px; cursor: pointer">Usage</button>
+              <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: #93A4C8; font-size: 12px; cursor: pointer">Waste</button>
+            </div>
+          </div>
+          <div role="img" aria-label="Monthly cost for August, September and October by top three accounts" style="display: flex; align-items: flex-end; gap: 22px; height: 150px; padding-top: 24px">
+            <sc-for list="{{months}}" as="m" hint-placeholder-count="3">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: flex-end; position: relative">
+                <span style="position: absolute; top: -22px; left: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #04122E; background: #6CB4FF; border-radius: 4px; padding: 2px 6px">{{m.top}}</span>
+                <div style="display: flex; align-items: flex-end; gap: 4px; height: 100%">
+                  <sc-for list="{{m.bars}}" as="b" hint-placeholder-count="3">
+                    <span class="{{b.cls}}" style="{{b.style}}"></span>
+                  </sc-for>
+                </div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A4C8; text-align: center">{{m.name}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT: leaderboard -->
+    <section aria-label="Accounts" style="flex: 1 1 520px; min-width: 0; border: 1px solid #1C2F57; border-radius: 12px; background: #0A1633; padding: 8px 0; overflow-x: auto">
+      <div style="min-width: 520px">
+        <div style="display: grid; grid-template-columns: 2fr 1.2fr 1fr 0.8fr 1fr 40px; gap: 8px; padding: 10px 18px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #7083AB">
+          <span>ACCOUNT</span><span>MTD</span><span>FINDINGS</span><span>SCORE</span><span>Δ FCST</span><span></span>
+        </div>
+        <sc-for list="{{accounts}}" as="a" hint-placeholder-count="6">
+          <div style="{{a.wrap}}">
+            <button type="button" onClick="{{a.toggle}}" style="width: 100%; display: grid; grid-template-columns: 2fr 1.2fr 1fr 0.8fr 1fr 40px; gap: 8px; align-items: center; padding: 12px 18px; border: 0; background: transparent; color: #EAF1FF; text-align: left; cursor: pointer; min-height: 52px">
+              <span style="display: flex; align-items: center; gap: 10px; min-width: 0">
+                <span style="{{a.avatar}}">{{a.initials}}</span>
+                <span style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{a.name}}</span>
+              </span>
+              <span style="font-size: 14px">{{a.mtd}}</span>
+              <span style="display: flex; gap: 4px">
+                <span style="{{a.critStyle}}">{{a.crit}}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #BCC9E3; border: 1px solid #27406F; border-radius: 999px; padding: 2px 7px">{{a.other}}</span>
+              </span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">{{a.score}}</span>
+              <span style="{{a.deltaStyle}}">{{a.delta}}</span>
+              <span style="{{a.chev}}">{{a.chevGlyph}}</span>
+            </button>
+            <sc-if value="{{a.open}}" hint-placeholder-val="{{false}}">
+              <div style="padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 14px">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                  <span style="font-size: 12px; color: #BCC9E3; border: 1px solid #27406F; border-radius: 999px; padding: 5px 10px">Top service: NAT Gateway</span>
+                  <span style="font-size: 12px; color: #BCC9E3; border: 1px solid #27406F; border-radius: 999px; padding: 5px 10px">Reserved coverage 41%</span>
+                  <span style="font-size: 12px; color: #6CB4FF; border: 1px solid #2A4A85; border-radius: 999px; padding: 5px 10px">Vyom: 3 savings ›</span>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                  <div style="flex: 2 1 180px; padding: 14px; border-radius: 10px; background: #0C1A3A; display: flex; flex-direction: column; gap: 4px">
+                    <span style="font-size: 12px; color: #93A4C8">Data processing</span>
+                    <span style="font-size: 28px; font-weight: 600">62.4% <span style="font-size: 16px; color: #4C6290">$[3,610]</span></span>
+                  </div>
+                  <div style="flex: 1 1 140px; padding: 14px; border-radius: 10px; background: #0C1A3A; display: flex; flex-direction: column; gap: 4px">
+                    <span style="font-size: 12px; color: #93A4C8">Hourly charge</span>
+                    <span style="font-size: 18px; font-weight: 600">21.0%</span>
+                  </div>
+                  <div style="flex: 1 1 140px; padding: 14px; border-radius: 10px; background: #0C1A3A; display: flex; flex-direction: column; gap: 4px">
+                    <span style="font-size: 12px; color: #93A4C8">Cross-AZ</span>
+                    <span style="font-size: 18px; font-weight: 600">16.6%</span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #93A4C8">DAILY COST · WITH CHANGES</span>
+                  <svg role="img" aria-label="Daily cost for this account with a spike after a change on day 9" width="100%" height="90" viewBox="0 0 480 90" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="vyArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6CB4FF" stop-opacity="0.35"></stop><stop offset="1" stop-color="#6CB4FF" stop-opacity="0"></stop></linearGradient>
+                    </defs>
+                    <path d="M0 62 L40 60 L80 64 L120 58 L160 61 L200 57 L240 60 L280 55 L320 22 L360 38 L400 42 L440 40 L480 36 L480 90 L0 90 Z" fill="url(#vyArea)"></path>
+                    <path d="M0 62 L40 60 L80 64 L120 58 L160 61 L200 57 L240 60 L280 55 L320 22 L360 38 L400 42 L440 40 L480 36" fill="none" stroke="#6CB4FF" stroke-width="2"></path>
+                    <line x1="300" y1="0" x2="300" y2="90" stroke="#F5B84A" stroke-dasharray="3 3"></line>
+                    <circle cx="300" cy="80" r="5" fill="#F5B84A"></circle>
+                  </svg>
+                  <span style="font-size: 12px; color: #BCC9E3"><span style="color: #F5B84A">●</span> Oct 9 · terraform apply moved [batch-etl] to a private subnet behind the NAT</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { org: 0, open: 1 }; }
+  renderVals() {
+    var me = this;
+    var mono = "font-family: 'JetBrains Mono', monospace; ";
+    var palette = ['#6CB4FF', '#4FD1A5', '#F5B84A', '#B89CFF', '#FF8FB1', '#7083AB'];
+
+    var orgDefs = ['All orgs', '[org-prod]', '[org-pay]', '[org-data]'];
+    var orgChips = orgDefs.map(function (o, i) {
+      var on = me.state.org === i;
+      return {
+        label: o,
+        pick: function () { me.setState({ org: i }); },
+        dot: 'width: 8px; height: 8px; border-radius: 50%; background: ' + (i === 0 ? '#EAF1FF' : palette[i - 1]),
+        style: 'height: 40px; padding: 0 14px; border-radius: 999px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; ' + (on ? 'background: #EAF1FF; color: #050C1F; border: 1px solid #EAF1FF; font-weight: 600' : 'background: #0C1A3A; color: #BCC9E3; border: 1px solid #1C2F57')
+      };
+    });
+
+    var shareDefs = [
+      { code: 'PR', amount: '$[18,420]', pct: '38.2%' },
+      { code: 'PY', amount: '$[11,060]', pct: '22.9%' },
+      { code: 'DT', amount: '$[8,210]', pct: '17.0%' },
+      { code: 'NT', amount: '$[5,880]', pct: '12.2%' },
+      { code: 'DV', amount: '$[3,190]', pct: '6.6%' },
+      { code: 'SB', amount: '$[1,446]', pct: '3.0%' }
+    ];
+    var share = shareDefs.map(function (s, i) {
+      var grow = [38, 23, 17, 12, 7, 3][i];
+      return {
+        code: s.code, amount: s.amount, pct: s.pct,
+        badge: mono + 'font-size: 10px; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #050C1F; background: ' + palette[i],
+        style: 'flex: ' + grow + ' 1 150px; min-width: 150px; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px 0 8px; border-radius: 999px; background: #0A1633; border: 1px solid #1C2F57; box-sizing: border-box'
+      };
+    });
+
+    var svcDefs = [
+      { code: 'EC2', name: 'EC2 compute', amount: '$[14,210]', pct: '29%' },
+      { code: 'RDS', name: 'RDS', amount: '$[9,480]', pct: '20%' },
+      { code: 'EKS', name: 'EKS + nodes', amount: '$[8,020]', pct: '17%' },
+      { code: 'NAT', name: 'NAT Gateway', amount: '$[5,790]', pct: '12%' },
+      { code: 'S3', name: 'S3 + CloudFront', amount: '$[3,940]', pct: '8%' }
+    ];
+    var services = svcDefs.map(function (v, i) {
+      return {
+        code: v.code, name: v.name, amount: v.amount, pct: v.pct,
+        icon: mono + 'font-size: 9px; width: 30px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: ' + (v.code === 'NAT' ? '#050C1F; background: #F5B84A' : '#6CB4FF; border: 1px solid #2A4A85')
+      };
+    });
+
+    var envDefs = [
+      { name: 'PROD', v: 100, amount: '$[22K]' },
+      { name: 'SHARED', v: 46, amount: '$[10K]' },
+      { name: 'DATA', v: 64, amount: '$[14K]' },
+      { name: 'DEV', v: 22, amount: '$[4.8K]' },
+      { name: 'SBX', v: 8, amount: '$[1.4K]' }
+    ];
+    var envs = envDefs.map(function (e, i) {
+      var hl = i === 0;
+      return {
+        name: e.name, amount: e.amount, cls: hl ? '' : 'vy-hatch',
+        style: 'width: 100%; height: ' + Math.max(e.v * 1.25, 10) + 'px; border-radius: 8px 8px 4px 4px; ' + (hl ? 'background: linear-gradient(180deg, #6CB4FF, #1E4FB8)' : 'background-color: #0C1A3A; border: 1px solid #27406F; box-sizing: border-box')
+      };
+    });
+
+    var monthDefs = [
+      { name: 'AUG', top: '$[42.1K]', v: [70, 48, 30] },
+      { name: 'SEP', top: '$[45.4K]', v: [74, 52, 34] },
+      { name: 'OCT', top: '$[48.2K]', v: [88, 58, 36] }
+    ];
+    var months = monthDefs.map(function (m, mi) {
+      return {
+        name: m.name, top: m.top,
+        bars: m.v.map(function (h, bi) {
+          var solid = mi === 2 && bi === 0;
+          return { cls: solid ? '' : 'vy-hatch', style: 'flex: 1; height: ' + h + '%; border-radius: 6px 6px 3px 3px; ' + (solid ? 'background: #6CB4FF' : 'background-color: #0C1A3A; border: 1px solid #27406F; box-sizing: border-box') };
+        })
+      };
+    });
+
+    var acctDefs = [
+      { name: '[prod-billing]', init: 'PB', mtd: '$[9,840]', crit: 2, other: 7, score: 71, delta: '+4.0%', bad: true },
+      { name: '[shared-network]', init: 'SN', mtd: '$[5,880]', crit: 0, other: 3, score: 84, delta: '+38%', bad: true },
+      { name: '[prod-payments]', init: 'PP', mtd: '$[7,410]', crit: 1, other: 4, score: 79, delta: '+1.2%', bad: true },
+      { name: '[data-lake]', init: 'DL', mtd: '$[6,020]', crit: 0, other: 2, score: 88, delta: '−3.1%', bad: false },
+      { name: '[api-gateway]', init: 'AG', mtd: '$[3,310]', crit: 0, other: 5, score: 82, delta: '−0.4%', bad: false },
+      { name: '[dev-sandbox]', init: 'DS', mtd: '$[1,446]', crit: 0, other: 1, score: 90, delta: '−8.0%', bad: false }
+    ];
+    var openIdx = this.state.open;
+    var accounts = acctDefs.map(function (a, i) {
+      var open = openIdx === i;
+      return {
+        name: a.name, initials: a.init, mtd: a.mtd, crit: a.crit, other: a.other, score: a.score, delta: a.delta, open: open,
+        toggle: function () { me.setState({ open: open ? -1 : i }); },
+        wrap: 'border-top: 1px solid #16264A; ' + (open ? 'background: linear-gradient(180deg, #0B1D42, #0A1633); box-shadow: inset 2px 0 0 #6CB4FF' : ''),
+        avatar: mono + 'font-size: 10px; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #16264A; color: #BCC9E3; border: 1px solid #27406F',
+        critStyle: mono + 'font-size: 11px; border-radius: 999px; padding: 2px 7px; ' + (a.crit ? 'background: #FF6F5E; color: #050C1F' : 'background: #16264A; color: #7083AB'),
+        deltaStyle: mono + 'font-size: 12px; color: ' + (a.bad ? '#F5B84A' : '#4FD1A5'),
+        chev: 'width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; ' + (open ? 'background: #6CB4FF; color: #04122E' : 'border: 1px solid #27406F; color: #93A4C8'),
+        chevGlyph: open ? '⌃' : '⌄'
+      };
+    });
+
+    var focusDefs = { 0: ['All orgs', '$[4,017]', '1,284', '$[3.13]'], 1: ['[org-prod]', '$[1,535]', '412', '$[3.73]'], 2: ['[org-pay]', '$[922]', '268', '$[3.44]'], 3: ['[org-data]', '$[684]', '190', '$[3.60]'] };
+    var f = focusDefs[this.state.org];
+    var focus = { name: f[0], rate: f[1], res: f[2], per: f[3] };
+
+    return { orgChips: orgChips, share: share, services: services, envs: envs, months: months, accounts: accounts, focus: focus };
+  }
+}
+</script>
+</body>
+</html>

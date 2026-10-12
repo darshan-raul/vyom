@@ -1,6 +1,6 @@
 # Current handoff
 
-Updated: 2026-10-12. Latest session: [2026-10-12-03](sessions/2026-10-12-03.md).
+Updated: 2026-10-12. Latest session: [2026-10-12-04](sessions/2026-10-12-04.md).
 
 ## Current state
 
@@ -9,16 +9,18 @@ Updated: 2026-10-12. Latest session: [2026-10-12-03](sessions/2026-10-12-03.md).
 - `backend/` has the evidence contract, trusted context, MCP host and one reviewed tool, `kubernetes__pods_list_in_namespace`, plus the reasoning adapter `agent/model.py` (LangChain `ChatOpenAI`) for OpenRouter with `anthropic/claude-haiku-5.5`. Nothing calls the host or the adapter from the API yet.
 - Kind cluster `vyom` runs the observability stack plus the upstream Kubernetes MCP server v0.0.67 behind `kube-rbac-proxy` v0.23.0 in `vyom`, and demo workloads in `demo` (one Running pod, one in ImagePullBackOff). Details: [MCP_INTEGRATIONS.md](MCP_INTEGRATIONS.md#deployed-on-kind-in-s13).
 - `./scripts/mcp-up.sh` installs; `./scripts/mcp-check.sh` verifies live (22 checks).
+- `frontend/` is redesigned to the owner's [design spec](design/DESIGN.md) (P11): dark console shell, Today page showing API liveness, and the Ask Vyom panel disabled until the chat route exists. Its §0 says which surface arrives in which sprint.
 
 S1.5–S1.8 are pending and no sprint gate is closed.
 
 ## Next action
 
-**S1.5** (bounded graph and MCP-backed chat): propose → host validation → MCP call → normalize → answer, one tool round, through `ModelClient` and `McpHost`, with a chat API route. Its live checks need the model key in the backend's process: an agent session can run them only if the key is in `.local/model-api-key` (mode 600); a variable exported in the owner's terminal is not visible to it. Do not ask for the key in chat.
+**S1.5** (bounded graph and MCP-backed chat): propose → host validation → MCP call → normalize → answer, one tool round, through `ModelClient` and `McpHost`, with a chat API route. Its live checks need the model key in the backend's process: an agent session can run them only if the key is in `.local/model-api-key` (mode 600); a variable exported in the owner's terminal is not visible to it. Do not ask for the key in chat. On the UI side, S1.5 enables `frontend/src/components/vyom/ask-vyom.tsx` (remove the disabled state, add the answer with tool, resources and collection time in the right column) and updates the `REASON` and `K8S MCP` cells in `frontend/src/pages/today.tsx` and the ticker's agent state.
 
 ## Unresolved decisions
 
 - Sending questions and projected pod names and statuses from the demo cluster to OpenRouter follows from the owner's choice of endpoint but was not separately confirmed ([P01](DECISIONS.md#s14-reasoning-adapter--2026-10-12)).
+- UI02–UI04 ([design decisions](DECISIONS.md#frontend-design-spec--2026-10-12)) are the agent's adaptation of the spec to the plan and are proposed, not confirmed: what is left out of the mockups, listing planned surfaces dimmed with their sprint, and the disabled Ask panel.
 - MCPC01 (as revised by MCPK01) and MCPC04 are recorded as accepted on the owner's "go ahead"; say so if that reading is wrong.
 
 ## Limits / environment
@@ -37,6 +39,8 @@ S1.5–S1.8 are pending and no sprint gate is closed.
 - This shell is zsh with `cp` aliased to prompt before overwriting: write multi-step checks as bash scripts, use `command cp -f`, and do not put `kubectl run -i` inside a heredoc script (it consumes the rest of the script). Start a `kubectl port-forward` directly, not through a shell function, or `$!` is not kubectl.
 - After restarting Tempo, a new trace can take up to about 30 seconds to become queryable. A `kubectl port-forward` to `svc/alloy` dies when the collector pod is replaced.
 - Images from GitHub's registry pull slowly from this machine; quay.io pulls took under a minute.
+- The UI's sprint tags and "not wired / not built" strip cells are static text, not read from the backend; update them in the task that delivers each surface. The UI was checked in Brave headless only; no keyboard or screen-reader pass was done.
+- `vyom-design-spec.zip` in the repository root is untracked; its contents are now in `docs/design/`.
 - `npm audit` reports 7 high findings from one `braces` advisory in the `shadcn` CLI dev dependency; `npm audit --omit=dev` reports 0.
 - Docker 29.7.2, kind 0.31.0, kubectl 1.36.0 and Helm 4.2.2 are installed.
 

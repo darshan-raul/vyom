@@ -19,6 +19,7 @@ States: `pending`, `in_progress`, `blocked`, `done`, `deferred`. `blocked` requi
 | P8 | README deployment architecture SVG | done | [2026-10-04-06](sessions/2026-10-04-06.md) | Standalone SVG with service boundaries/icons and five primary connectors; XML, 1200px/760px rendering and visual review pass; doc/whitespace checks pass |
 | P9 | Owner-supplied canonical Vyom logo | done | [2026-10-04-07](sessions/2026-10-04-07.md) | Original PNG preserved; README/diagram branded; future reuse documented. Byte/dimension/XML checks, raster/visual review and docs/whitespace pass |
 | P10 | Explicit RAG in README architecture | done | [2026-10-04-08](sessions/2026-10-04-08.md) | Backend RAG S3, ingestion/retrieval/citations visible; five connectors retained. SVG/labels/logo, rendering/visual review and docs/whitespace pass |
+| P11 | Frontend design spec adoption and shell redesign (owner-requested, outside S1.x) | done | [2026-10-12-04](sessions/2026-10-12-04.md) | Spec, mockups and circular mark in [design/](design/DESIGN.md), adapted to the plan in its §0; tokens, fonts, app shell, Today, Ask Vyom (not connected) and question-path strip in `frontend/`. Typecheck, lint, build pass; rendered in a browser at 1440px and 500px with the API up and down. No new data or route: S1.5 and S1.6 remain pending and gain no credit |
 
 ## S1 — Smallest real agent with observability
 
