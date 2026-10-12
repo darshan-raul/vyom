@@ -22,14 +22,10 @@ from pydantic import ValidationError
 
 from vyom import telemetry
 from vyom.context import TrustedContext
+from vyom.credentials import CredentialUnavailable
 from vyom.evidence import ErrorKind, Evidence, ItemDraft, McpProvenance, build_evidence
 from vyom.mcp_client import client_for
-from vyom.mcp_client.registry import (
-    CredentialUnavailable,
-    OperatorConfig,
-    ServerConfig,
-    tool_id,
-)
+from vyom.mcp_client.registry import OperatorConfig, ServerConfig, tool_id
 from vyom.mcp_client.tools import ToolOutput, ToolSpec, schema_digest
 
 UNLISTED = "unlisted"  # telemetry label for any server or tool ID that is not configured

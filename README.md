@@ -90,6 +90,15 @@ kubectl --context kind-vyom -n observability port-forward svc/grafana 3000:80 --
 # http://127.0.0.1:3000  user admin, password in .local/grafana-admin-password
 ```
 
+Reasoning endpoint (S1.4): OpenRouter with `anthropic/claude-haiku-5.5`. Run the live check yourself in a terminal that has the API key; it sends a few small requests, which costs a little. The key can be an environment variable in that terminal or an ignored file.
+
+```sh
+export OPENROUTER_API_KEY=...             # in your own terminal; or instead:
+(umask 077; cat > .local/model-api-key)   # paste the key, press Enter, then Ctrl-D
+
+./scripts/model-check.sh                  # live: tool-call round trip, refused arguments, wrong and missing key, no key in telemetry or bundle
+```
+
 The first install pulls about ten images and takes several minutes. `kind delete cluster --name vyom` removes everything, including stored telemetry. What is installed and its limits: [observability](docs/OBSERVABILITY.md#installed-on-kind-in-s19).
 
-Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK with the endpoint registry, tool allowlist, limits and the reviewed Kubernetes pod-list tool; Vyom serves no MCP protocol), `evidence.py` and `context.py` (shared evidence contract and server-side scope), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` and `collectors` (empty until S1.4–S1.6).
+Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK with the endpoint registry, tool allowlist, limits and the reviewed Kubernetes pod-list tool; Vyom serves no MCP protocol), `evidence.py` and `context.py` (shared evidence contract and server-side scope), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` (the reasoning adapter: LangChain `ChatOpenAI` against one OpenAI-compatible endpoint; the LangGraph workflow arrives in S1.5), `credentials.py` (credential references) and `collectors` (empty until S1.6).

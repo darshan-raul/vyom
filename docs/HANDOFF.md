@@ -1,24 +1,24 @@
 # Current handoff
 
-Updated: 2026-10-12. Latest session: [2026-10-12-02](sessions/2026-10-12-02.md).
+Updated: 2026-10-12. Latest session: [2026-10-12-03](sessions/2026-10-12-03.md).
 
 ## Current state
 
-**S1.1, S1.9, S1.2 and S1.3 are done and committed to `main`.**
+**S1.1, S1.9, S1.2, S1.3 and S1.4 are done and on `origin/main`. S1.4's live check was run by the owner.**
 
-- `backend/` has the evidence contract, trusted context, MCP host and one reviewed tool, `kubernetes__pods_list_in_namespace`. Nothing calls the host from the API yet.
+- `backend/` has the evidence contract, trusted context, MCP host and one reviewed tool, `kubernetes__pods_list_in_namespace`, plus the reasoning adapter `agent/model.py` (LangChain `ChatOpenAI`) for OpenRouter with `anthropic/claude-haiku-5.5`. Nothing calls the host or the adapter from the API yet.
 - Kind cluster `vyom` runs the observability stack plus the upstream Kubernetes MCP server v0.0.67 behind `kube-rbac-proxy` v0.23.0 in `vyom`, and demo workloads in `demo` (one Running pod, one in ImagePullBackOff). Details: [MCP_INTEGRATIONS.md](MCP_INTEGRATIONS.md#deployed-on-kind-in-s13).
 - `./scripts/mcp-up.sh` installs; `./scripts/mcp-check.sh` verifies live (22 checks).
 
-S1.4–S1.8 are pending and no sprint gate is closed.
+S1.5–S1.8 are pending and no sprint gate is closed.
 
 ## Next action
 
-**S1.4** (initial reasoning adapter) is dependency-ready but blocked on an owner decision: **P01** — which OpenAI-compatible endpoint and model, and how the key is injected (an ignored file is the planned mechanism). Do not ask for the key in chat. Once settled: add the adapter under `backend/src/vyom/agent/`, with `McpHost.tools()` as the source of tool definitions for the real tool-call round trip.
+**S1.5** (bounded graph and MCP-backed chat): propose → host validation → MCP call → normalize → answer, one tool round, through `ModelClient` and `McpHost`, with a chat API route. Its live checks need the model key in the backend's process: an agent session can run them only if the key is in `.local/model-api-key` (mode 600); a variable exported in the owner's terminal is not visible to it. Do not ask for the key in chat.
 
 ## Unresolved decisions
 
-- **P01**, above.
+- Sending questions and projected pod names and statuses from the demo cluster to OpenRouter follows from the owner's choice of endpoint but was not separately confirmed ([P01](DECISIONS.md#s14-reasoning-adapter--2026-10-12)).
 - MCPC01 (as revised by MCPK01) and MCPC04 are recorded as accepted on the owner's "go ahead"; say so if that reading is wrong.
 
 ## Limits / environment
@@ -31,7 +31,9 @@ S1.4–S1.8 are pending and no sprint gate is closed.
 - Upstream MCP logs are collected (the pod is in `vyom`). Keep `log_level` below 6 in `config.toml`.
 - Upstream metrics and tracing are not enabled; MCP panels are not on the second dashboard; Prometheus does not scrape the backend until S1.7.
 - Records from the `mcp` and HTTP client loggers are dropped by design; debug an MCP exchange with `scripts/mcp_live_check.py` or a test.
-- CI passed on `8931bd4` (S1.1, S1.9); its result on the S1.2/S1.3 commit has not been checked (`gh` is not installed here). `shellcheck` is not installed here.
+- CI passed on `8931bd4`; its results on `6461441` and on the S1.4 commit have not been checked (`gh` is not installed here).
+- The adapter makes one request with no retries and does not stream. It disables LangSmith export per request; do not set `OPENAI_ORG_ID` in the backend's environment (the `openai` client would send it as a header). `scripts/model-check.sh` spends a few thousand tokens per run.
+- In the S1.4 live check the tool result was canned, not from MCP. The model would not send arguments outside the offered schema, so the host's refusal of those is offline evidence only.
 - This shell is zsh with `cp` aliased to prompt before overwriting: write multi-step checks as bash scripts, use `command cp -f`, and do not put `kubectl run -i` inside a heredoc script (it consumes the rest of the script). Start a `kubectl port-forward` directly, not through a shell function, or `$!` is not kubectl.
 - After restarting Tempo, a new trace can take up to about 30 seconds to become queryable. A `kubectl port-forward` to `svc/alloy` dies when the collector pod is replaced.
 - Images from GitHub's registry pull slowly from this machine; quay.io pulls took under a minute.

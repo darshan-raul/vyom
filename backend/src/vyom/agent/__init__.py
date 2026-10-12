@@ -1,1 +1,1 @@
-"""Reasoning adapter and LangGraph workflow. Empty until S1.4 and S1.5."""
+"""Reasoning adapter (S1.4). The LangGraph workflow arrives in S1.5."""

@@ -3,7 +3,7 @@
 Rules every caller relies on:
 - Logs carry a constant message plus fields from ``LOG_FIELDS`` only; anything else is dropped.
 - Metric labels are bounded: route templates, known methods and status codes, configured MCP
-  server and tool IDs, and fixed outcome names.
+  server and tool IDs, the configured model provider and model, and fixed outcome names.
 - Spans never export URL queries, headers or exception text.
 - Export is asynchronous and bounded; a telemetry outage costs spans, never a request.
 """
@@ -46,12 +46,29 @@ LOG_FIELDS = frozenset(
         # Configured IDs only; a tool name a model made up is logged as "unlisted".
         "mcp_server",
         "mcp_tool",
+        # From operator configuration, never from a request or a reply.
+        "model_provider",
+        "model_name",
+        # Provider-reported counts; the fields are absent when the provider reported none.
+        "input_tokens",
+        "output_tokens",
     }
 )
 
 # Client libraries log free text (endpoint URLs, upstream error bodies). Their records are
 # dropped; the owning Vyom module logs the same event with allowlisted fields instead.
-_SILENCED_LOGGERS = ("mcp", "httpx2", "httpcore2", "httpx", "httpcore")
+_SILENCED_LOGGERS = (
+    "mcp",
+    "httpx2",
+    "httpcore2",
+    "httpx",
+    "httpcore",
+    "openai",
+    "langchain",
+    "langchain_core",
+    "langchain_openai",
+    "langsmith",
+)
 
 
 def _owned_or_safe(record: logging.LogRecord) -> bool:
@@ -186,6 +203,70 @@ def record_mcp_operation(
     _mcp_log.log(
         logging.INFO if outcome == "ok" else logging.WARNING,
         "mcp operation finished",
+        extra=fields,
+    )
+
+
+MODEL_REQUESTS = Counter(
+    "vyom_model_requests_total",
+    "Requests to the reasoning endpoint by configured provider and model.",
+    ["provider", "model", "outcome"],
+)
+MODEL_DURATION = Histogram(
+    "vyom_model_request_duration_seconds",
+    "Reasoning endpoint request duration.",
+    ["provider", "model"],
+    buckets=(0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120),
+)
+MODEL_TOKENS = Counter(
+    "vyom_model_tokens_total",
+    "Tokens as reported by the provider. Replies without a report add nothing here.",
+    ["provider", "model", "direction"],
+)
+MODEL_USAGE_UNAVAILABLE = Counter(
+    "vyom_model_usage_unavailable_total",
+    "Successful replies for which the provider reported no token usage.",
+    ["provider", "model"],
+)
+
+_model_log = logging.getLogger("vyom.model")
+
+
+def record_model_request(
+    *,
+    provider: str,
+    model: str,
+    outcome: str,
+    duration: float,
+    usage: tuple[int, int] | None,
+    error_type: str | None = None,
+) -> None:
+    """Count, time and log one request to the reasoning endpoint.
+
+    ``provider`` and ``model`` come from operator configuration and ``outcome`` is ``ok`` or
+    an error kind. ``usage`` is (input, output) tokens as reported, or None when the provider
+    reported none: unavailable, not zero. Messages and replies are never passed here.
+    """
+    MODEL_REQUESTS.labels(provider, model, outcome).inc()
+    MODEL_DURATION.labels(provider, model).observe(duration)
+    fields: dict[str, object] = {
+        "operation": "model.chat",
+        "outcome": outcome,
+        "duration_ms": round(duration * 1000, 1),
+        "model_provider": provider,
+        "model_name": model,
+    }
+    if usage is not None:
+        MODEL_TOKENS.labels(provider, model, "input").inc(usage[0])
+        MODEL_TOKENS.labels(provider, model, "output").inc(usage[1])
+        fields["input_tokens"], fields["output_tokens"] = usage
+    elif outcome == "ok":
+        MODEL_USAGE_UNAVAILABLE.labels(provider, model).inc()
+    if error_type is not None:
+        fields["error_type"] = error_type
+    _model_log.log(
+        logging.INFO if outcome == "ok" else logging.WARNING,
+        "model request finished",
         extra=fields,
     )
 

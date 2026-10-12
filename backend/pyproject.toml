@@ -8,7 +8,13 @@ authors = [
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi>=0.143.0",
+    "httpx>=0.28.1",
+    "httpx2>=2.13.1",
+    "langchain-core>=1.6.9",
+    "langchain-openai>=1.7.0",
+    "langsmith>=0.14.7",
     "mcp>=2.3.0",
+    "openai>=3.29.0",
     "opentelemetry-exporter-otlp-proto-http>=1.45.1",
     "opentelemetry-instrumentation-fastapi>=0.66b1",
     "opentelemetry-sdk>=1.45.1",

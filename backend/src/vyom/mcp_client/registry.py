@@ -1,4 +1,5 @@
-"""Operator configuration: the trusted context and the MCP endpoints Vyom may connect to.
+"""Operator configuration: the trusted context, the MCP endpoints Vyom may connect to and
+the reasoning endpoint.
 
 Loaded once from a file the operator mounts. Nothing in a request or a model reply can add
 an endpoint, change a URL or pick a credential: callers name a tool ID and the registry
@@ -6,27 +7,23 @@ decides where it goes and what is presented there.
 """
 
 import json
-import os
 import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from vyom.agent.model import ModelConfig
 from vyom.context import TrustedContext
+from vyom.credentials import check_reference, read_credential
 
 SERVER_ID = r"^[a-z][a-z0-9]{0,30}$"  # no underscore: "__" separates server from tool
 _TOOL_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
-_CREDENTIAL_REF = re.compile(r"^(file:/[^\0]+|env:[A-Z][A-Z0-9_]*)$")
 
 
 def tool_id(server_id: str, tool_name: str) -> str:
     """Server-qualified tool identity, safe as a model-facing function name."""
     return f"{server_id}__{tool_name}"
-
-
-class CredentialUnavailable(Exception):
-    """The referenced credential could not be read. Carries no path or value."""
 
 
 class Limits(BaseModel):
@@ -66,10 +63,7 @@ class ServerConfig(BaseModel):
     @field_validator("credential_ref")
     @classmethod
     def _reference_only(cls, ref: str) -> str:
-        if not _CREDENTIAL_REF.fullmatch(ref):
-            # Do not echo the input: a pasted token must not reach an error message.
-            raise ValueError("credential_ref must be 'file:/absolute/path' or 'env:NAME'")
-        return ref
+        return check_reference(ref)
 
     @field_validator("enabled_tools")
     @classmethod
@@ -86,15 +80,7 @@ class ServerConfig(BaseModel):
 
     def read_credential(self) -> str:
         """Resolve the reference now, so a rotated token is picked up on the next connect."""
-        scheme, _, target = self.credential_ref.partition(":")
-        try:
-            value = Path(target).read_text() if scheme == "file" else os.environ[target]
-        except (OSError, KeyError):
-            raise CredentialUnavailable() from None
-        value = value.strip()
-        if not value or any(character.isspace() for character in value):
-            raise CredentialUnavailable()
-        return value
+        return read_credential(self.credential_ref)
 
 
 class OperatorConfig(BaseModel):
@@ -102,6 +88,7 @@ class OperatorConfig(BaseModel):
 
     context: TrustedContext
     mcp_servers: tuple[ServerConfig, ...] = ()
+    model: ModelConfig | None = None  # absent: chat is unavailable, never a silent fallback
 
     @model_validator(mode="after")
     def _unique_server_ids(self) -> "OperatorConfig":
