@@ -1,1 +1,1 @@
-"""Deterministic direct-SDK collection for resource views. Empty until S1.6."""
+"""Deterministic direct collectors. They never go through MCP and never serve the agent."""

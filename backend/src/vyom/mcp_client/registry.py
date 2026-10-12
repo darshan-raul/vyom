@@ -1,5 +1,5 @@
-"""Operator configuration: the trusted context, the MCP endpoints Vyom may connect to and
-the reasoning endpoint.
+"""Operator configuration: the trusted context, the MCP endpoints Vyom may connect to, the
+reasoning endpoint and the direct collector's Kubernetes API.
 
 Loaded once from a file the operator mounts. Nothing in a request or a model reply can add
 an endpoint, change a URL or pick a credential: callers name a tool ID and the registry
@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from vyom.agent.model import ModelConfig
+from vyom.collectors.kubernetes import KubernetesApiConfig
 from vyom.context import TrustedContext
 from vyom.credentials import check_reference, read_credential
 
@@ -89,6 +90,8 @@ class OperatorConfig(BaseModel):
     context: TrustedContext
     mcp_servers: tuple[ServerConfig, ...] = ()
     model: ModelConfig | None = None  # absent: chat is unavailable, never a silent fallback
+    # The direct collector's API server and identity; absent: no deterministic resource view.
+    kubernetes: KubernetesApiConfig | None = None
 
     @model_validator(mode="after")
     def _unique_server_ids(self) -> "OperatorConfig":

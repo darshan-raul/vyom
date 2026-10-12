@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from vyom import __version__, telemetry
 from vyom.agent.graph import MAX_QUESTION_CHARS, ChatAgent, ChatResult, not_configured
 from vyom.agent.model import ModelClient
+from vyom.collectors.kubernetes import PodCollector
 from vyom.context import FixedContextResolver
+from vyom.evidence import Evidence
 from vyom.mcp_client.host import McpHost
 from vyom.mcp_client.kubernetes import SPECS
 from vyom.mcp_client.registry import OperatorConfig, load_operator_config
@@ -57,15 +59,24 @@ class AgentStatus(BaseModel):
     max_question_chars: int = MAX_QUESTION_CHARS
 
 
+class PodsView(BaseModel):
+    """The direct collector's current read. ``evidence`` is absent only when no collector
+    is configured; a failed read is evidence with an error, not an absent field."""
+
+    configured: bool
+    evidence: Evidence | None = None
+
+
 def create_app(
     operator: OperatorConfig | None = None,
     *,
     host: McpHost | None = None,
     model: ModelClient | None = None,
+    pods: PodCollector | None = None,
 ) -> FastAPI:
     """Build the API. Without ``operator`` there is no agent and chat reports that.
 
-    ``host`` and ``model`` replace the ones built from ``operator`` (tests only).
+    ``host``, ``model`` and ``pods`` replace the ones built from ``operator`` (tests only).
     """
     app = FastAPI(title="Vyom API", version=__version__)
     telemetry.instrument(app)
@@ -78,6 +89,8 @@ def create_app(
         if operator and operator.model and host and tools
         else None
     )
+
+    pods = pods or (PodCollector(operator.kubernetes) if operator and operator.kubernetes else None)
 
     @app.get("/api/health")
     def health() -> Health:
@@ -97,6 +110,14 @@ def create_app(
             and ModelInfo(provider=operator.model.provider, model=operator.model.model),
             tools=[ToolInfo(id=tool.id, description=tool.description) for tool in tools],
         )
+
+    @app.get("/api/kubernetes/pods")
+    async def kubernetes_pods() -> PodsView:
+        """Pods in the configured namespace, read directly from the Kubernetes API with the
+        collector's own identity. Independent of the agent, the model and MCP."""
+        if pods is None or resolver is None:
+            return PodsView(configured=False)
+        return PodsView(configured=True, evidence=await pods.collect(resolver.resolve()))
 
     @app.post("/api/chat")
     async def chat(request: ChatRequest) -> ChatResponse:

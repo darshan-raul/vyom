@@ -24,7 +24,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import Event, ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
 from vyom import __version__
 
@@ -47,6 +47,7 @@ LOG_FIELDS = frozenset(
         "mcp_server",
         "mcp_tool",
         # From operator configuration, never from a request or a reply.
+        "collector",  # a collector's fixed name
         "model_provider",
         "model_name",
         # Provider-reported counts; the fields are absent when the provider reported none.
@@ -307,6 +308,45 @@ def record_chat(outcome: str, duration: float) -> None:
 def record_graph_step(step: str, duration: float) -> None:
     """``step`` is one of the graph's node names."""
     GRAPH_STEP_DURATION.labels(step).observe(duration)
+
+
+COLLECTOR_RUNS = Counter(
+    "vyom_collector_runs_total", "Direct collector runs.", ["collector", "outcome"]
+)
+COLLECTOR_DURATION = Histogram(
+    "vyom_collector_duration_seconds", "Direct collector run duration.", ["collector"]
+)
+COLLECTOR_LAST_SUCCESS = Gauge(
+    "vyom_collector_last_success_timestamp_seconds",
+    "Unix time of the collector's last complete run. Absent until one succeeds.",
+    ["collector"],
+)
+
+_collector_log = logging.getLogger("vyom.collector")
+
+
+def record_collector_run(
+    collector: str, *, outcome: str, duration: float, error_type: str | None = None
+) -> None:
+    """Count, time and log one direct collection. ``collector`` is a fixed name and
+    ``outcome`` is ``ok`` or an error kind. Collected resources are never passed here."""
+    COLLECTOR_RUNS.labels(collector, outcome).inc()
+    COLLECTOR_DURATION.labels(collector).observe(duration)
+    if outcome == "ok":
+        COLLECTOR_LAST_SUCCESS.labels(collector).set_to_current_time()
+    fields: dict[str, object] = {
+        "operation": "collector.run",
+        "outcome": outcome,
+        "duration_ms": round(duration * 1000, 1),
+        "collector": collector,
+    }
+    if error_type is not None:
+        fields["error_type"] = error_type
+    _collector_log.log(
+        logging.INFO if outcome == "ok" else logging.WARNING,
+        "collector run finished",
+        extra=fields,
+    )
 
 
 def _metrics() -> Response:

@@ -53,16 +53,20 @@ class Outcome(StrEnum):
 
 _LIMITATIONS = {
     Outcome.NOT_CONFIGURED: "The agent is not configured on this deployment.",
-    Outcome.NO_TOOL_USED: (
-        "Vyom did not read anything for this question, so there is nothing to ground an answer "
-        "in. It can answer questions about the pods in the configured namespace."
-    ),
     Outcome.NO_EVIDENCE: "The tool call returned no usable evidence, so there is no answer.",
     Outcome.TOOL_ROUND_LIMIT: (
         "The model asked for another tool call. This workflow allows one, so there is no answer."
     ),
     Outcome.TIMEOUT: "The question was not answered within the time limit.",
 }
+# The model does not say why it declined, so this states what can be read instead. The
+# namespace is the trusted context's, never text from the question or the model.
+_NO_TOOL_USED = (
+    "Vyom did not read anything for this question, so there is no answer. Right now it can "
+    "only read the pods in the namespace {namespace}: it cannot look at other namespaces or "
+    "at other kinds of resource, answer general questions, or change anything. Try asking "
+    "about the pods in {namespace}."
+)
 _UNCITED = "The model's answer did not cite the collected evidence, so it was withheld."
 _BAD_CITATION = "The model's answer cited evidence that was not collected, so it was withheld."
 _CUT_OFF = "The model's answer was empty or cut off, so it was withheld."
@@ -208,7 +212,7 @@ class ChatAgent:
                     span,
                     ChatResult(
                         outcome=Outcome.NO_TOOL_USED,
-                        limitation=_LIMITATIONS[Outcome.NO_TOOL_USED],
+                        limitation=_NO_TOOL_USED.format(namespace=state["context"].namespace),
                     ),
                 )
             return {"messages": [*messages, reply.message]}

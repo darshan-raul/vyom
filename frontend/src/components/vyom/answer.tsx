@@ -8,19 +8,9 @@ import {
   type Ask,
   type ChatResult,
   type Evidence,
-  type EvidenceItem,
 } from '@/lib/agent'
-import { toneGlyph, toneText, type Tone } from '@/lib/status'
-
-// How a pod row is drawn. The evidence itself is shown unchanged beside it.
-function podTone(item: EvidenceItem): Tone {
-  const status = String(item.attributes.status ?? '')
-  const [ready, wanted] = String(item.attributes.ready ?? '').split('/')
-  if (status === 'Completed') return 'ok'
-  if (status === 'Running') return ready === wanted ? 'ok' : 'caution'
-  if (status === 'Pending' || status === 'ContainerCreating') return 'caution'
-  return 'alert'
-}
+import { podTone } from '@/lib/pods'
+import { toneGlyph, toneText } from '@/lib/status'
 
 // The answer with each "[n]" drawn as a citation that names the item it points at.
 function CitedText({ result }: { result: ChatResult }) {

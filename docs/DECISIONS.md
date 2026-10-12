@@ -131,3 +131,14 @@ Made while implementing S1.5; none changes scope. Evidence: [session 2026-10-13-
 | CHAT04 | Accepted (implementation) | When the model proposes no tool call, whatever it wrote is dropped and the result is `no_tool_used` | The constitution forbids an ungrounded fallback. Consequence: greetings and general questions get the fixed limitation |
 | CHAT05 | Accepted (implementation); extends MCPC07 | The API reads the operator file named by `VYOM_CONFIG` at start. Without it the API runs with health only and chat answers `not_configured`. `GET /api/agent` shows scope, model ID and enabled tool IDs to the browser | The browser needs to show scope and tools without choosing them. Nothing in that response is a credential or an endpoint URL |
 
+## S1.6 direct Kubernetes view — 2026-10-13
+
+Made while implementing S1.6; none changes scope. Evidence: [session 2026-10-13-02](sessions/2026-10-13-02.md); detail: [direct pod view](MCP_INTEGRATIONS.md#direct-pod-view-in-s16).
+
+| ID | Status | Decision | Why / consequence |
+|---|---|---|---|
+| K8S01 | Accepted (implementation) | The collector calls the Kubernetes API over HTTPS with `httpx` and asks for the server's Table rendering with `includeObject=Metadata`, not the official Python client and not full pod objects | Minimization happens at the source: no pod spec or env value reaches Vyom, checked live. Status, readiness and restarts are computed by the API server, so they equal kubectl and the MCP table. No new dependency. Consequence: only what the Table carries is available; S2.3's waiting and termination reasons will need another projection |
+| K8S02 | Open; decide in S1.7 | In development the collector's token comes from `kubectl create token vyom-collector`. How the in-cluster API pod holds this second identity is not decided | A pod has one ServiceAccount. Options: mount a token Secret for `vyom-collector` (separate identity, long-lived token), or grant the read to `vyom-api` (one identity for the MCP endpoint and the collector, and `mcp-check.sh` currently asserts it has no Kubernetes access), or run the collector as its own workload |
+| K8S03 | Accepted (implementation) | `GET /api/kubernetes/pods` reads the cluster on each request; nothing is cached or stored, and the page polls every 15 seconds | Simplest correct freshness for one user and one namespace. Scheduled observation and history are S3.6 |
+| K8S04 | Proposed | The UI uses `react-router` for its two routes, without Refine's router binding or resources | Two pages need addresses. Refine's resource routing is not needed until there are list and detail views to generate |
+

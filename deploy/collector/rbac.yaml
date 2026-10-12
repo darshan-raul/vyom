@@ -1,0 +1,35 @@
+# Identity of Vyom's direct Kubernetes collector (the deterministic pod view).
+# It is separate from the MCP server's ServiceAccount (kubernetes-mcp) and from the identity
+# the backend presents to the MCP endpoint (vyom-api, which has no Kubernetes read access).
+# It may list pods in the demo namespace and nothing else: no get/watch, no logs, no exec,
+# no Secrets, no other namespace, no cluster-scoped resource.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vyom-collector
+  namespace: vyom
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vyom-collector-pod-reader
+  namespace: demo
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vyom-collector-pod-reader
+  namespace: demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vyom-collector-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: vyom-collector
+    namespace: vyom

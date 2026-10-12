@@ -3,6 +3,7 @@ import { AskVyom } from '@/components/vyom/ask-vyom'
 import { PipelineStrip, type Stage } from '@/components/vyom/pipeline-strip'
 import { SectionLabel } from '@/components/vyom/section-label'
 import { StatusText } from '@/components/vyom/status-text'
+import { Ticker } from '@/components/vyom/ticker'
 import { evidenceTone, useAgentStatus, useAsk, type AgentStatus, type Ask } from '@/lib/agent'
 import { apiLabel, apiTone, clockTime, type ApiHealth } from '@/lib/api-health'
 import type { Tone } from '@/lib/status'
@@ -81,18 +82,11 @@ export function Today({ api }: { api: ApiHealth }) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-vy-line-faint pb-3.5">
-        <div className="flex flex-wrap gap-x-4.5 gap-y-1">
-          <span className="vy-label tracking-[0.12em] text-vy-text-3">Today</span>
-          <StatusText tone={apiTone(api)}>{apiLabel(api)}</StatusText>
-          <StatusText tone={state.tone}>{state.label}</StatusText>
-        </div>
-        {api.state === 'checking' ? null : (
-          <span className="vy-label tracking-[0.1em] text-vy-text-4">
-            Checked {clockTime(api.checkedAt)}
-          </span>
-        )}
-      </div>
+      <Ticker aside={api.state === 'checking' ? undefined : `Checked ${clockTime(api.checkedAt)}`}>
+        <span className="vy-label tracking-[0.12em] text-vy-text-3">Today</span>
+        <StatusText tone={apiTone(api)}>{apiLabel(api)}</StatusText>
+        <StatusText tone={state.tone}>{state.label}</StatusText>
+      </Ticker>
 
       <div className="flex max-w-190 min-w-0 flex-col gap-3">
         <SectionLabel number="00" className="text-vy-caution">
@@ -130,7 +124,7 @@ export function Today({ api }: { api: ApiHealth }) {
         unavailable={
           api.state === 'unreachable'
             ? 'The backend is unreachable, so nothing can be sent.'
-            : 'The backend has no agent configuration (a model and at least one enabled tool), so nothing can be sent. Start it with scripts/chat-up.sh to connect it to the Kind cluster.'
+            : 'The backend has no agent configuration (a model and at least one enabled tool), so nothing can be sent. Start it with scripts/dev-up.sh to connect it to the Kind cluster.'
         }
       />
 

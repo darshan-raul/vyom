@@ -211,6 +211,8 @@ def test_no_tool_call_means_no_answer(model_config, tmp_path):
     result, upstream = ask(model, model_config, tmp_path, question="What is Kubernetes?")
 
     assert result.outcome is Outcome.NO_TOOL_USED and result.answer is None
+    # The limitation names what can be read, from the trusted context.
+    assert "only read the pods in the namespace demo" in result.limitation
     assert "ungrounded-marker-9" not in result.model_dump_json()
     assert upstream.calls == [] and result.evidence == ()
 

@@ -57,7 +57,20 @@ The API loads the operator file from S1.5 (`VYOM_CONFIG`); S1.7 mounts it in the
 - There is no other read path in the workflow. When MCP fails the answer is `no_evidence`; nothing switches to an SDK.
 - Telemetry: spans `chat.graph`, `graph.propose`, `graph.collect`, `graph.answer` above the existing model-client and MCP-client spans, in the request's trace; `vyom_chat_requests_total{outcome}`, `vyom_chat_duration_seconds`, `vyom_graph_step_duration_seconds{step}`; one `vyom.chat` log line per question with the outcome. No question, answer or evidence content in any of them.
 
-Run it locally with `scripts/chat-up.sh`; verify it live with `scripts/chat-check.sh`.
+Run it locally with `scripts/dev-up.sh`; verify it live with `scripts/chat-check.sh`.
+
+## Direct pod view in S1.6
+
+The deterministic path, in `backend/src/vyom/collectors/kubernetes.py`. It shares the evidence contract with the MCP path and nothing else: no MCP host, no model, no shared credential.
+
+- **Identity.** ServiceAccount `vyom-collector` ([rbac.yaml](../deploy/collector/rbac.yaml)), allowed `list` on pods in `demo` only. It is neither the MCP server's identity (`kubernetes-mcp`) nor the identity the backend presents to the MCP endpoint (`vyom-api`, which still has no Kubernetes access).
+- **Request.** `GET /api/v1/namespaces/<namespace>/pods` with `Accept: application/json;as=Table;g=meta.k8s.io;v=v1` and `includeObject=Metadata`, paged by 100. The API server renders the same Ready, Status and Restarts values `kubectl get pods` prints and attaches object metadata only, so pod specs and literal environment values are never sent to Vyom. The namespace comes from the trusted context.
+- **Evidence.** `path: direct`, `collector: kubernetes-pods`, the same resource ID as the MCP path (`k8s:<cluster UID>:<namespace>:pod:<name>`), plus the pod UID, which the MCP table does not carry. A failed later page leaves `partial` evidence; more than `max_items` (500) is cut and marked truncated.
+- **Failures.** 401 → `auth`, 403 → `forbidden` (both `denied`), unreachable → `unavailable`, slow → `timeout`, unexpected shape → `invalid_output`, oversized page → `oversized` (all `missing`). An empty namespace is `zero`.
+- **Route.** `GET /api/kubernetes/pods` returns `{configured, evidence}` and reads the cluster on each request. Without a `kubernetes` section in the operator file it returns `configured: false`.
+- **Telemetry.** Span `collector.kubernetes.pods` with `evidence.normalize`; `vyom_collector_runs_total{collector,outcome}`, `vyom_collector_duration_seconds{collector}`, `vyom_collector_last_success_timestamp_seconds{collector}`; one `vyom.collector` log line per run. No resource name or UID in any of them.
+
+Verify it live with `scripts/pods-check.sh`.
 
 ## Deployed on Kind in S1.3
 

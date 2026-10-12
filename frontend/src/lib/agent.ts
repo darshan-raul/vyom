@@ -19,6 +19,7 @@ export type EvidenceItem = {
   kind: string
   namespace: string
   name: string
+  uid: string | null
   attributes: Record<string, string | number | boolean | null>
 }
 
@@ -29,6 +30,7 @@ export type Evidence = {
     connection_id: string
     namespace: string
     mcp: { server_id: string; tool_id: string } | null
+    collector: string | null
   }
   collected_at: string
   state: EvidenceState

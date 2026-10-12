@@ -27,7 +27,7 @@ namespace.
 |---|---|---|
 | S1 (built) | App shell, tokens and fonts, Today with the API's own liveness, the question-path strip | §2, §3, `SectionLabel`, `PipelineStrip` |
 | S1.5 (built) | Ask Vyom is live: one question, one tool call, an answer with citations, the tool called, the resources read, the collection time and the trace ID; a fixed reason when there is no answer | §4.1, `Citation`, evidence rows |
-| S1.6 | Kubernetes view: pods table from the direct collector with time, coverage, loading, empty and error states | `StatusBadge`, `SegmentedTabs`, header ticker counts for pods |
+| S1.6 (built) | Kubernetes view (`/kubernetes`): pods table from the direct collector with source, collection time, coverage and loading, empty, denied, missing, partial and stale states; the ticker counts pods by state | `StatusBadge`, header ticker counts, wide table in an `overflow-x` box |
 | S2 | AWS view: EC2 inventory and CloudWatch CPU/status charts; workload and node health; current CPU and memory | `MetricCard`, `Delta`, annotated line, scope tabs All / AWS / EKS |
 | S3 | Runbook citations in answers, chat history ("last answer", continue thread), freshness of scheduled observations | `Citation` source chips, last-answer column |
 | S4 | Findings (unavailable replicas, repeated restarts), bounded investigation, related-resource graph, daily cost by service | `FindingRow`, `FindingCard`, `ConfidenceMeter`, blast-radius layout (§6.2), dot-matrix spend, "by service" list (§6.3) |
@@ -167,7 +167,7 @@ Load with `@fontsource-variable/archivo` and `@fontsource-variable/jetbrains-mon
 - Main content max width is about 1360–1440px, centred.
 - Two-column body: findings `flex: 2 1 560px` and a right rail `flex: 1 1 320px`.
 - Wide tables go inside an `overflow-x: auto` box.
-- Header ticker (top of main): mono 11px status counts plus a timestamp, with a hairline under it. Today it carries the API and agent state; from S1.6 it counts pods by state (`● 12 RUNNING  ▲ 1 PENDING  ■ 1 FAILING`), from S2 nodes and instances as well.
+- Header ticker (top of main): mono 11px status counts plus a timestamp, with a hairline under it. On Today it carries the API and agent state; on Kubernetes it counts pods by state (`● 1 NOMINAL  ▲ 0 CAUTION  ■ 1 ALERT`); from S2 nodes and instances as well.
 
 ### Sidebar
 - Logo (circular image, 40–44px, faint blue halo) + `VYOM` wordmark (19px/700, tracking 0.22em) + mono sub-label `AWS · K8S · ALPHA`.

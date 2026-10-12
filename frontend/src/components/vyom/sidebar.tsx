@@ -1,16 +1,17 @@
 import { cn } from 'cn'
+import { NavLink } from 'react-router'
 
 import mark from '@/assets/vyom-mark.png'
 import { apiLabel, apiTone, clockTime, type ApiHealth } from '@/lib/api-health'
 import { toneText } from '@/lib/status'
 
-// Surfaces in delivery order. `sprint` marks one that is planned but not built:
-// it is listed so the console's shape is visible, and it is not a link.
-type NavItem = { label: string; sprint?: string }
+// Surfaces in delivery order. A built one has a route (`to`); `sprint` marks one that is
+// planned but not built: it is listed so the console's shape is visible, and is not a link.
+type NavItem = { label: string; to?: string; sprint?: string }
 
 const operate: NavItem[] = [
-  { label: 'Today' },
-  { label: 'Kubernetes', sprint: 'S1' },
+  { label: 'Today', to: '/' },
+  { label: 'Kubernetes', to: '/kubernetes' },
   { label: 'AWS', sprint: 'S2' },
   { label: 'Findings', sprint: 'S4' },
   { label: 'Spend', sprint: 'S4' },
@@ -23,13 +24,11 @@ const flightKit: NavItem[] = [
 
 function NavRow({ item, number }: { item: NavItem; number?: string }) {
   const row = 'flex min-h-10 items-center gap-3 border-l-2 px-3 text-sm'
-  const numberCell = number ? (
-    <span className={cn('font-mono text-[10px]', item.sprint ? 'text-vy-quiet' : 'text-vy-caution')}>
-      {number}
-    </span>
-  ) : null
+  if (!item.to) {
+    const numberCell = number ? (
+      <span className="font-mono text-[10px] text-vy-quiet">{number}</span>
+    ) : null
 
-  if (item.sprint) {
     return (
       <li>
         <span
@@ -49,17 +48,34 @@ function NavRow({ item, number }: { item: NavItem; number?: string }) {
   }
   return (
     <li>
-      <a
-        href="/"
-        aria-current="page"
-        className={cn(
-          row,
-          'border-vy-caution bg-linear-to-r from-vy-caution/8 to-transparent font-medium text-vy-text',
-        )}
+      <NavLink
+        to={item.to}
+        end
+        className={({ isActive }) =>
+          cn(
+            row,
+            isActive
+              ? 'border-vy-caution bg-linear-to-r from-vy-caution/8 to-transparent font-medium text-vy-text'
+              : 'border-transparent text-vy-text-2 hover:text-vy-text',
+          )
+        }
       >
-        {numberCell}
-        <span className="flex-1">{item.label}</span>
-      </a>
+        {({ isActive }) => (
+          <>
+            {number ? (
+              <span
+                className={cn(
+                  'font-mono text-[10px]',
+                  isActive ? 'text-vy-caution' : 'text-vy-quiet',
+                )}
+              >
+                {number}
+              </span>
+            ) : null}
+            <span className="flex-1">{item.label}</span>
+          </>
+        )}
+      </NavLink>
     </li>
   )
 }

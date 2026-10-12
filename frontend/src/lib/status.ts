@@ -22,3 +22,11 @@ export const toneBorderTop: Record<Tone, string> = {
   alert: 'border-t-vy-alert',
   idle: 'border-t-vy-line-strong',
 }
+
+// Status tint recipe (DESIGN.md §2.1): status-colour text, ~35% border, ~8% fill.
+export const toneTint: Record<Tone, string> = {
+  ok: 'border-vy-ok/35 bg-vy-ok/8 text-vy-ok',
+  caution: 'border-vy-caution/35 bg-vy-caution/8 text-vy-caution',
+  alert: 'border-vy-alert/35 bg-vy-alert/8 text-vy-alert',
+  idle: 'border-vy-line-strong bg-transparent text-vy-text-3',
+}

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install or update the pinned upstream Kubernetes MCP server and the demo workloads. Safe to re-run.
+# Install or update the pinned upstream Kubernetes MCP server, the direct collector's
+# ServiceAccount and the demo workloads. Safe to re-run.
 #   KUBE_CONTEXT  kubectl context (default: kind-vyom)
 # Pins: the image digests in deploy/kubernetes-mcp/manifests.yaml. Server settings:
 # deploy/kubernetes-mcp/config.toml. Nothing is exposed outside the cluster.
@@ -19,6 +20,8 @@ k version -o json >/dev/null || { echo "cannot reach cluster for context $contex
 
 k create namespace vyom --dry-run=client -o yaml | k apply -f - >/dev/null
 k apply -f "$root/deploy/kind/demo.yaml" >/dev/null
+# The direct collector's own identity (S1.6); it does not go through the MCP server.
+k apply -f "$root/deploy/collector/rbac.yaml" >/dev/null
 
 if [[ ! -s "$tls/tls.crt" || ! -s "$tls/tls.key" ]]; then
   mkdir -p "$tls"
