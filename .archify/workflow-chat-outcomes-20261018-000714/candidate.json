@@ -1,0 +1,411 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Chat graph: every way a question can end",
+    "output": ".archify/workflow-chat-outcomes-20261018-000714/chat-outcomes.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "lanes": [
+    {
+      "id": "api",
+      "label": "API route + ask()"
+    },
+    {
+      "id": "graph",
+      "label": "LangGraph steps"
+    },
+    {
+      "id": "stop",
+      "label": "Stops: no answer",
+      "variant": "exception"
+    },
+    {
+      "id": "stop2",
+      "label": "Stops: model or round limit",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "ph-in",
+      "label": "Request",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "ph-graph",
+      "label": "propose \u2192 collect \u2192 answer",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    {
+      "id": "ph-out",
+      "label": "Result",
+      "fromCol": 5,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "request",
+    "ask",
+    "propose",
+    "collect",
+    "answer",
+    "answered"
+  ],
+  "nodes": [
+    {
+      "id": "request",
+      "lane": "api",
+      "col": 0,
+      "type": "frontend",
+      "label": "POST /api/chat",
+      "sublabel": "question only",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 148,
+          "end_line": 162
+        }
+      ]
+    },
+    {
+      "id": "ask",
+      "lane": "api",
+      "col": 1,
+      "type": "backend",
+      "label": "ChatAgent.ask",
+      "sublabel": "60 s deadline",
+      "tag": "recursion \u2264 5",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 205,
+          "end_line": 227
+        }
+      ]
+    },
+    {
+      "id": "propose",
+      "lane": "graph",
+      "col": 2,
+      "type": "backend",
+      "label": "propose",
+      "sublabel": "model picks a tool",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 235,
+          "end_line": 256
+        }
+      ]
+    },
+    {
+      "id": "collect",
+      "lane": "graph",
+      "col": 3,
+      "type": "security",
+      "label": "collect",
+      "sublabel": "McpHost.call, 1 call",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 260,
+          "end_line": 286
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "lane": "graph",
+      "col": 4,
+      "type": "backend",
+      "label": "answer + checks",
+      "sublabel": "citations verified",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 290,
+          "end_line": 332
+        }
+      ]
+    },
+    {
+      "id": "answered",
+      "lane": "api",
+      "col": 5,
+      "type": "frontend",
+      "label": "answered",
+      "sublabel": "answer + citations",
+      "icon": "success",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 324,
+          "end_line": 332
+        }
+      ]
+    },
+    {
+      "id": "not_configured",
+      "lane": "stop",
+      "col": 0,
+      "type": "external",
+      "label": "not_configured",
+      "sublabel": "no model or tool",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 336,
+          "end_line": 340
+        },
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 103,
+          "end_line": 111
+        }
+      ]
+    },
+    {
+      "id": "timeout",
+      "lane": "stop",
+      "col": 1,
+      "type": "external",
+      "label": "timeout",
+      "sublabel": "deadline passed",
+      "icon": "clock",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 207,
+          "end_line": 222
+        }
+      ]
+    },
+    {
+      "id": "no_tool_used",
+      "lane": "stop",
+      "col": 2,
+      "type": "external",
+      "label": "no_tool_used",
+      "sublabel": "model text dropped",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 248,
+          "end_line": 255
+        }
+      ]
+    },
+    {
+      "id": "no_evidence",
+      "lane": "stop",
+      "col": 3,
+      "type": "external",
+      "label": "no_evidence",
+      "sublabel": "denied or missing",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 278,
+          "end_line": 285
+        }
+      ]
+    },
+    {
+      "id": "invalid_answer",
+      "lane": "stop",
+      "col": 4,
+      "type": "external",
+      "label": "invalid_answer",
+      "sublabel": "answer withheld",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 311,
+          "end_line": 322
+        }
+      ]
+    },
+    {
+      "id": "model_unavailable",
+      "lane": "stop2",
+      "col": 3,
+      "type": "external",
+      "label": "model_unavailable",
+      "sublabel": "ModelError kind",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 241,
+          "end_line": 247
+        },
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 305,
+          "end_line": 308
+        }
+      ]
+    },
+    {
+      "id": "tool_round_limit",
+      "lane": "stop2",
+      "col": 4,
+      "type": "external",
+      "label": "tool_round_limit",
+      "sublabel": "second call asked",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 309,
+          "end_line": 310
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-request-ask",
+      "from": "request",
+      "to": "ask",
+      "label": "agent built",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-ask-propose",
+      "from": "ask",
+      "to": "propose",
+      "label": "run graph",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-propose-collect",
+      "from": "propose",
+      "to": "collect",
+      "label": "tool call",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-collect-answer",
+      "from": "collect",
+      "to": "answer",
+      "label": "usable",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-answer-answered",
+      "from": "answer",
+      "to": "answered",
+      "label": "all checks pass",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-not-configured",
+      "from": "request",
+      "to": "not_configured",
+      "label": "no agent",
+      "role": "error"
+    },
+    {
+      "id": "e-timeout",
+      "from": "ask",
+      "to": "timeout",
+      "label": "60 s passed",
+      "role": "error"
+    },
+    {
+      "id": "e-no-tool",
+      "from": "propose",
+      "to": "no_tool_used",
+      "label": "no call",
+      "role": "error"
+    },
+    {
+      "id": "e-no-evidence",
+      "from": "collect",
+      "to": "no_evidence",
+      "label": "none usable",
+      "role": "error"
+    },
+    {
+      "id": "e-invalid",
+      "from": "answer",
+      "to": "invalid_answer",
+      "label": "check fails",
+      "role": "error"
+    },
+    {
+      "id": "e-model-propose",
+      "from": "propose",
+      "to": "model_unavailable",
+      "label": "ModelError",
+      "role": "error"
+    },
+    {
+      "id": "e-model-answer",
+      "from": "answer",
+      "to": "model_unavailable",
+      "label": "ModelError",
+      "role": "error"
+    },
+    {
+      "id": "e-round",
+      "from": "answer",
+      "to": "tool_round_limit",
+      "label": "new tool call",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Checks before an answer is passed on",
+      "items": [
+        "The reply proposes no further tool call",
+        "finish is stop, text is non-empty and at most 4000 chars",
+        "Every [n] refers to an item that was collected",
+        "If evidence was sent, at least one [n] is cited"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "What a stop returns",
+      "items": [
+        "HTTP 200 with outcome and a fixed limitation text, never a guess",
+        "Evidence that was collected is still returned",
+        "no_tool_used names the one namespace Vyom can read"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Limits per question",
+      "items": [
+        "Question 1 to 500 chars; one tool call (extra calls are not made)",
+        "At most 50 items shown to the model; the rest are counted",
+        "60 s for the whole graph; at most 5 graph steps"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Usable evidence",
+      "items": [
+        "complete, zero or partial",
+        "denied and missing end the question at collect"
+      ]
+    }
+  ]
+}

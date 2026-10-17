@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c93b530f-e217-420b-a7a8-dd1cbe3dd1ee",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+  "specification": {
+    "sha256": "eccad6746fd0f319ce533d42a8ba565c282bc95b18d2d112f065d43264c3c4ef",
+    "bytes": 7974
+  },
+  "artifact": {
+    "sha256": "1e93af5ecb534cacaa3aac0d27f9ff75bf0cfa29daa0f19ec6b80975668019f9",
+    "bytes": 827635
+  }
+}

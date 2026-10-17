@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "GET /api/kubernetes/pods: the direct read, no model and no MCP",
+    "output": ".archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Kubernetes page",
+      "sources": [
+        {
+          "path": "frontend/src/lib/pods.ts",
+          "line": 16,
+          "end_line": 24,
+          "label": "poll every 15 s"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI",
+      "sublabel": "/api/kubernetes/pods",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 139,
+          "end_line": 145
+        }
+      ]
+    },
+    {
+      "id": "collector",
+      "type": "backend",
+      "label": "PodCollector",
+      "sublabel": "vyom-collector SA",
+      "sources": [
+        {
+          "path": "backend/src/vyom/collectors/kubernetes.py",
+          "line": 151,
+          "end_line": 199,
+          "label": "collect()"
+        },
+        {
+          "path": "backend/src/vyom/collectors/kubernetes.py",
+          "line": 204,
+          "end_line": 257,
+          "label": "_list(), _page()"
+        }
+      ]
+    },
+    {
+      "id": "k8s",
+      "type": "cloud",
+      "label": "Kubernetes API",
+      "sublabel": "list pods in demo",
+      "sources": [
+        {
+          "path": "deploy/collector/rbac.yaml",
+          "line": 14,
+          "end_line": 21
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "type": "database",
+      "label": "build_evidence",
+      "sublabel": "path direct",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 185,
+          "end_line": 257
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 292,
+      "label": "Request"
+    },
+    {
+      "from": 302,
+      "to": 594,
+      "label": "Paged read"
+    },
+    {
+      "from": 604,
+      "to": 785,
+      "label": "Normalize and reply"
+    }
+  ],
+  "messages": [
+    {
+      "id": "p-get",
+      "from": "browser",
+      "to": "api",
+      "y": 175,
+      "label": "GET (every 15 s)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p-collect",
+      "from": "api",
+      "to": "collector",
+      "y": 207,
+      "label": "collect(resolver.resolve())",
+      "variant": "emphasis",
+      "note": "Same trusted context as chat; connection_id must match the collector's"
+    },
+    {
+      "id": "p-page1",
+      "from": "collector",
+      "to": "k8s",
+      "y": 317,
+      "label": "GET pods?limit=100",
+      "variant": "security",
+      "note": "Accept: Table, includeObject=Metadata; Bearer token read from file now"
+    },
+    {
+      "id": "p-table1",
+      "from": "k8s",
+      "to": "collector",
+      "y": 397,
+      "label": "Table page + continue",
+      "variant": "return",
+      "note": "Name, Ready, Status, Restarts and metadata only, never pod specs"
+    },
+    {
+      "id": "p-page2",
+      "from": "collector",
+      "to": "k8s",
+      "y": 477,
+      "label": "GET \u2026&continue=token",
+      "variant": "security",
+      "note": "Up to 20 pages; stops early past 500 items"
+    },
+    {
+      "id": "p-table2",
+      "from": "k8s",
+      "to": "collector",
+      "y": 557,
+      "label": "last page (no continue)",
+      "variant": "return"
+    },
+    {
+      "id": "p-build",
+      "from": "collector",
+      "to": "evidence",
+      "y": 619,
+      "label": "drafts, complete, errors",
+      "note": "Out-of-namespace items dropped; cut at 500; state decided"
+    },
+    {
+      "id": "p-ev",
+      "from": "evidence",
+      "to": "collector",
+      "y": 699,
+      "label": "Evidence",
+      "variant": "return"
+    },
+    {
+      "id": "p-ret",
+      "from": "collector",
+      "to": "api",
+      "y": 731,
+      "label": "Evidence (never raises)",
+      "variant": "return"
+    },
+    {
+      "id": "p-200",
+      "from": "api",
+      "to": "browser",
+      "y": 763,
+      "label": "200 {configured, evidence}",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "api",
+      "from": 175,
+      "to": 763,
+      "type": "backend"
+    },
+    {
+      "participant": "collector",
+      "from": 207,
+      "to": 731,
+      "type": "backend"
+    },
+    {
+      "participant": "evidence",
+      "from": 619,
+      "to": 699,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Why this path exists",
+      "items": [
+        "The pods table must not depend on the model or MCP",
+        "Same evidence shape as chat, so both can be compared item by item"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Failures become evidence",
+      "items": [
+        "401 auth and 403 forbidden: denied",
+        "timeout, 5xx unavailable, oversized page, bad shape invalid_output: missing",
+        "Pages read before a failure are kept, so the result is partial"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Limits",
+      "items": [
+        "100 pods per page, 20 pages",
+        "1 MiB per page, 10 s timeout",
+        "500 items, then truncated"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Not configured",
+      "items": [
+        "No kubernetes block in operator config: 200 with configured false"
+      ]
+    }
+  ]
+}

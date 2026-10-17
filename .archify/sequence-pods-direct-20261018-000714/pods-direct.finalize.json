@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "sequence",
+  "quality": "showcase",
+  "startedAt": "2026-10-17T18:37:14.703Z",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/candidate.json",
+    "sha256": "c4709ff5da72572c186955bcef8cfb6b99f1f3a40c46c56816e8b8eaf7588366",
+    "bytes": 5657
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+    "sha256": "9e1f7ad36c905346af287dec614811964776db16e0a7d00840dff43b7316c2dc",
+    "bytes": 815806
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "sequence",
+        "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/candidate.json",
+        "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "c4709ff5da72572c186955bcef8cfb6b99f1f3a40c46c56816e8b8eaf7588366",
+          "bytes": 5657
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 2034,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "sequence",
+        "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/candidate.json",
+        "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "a508b1b6-dc2a-4fbe-b6c3-b6219571ab67",
+        "ok": true,
+        "command": "deliver",
+        "type": "sequence",
+        "input": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/candidate.json",
+        "output": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+        "specification": {
+          "sha256": "c4709ff5da72572c186955bcef8cfb6b99f1f3a40c46c56816e8b8eaf7588366",
+          "bytes": 5657
+        },
+        "artifact": {
+          "sha256": "9e1f7ad36c905346af287dec614811964776db16e0a7d00840dff43b7316c2dc",
+          "bytes": 815806
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:darshan-raul/vyom",
+          "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388",
+          "references": 6,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 786,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+        "artifact": {
+          "sha256": "9e1f7ad36c905346af287dec614811964776db16e0a7d00840dff43b7316c2dc",
+          "bytes": 815806
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 12,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 7,
+            "maxBends": 0,
+            "routesOverSuggestedBends": 0,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 156.8,
+            "minInteriorSegmentPx": null,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": []
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "sequenceColumnSpace": {
+            "measured": true,
+            "columnFit": "spread",
+            "participantCount": 5,
+            "occupiedRight": 880,
+            "viewBoxLeft": 0,
+            "canvasWidth": 920,
+            "emptyRightPx": 40,
+            "emptyRightRatio": 0.043,
+            "typicalParticipantWidth": 135,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": null,
+            "requestedTargetMet": null,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": "p-collect",
+              "from": "api",
+              "to": "collector"
+            },
+            "minimumSourceTextPx": 7,
+            "minimumProjectedTextPx": 7,
+            "semanticTextCount": 25
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "a508b1b6-dc2a-4fbe-b6c3-b6219571ab67"
+      }
+    },
+    "browser-check": {
+      "status": "skipped",
+      "exitCode": 2,
+      "durationMs": 86,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "skipped",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "a508b1b6-dc2a-4fbe-b6c3-b6219571ab67",
+        "artifact": {
+          "path": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+          "sha256": "9e1f7ad36c905346af287dec614811964776db16e0a7d00840dff43b7316c2dc",
+          "bytes": 815806
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "unavailable",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/chrome-unavailable",
+            "severity": "warning",
+            "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+            "subject": {
+              "artifact": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html"
+            },
+            "evidence": {
+              "executable": null
+            },
+            "supportedFixes": [
+              "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "skipped",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "readability": {
+          "status": "skipped",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "pods-direct.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-17T18:37:18.147Z",
+  "durationMs": 3443,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-17T17:26:09.543Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

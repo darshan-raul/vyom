@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ff950a18-032d-4b3e-adae-75e3f86111f8",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/home/darshan/projects/vyom/.archify/workflow-mcp-host-call-20261018-000714/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/workflow-mcp-host-call-20261018-000714/mcp-host-call.html",
+  "specification": {
+    "sha256": "a0d0e577ebe342bbcc5dbd45e3c10a2b33128f06cd578ae5ec9031ac9a31833c",
+    "bytes": 10661
+  },
+  "artifact": {
+    "sha256": "35c9eaa89fc4021f4cd2b67eee3ec35d337475809519b0f28f3f44a608f9b4f9",
+    "bytes": 836869
+  }
+}

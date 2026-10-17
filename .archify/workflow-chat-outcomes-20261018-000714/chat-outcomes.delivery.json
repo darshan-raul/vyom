@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "081ff6b1-48b6-4f22-928c-55c0a44a5222",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/home/darshan/projects/vyom/.archify/workflow-chat-outcomes-20261018-000714/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/workflow-chat-outcomes-20261018-000714/chat-outcomes.html",
+  "specification": {
+    "sha256": "f5827dc4f3e295f7521382ca25db4f7a4140e0070238dab34397638f8148a930",
+    "bytes": 8994
+  },
+  "artifact": {
+    "sha256": "d5940cc685f45c866194ff3a4ca3db71946c14ad9062a273adeac9678b5f1b2d",
+    "bytes": 833874
+  }
+}

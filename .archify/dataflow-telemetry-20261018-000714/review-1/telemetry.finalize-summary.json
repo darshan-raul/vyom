@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "dataflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261018-000714/candidate.json",
+    "sha256": "57f378458e0163620996b1c52d723d2cc287b21596515c39d2f6a07bd320beff",
+    "bytes": 8677
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261018-000714/telemetry.html",
+    "sha256": "e3100d043bd92a8efbd6b542bbf46bbdbb4c1b8c4638a6038dbd7288eb6bb983",
+    "bytes": 824986
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261018-000714/review-1/telemetry.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261018-000714/review-1/telemetry.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261018-000714/review-1/telemetry.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-17T17:26:09.543Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4468
+}

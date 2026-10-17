@@ -1,0 +1,368 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "build_evidence: how one collection gets its state",
+    "output": ".archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "lanes": [
+    {
+      "id": "adjust",
+      "label": "Adjustments"
+    },
+    {
+      "id": "steps",
+      "label": "Normalize (both paths)"
+    },
+    {
+      "id": "usable",
+      "label": "Usable states"
+    },
+    {
+      "id": "unusable",
+      "label": "No usable data",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "inputs",
+    "guard",
+    "limit",
+    "ids",
+    "decide",
+    "complete"
+  ],
+  "nodes": [
+    {
+      "id": "inputs",
+      "lane": "steps",
+      "col": 0,
+      "type": "external",
+      "label": "Inputs",
+      "sublabel": "drafts, complete, errors",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 185,
+          "end_line": 202
+        }
+      ]
+    },
+    {
+      "id": "guard",
+      "lane": "steps",
+      "col": 1,
+      "type": "security",
+      "label": "Namespace guard",
+      "sublabel": "every item in scope?",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 205,
+          "end_line": 208
+        }
+      ]
+    },
+    {
+      "id": "drop",
+      "lane": "adjust",
+      "col": 1,
+      "type": "security",
+      "label": "Drop all items",
+      "sublabel": "+ scope_violation",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 207,
+          "end_line": 208
+        }
+      ]
+    },
+    {
+      "id": "limit",
+      "lane": "steps",
+      "col": 2,
+      "type": "backend",
+      "label": "Item limit",
+      "sublabel": "more than max_items?",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 210,
+          "end_line": 213
+        }
+      ]
+    },
+    {
+      "id": "cut",
+      "lane": "adjust",
+      "col": 2,
+      "type": "backend",
+      "label": "Keep first N",
+      "sublabel": "+ truncated",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 211,
+          "end_line": 213
+        }
+      ]
+    },
+    {
+      "id": "ids",
+      "lane": "steps",
+      "col": 3,
+      "type": "backend",
+      "label": "Assign IDs",
+      "sublabel": "k8s:cluster:ns:kind:name",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 173,
+          "end_line": 180,
+          "label": "resource_id"
+        },
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 217,
+          "end_line": 223
+        }
+      ]
+    },
+    {
+      "id": "decide",
+      "lane": "steps",
+      "col": 4,
+      "type": "security",
+      "label": "Decide state",
+      "sublabel": "first match wins",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 226,
+          "end_line": 238
+        }
+      ]
+    },
+    {
+      "id": "complete",
+      "lane": "usable",
+      "col": 4,
+      "type": "backend",
+      "label": "complete",
+      "sublabel": "full answer, \u22651 item",
+      "icon": "success",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 235,
+          "end_line": 236
+        }
+      ]
+    },
+    {
+      "id": "zero",
+      "lane": "usable",
+      "col": 3,
+      "type": "backend",
+      "label": "zero",
+      "sublabel": "full answer, nothing matches",
+      "icon": "neutral",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 237,
+          "end_line": 238
+        }
+      ]
+    },
+    {
+      "id": "partial",
+      "lane": "usable",
+      "col": 5,
+      "type": "backend",
+      "label": "partial",
+      "sublabel": "some of it is absent",
+      "icon": "waiting",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 233,
+          "end_line": 234
+        }
+      ]
+    },
+    {
+      "id": "denied",
+      "lane": "unusable",
+      "col": 4,
+      "type": "external",
+      "label": "denied",
+      "sublabel": "someone said no",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 63,
+          "end_line": 65,
+          "label": "refusal kinds"
+        },
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 230,
+          "end_line": 232
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "lane": "unusable",
+      "col": 5,
+      "type": "external",
+      "label": "missing",
+      "sublabel": "something broke",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 230,
+          "end_line": 232
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "s1",
+      "from": "inputs",
+      "to": "guard",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s2",
+      "from": "guard",
+      "to": "limit",
+      "label": "all in scope",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s2b",
+      "from": "guard",
+      "to": "drop",
+      "label": "any outside",
+      "role": "branch",
+      "variant": "security"
+    },
+    {
+      "id": "s2c",
+      "from": "drop",
+      "to": "limit",
+      "role": "branch"
+    },
+    {
+      "id": "s3",
+      "from": "limit",
+      "to": "ids",
+      "label": "within limit",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s3b",
+      "from": "limit",
+      "to": "cut",
+      "label": "over",
+      "role": "branch"
+    },
+    {
+      "id": "s3c",
+      "from": "cut",
+      "to": "ids",
+      "role": "branch"
+    },
+    {
+      "id": "s4",
+      "from": "ids",
+      "to": "decide",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d-complete",
+      "from": "decide",
+      "to": "complete",
+      "label": "items",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d-zero",
+      "from": "decide",
+      "to": "zero",
+      "label": "no items",
+      "role": "branch"
+    },
+    {
+      "id": "d-partial",
+      "from": "decide",
+      "to": "partial",
+      "label": "not complete",
+      "role": "branch"
+    },
+    {
+      "id": "d-denied",
+      "from": "decide",
+      "to": "denied",
+      "label": "error, no items, refusal",
+      "role": "error"
+    },
+    {
+      "id": "d-missing",
+      "from": "decide",
+      "to": "missing",
+      "label": "error, no items",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Decision order",
+      "items": [
+        "1. A blocking error and no items: denied if any error is a refusal, else missing",
+        "2. Not complete (cut, failed part-way, or the source said so): partial",
+        "3. Items: complete",
+        "4. Otherwise: zero"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Refusal vs breakage",
+      "items": [
+        "denied: tool_not_allowed, scope_violation, auth, forbidden",
+        "missing: unavailable, timeout, protocol, schema_mismatch, oversized, invalid_output, upstream_error",
+        "truncated alone is not blocking; it only makes the result partial"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Stale is decided by the reader",
+      "items": [
+        "state_at(now, max_age) turns complete, zero or partial into stale when too old",
+        "denied and missing never become stale"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Always recorded",
+      "items": [
+        "A random ev_ id, source (path, workspace, connection, cluster, namespace)",
+        "collected_at, coverage (complete, returned, truncated) and fixed error messages"
+      ]
+    }
+  ]
+}

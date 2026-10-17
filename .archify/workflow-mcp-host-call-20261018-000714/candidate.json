@@ -1,0 +1,478 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "McpHost.call: the gates a proposed tool call passes",
+    "output": ".archify/workflow-mcp-host-call-20261018-000714/mcp-host-call.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "lanes": [
+    {
+      "id": "refuse",
+      "label": "Refused before network",
+      "variant": "exception"
+    },
+    {
+      "id": "policy",
+      "label": "Host side, no network"
+    },
+    {
+      "id": "session",
+      "label": "One MCP session per call"
+    },
+    {
+      "id": "fail",
+      "label": "Failed on the session",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "ph-policy",
+      "label": "Check the proposal",
+      "fromCol": 0,
+      "toCol": 2,
+      "variant": "security"
+    },
+    {
+      "id": "ph-session",
+      "label": "Connect, verify, call",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "proposal",
+    "allow",
+    "conn",
+    "bind",
+    "open",
+    "schema",
+    "call",
+    "project"
+  ],
+  "nodes": [
+    {
+      "id": "proposal",
+      "lane": "policy",
+      "col": 0,
+      "type": "external",
+      "label": "Proposed call",
+      "sublabel": "tool id + args (untrusted)",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 268,
+          "end_line": 274,
+          "label": "collect step"
+        }
+      ]
+    },
+    {
+      "id": "allow",
+      "lane": "policy",
+      "col": 1,
+      "type": "security",
+      "label": "Tool allowed?",
+      "sublabel": "reviewed spec AND enabled",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 205,
+          "end_line": 221,
+          "label": "allowlist built"
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 302,
+          "end_line": 315
+        }
+      ]
+    },
+    {
+      "id": "conn",
+      "lane": "policy",
+      "col": 2,
+      "type": "security",
+      "label": "Same connection?",
+      "sublabel": "server vs trusted context",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 316,
+          "end_line": 319
+        }
+      ]
+    },
+    {
+      "id": "bind",
+      "lane": "policy",
+      "col": 3,
+      "type": "security",
+      "label": "Bind arguments",
+      "sublabel": "validate; set namespace",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 437,
+          "end_line": 456
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/kubernetes.py",
+          "line": 26,
+          "end_line": 30,
+          "label": "labelSelector only"
+        }
+      ]
+    },
+    {
+      "id": "open",
+      "lane": "session",
+      "col": 3,
+      "type": "backend",
+      "label": "Open session",
+      "sublabel": "fresh Bearer, TLS, deadline",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 365,
+          "end_line": 395
+        }
+      ]
+    },
+    {
+      "id": "schema",
+      "lane": "session",
+      "col": 4,
+      "type": "security",
+      "label": "Schema digest",
+      "sublabel": "tools/list = reviewed sha256",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 415,
+          "end_line": 433
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 464,
+          "end_line": 466
+        }
+      ]
+    },
+    {
+      "id": "call",
+      "lane": "session",
+      "col": 5,
+      "type": "cloud",
+      "label": "tools/call",
+      "sublabel": "pods_list_in_namespace",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 467,
+          "end_line": 476
+        }
+      ]
+    },
+    {
+      "id": "project",
+      "lane": "policy",
+      "col": 5,
+      "type": "backend",
+      "label": "Project output",
+      "sublabel": "6 columns, Pod rows",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/kubernetes.py",
+          "line": 33,
+          "end_line": 72
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 477,
+          "end_line": 489
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "lane": "policy",
+      "col": 4,
+      "type": "database",
+      "label": "build_evidence",
+      "sublabel": "path mcp; returned to graph",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 327,
+          "end_line": 349
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 350,
+          "end_line": 360,
+          "label": "returned, never raised"
+        }
+      ]
+    },
+    {
+      "id": "not_allowed",
+      "lane": "refuse",
+      "col": 1,
+      "type": "external",
+      "label": "tool_not_allowed",
+      "sublabel": "state: denied",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 314,
+          "end_line": 315
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "lane": "refuse",
+      "col": 2,
+      "type": "external",
+      "label": "scope_violation",
+      "sublabel": "state: denied",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 318,
+          "end_line": 319
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 447,
+          "end_line": 450
+        }
+      ]
+    },
+    {
+      "id": "badargs",
+      "lane": "refuse",
+      "col": 3,
+      "type": "external",
+      "label": "invalid_arguments",
+      "sublabel": "state: missing",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 441,
+          "end_line": 454
+        }
+      ]
+    },
+    {
+      "id": "connfail",
+      "lane": "fail",
+      "col": 3,
+      "type": "external",
+      "label": "auth / timeout / unavailable",
+      "sublabel": "or protocol, oversized",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 129,
+          "end_line": 156
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 95,
+          "end_line": 104,
+          "label": "401/403 noted"
+        }
+      ]
+    },
+    {
+      "id": "mismatch",
+      "lane": "fail",
+      "col": 4,
+      "type": "external",
+      "label": "schema_mismatch",
+      "sublabel": "state: missing",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 428,
+          "end_line": 433
+        }
+      ]
+    },
+    {
+      "id": "upstream",
+      "lane": "fail",
+      "col": 5,
+      "type": "external",
+      "label": "forbidden / upstream_error",
+      "sublabel": "or invalid_output",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 470,
+          "end_line": 481
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/kubernetes.py",
+          "line": 76,
+          "end_line": 77,
+          "label": "forbidden test"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "proposal",
+      "to": "allow",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e2",
+      "from": "allow",
+      "to": "conn",
+      "label": "yes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "conn",
+      "to": "bind",
+      "label": "yes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e4",
+      "from": "bind",
+      "to": "open",
+      "label": "valid",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e5",
+      "from": "open",
+      "to": "schema",
+      "label": "connected",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e6",
+      "from": "schema",
+      "to": "call",
+      "label": "match",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e7",
+      "from": "call",
+      "to": "project",
+      "label": "not is_error",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e8",
+      "from": "project",
+      "to": "evidence",
+      "label": "drafts",
+      "variant": "emphasis",
+      "role": "return"
+    },
+    {
+      "id": "r1",
+      "from": "allow",
+      "to": "not_allowed",
+      "label": "no",
+      "role": "error"
+    },
+    {
+      "id": "r2",
+      "from": "conn",
+      "to": "scope",
+      "label": "no",
+      "role": "error"
+    },
+    {
+      "id": "r3",
+      "from": "bind",
+      "to": "badargs",
+      "label": "bad shape",
+      "role": "error"
+    },
+    {
+      "id": "f1",
+      "from": "open",
+      "to": "connfail",
+      "label": "fails",
+      "role": "error"
+    },
+    {
+      "id": "f2",
+      "from": "schema",
+      "to": "mismatch",
+      "label": "differs",
+      "role": "error"
+    },
+    {
+      "id": "f3",
+      "from": "call",
+      "to": "upstream",
+      "label": "error",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Every failure is still evidence",
+      "items": [
+        "Each stop raises an internal failure with one fixed kind",
+        "call() catches it and passes the kind to build_evidence",
+        "denied: tool_not_allowed, scope_violation, auth, forbidden",
+        "missing: every other kind, when no items came back"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "What the model can and cannot set",
+      "items": [
+        "It names a tool id and labelSelector only",
+        "namespace is hidden from the model and filled from the trusted context",
+        "Repeating the trusted namespace is allowed; any other value is scope_violation"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Per-session limits",
+      "items": [
+        "Connect 5 s + call 15 s under one deadline",
+        "Response body capped at 256 KiB; a 401/403 marks the session as auth",
+        "No session, token or schema outlives the call"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Telemetry",
+      "items": [
+        "One span mcp.client.call, one metric and one log line per call",
+        "Unknown tool names are labelled unlisted"
+      ]
+    }
+  ]
+}

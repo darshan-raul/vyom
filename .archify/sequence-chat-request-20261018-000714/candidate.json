@@ -1,0 +1,447 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "POST /api/chat: one question, one tool call, one cited answer",
+    "output": ".archify/sequence-chat-request-20261018-000714/chat-request.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Ask Vyom panel",
+      "sources": [
+        {
+          "path": "frontend/src/lib/agent.ts",
+          "line": 80,
+          "end_line": 100,
+          "label": "useAsk()"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI",
+      "sublabel": "/api/chat",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 32,
+          "end_line": 38,
+          "label": "ChatRequest"
+        },
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 148,
+          "end_line": 162,
+          "label": "chat route"
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "ChatAgent",
+      "sublabel": "LangGraph",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 205,
+          "end_line": 227,
+          "label": "ask()"
+        },
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 235,
+          "end_line": 332,
+          "label": "propose, collect, answer"
+        }
+      ]
+    },
+    {
+      "id": "model",
+      "type": "backend",
+      "label": "ModelClient",
+      "sublabel": "ChatOpenAI",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 301,
+          "end_line": 388
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "type": "external",
+      "label": "Model provider",
+      "sublabel": "OpenRouter",
+      "sources": [
+        {
+          "path": "scripts/dev-up.sh",
+          "line": 83,
+          "end_line": 88
+        }
+      ]
+    },
+    {
+      "id": "host",
+      "type": "security",
+      "label": "McpHost",
+      "sublabel": "policy",
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 293,
+          "end_line": 360,
+          "label": "call()"
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 365,
+          "end_line": 395,
+          "label": "_session()"
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 460,
+          "end_line": 491,
+          "label": "_invoke()"
+        }
+      ]
+    },
+    {
+      "id": "proxy",
+      "type": "security",
+      "label": "kube-rbac-proxy",
+      "sublabel": ":8443",
+      "sources": [
+        {
+          "path": "deploy/kubernetes-mcp/manifests.yaml",
+          "line": 165,
+          "end_line": 173
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "MCP server",
+      "sublabel": "127.0.0.1:8080",
+      "sources": [
+        {
+          "path": "deploy/kubernetes-mcp/config.toml",
+          "line": 4,
+          "end_line": 27
+        }
+      ]
+    },
+    {
+      "id": "k8s",
+      "type": "cloud",
+      "label": "Kubernetes API",
+      "sublabel": "ns demo",
+      "sources": [
+        {
+          "path": "deploy/kubernetes-mcp/manifests.yaml",
+          "line": 24,
+          "end_line": 31
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 364,
+      "label": "Request"
+    },
+    {
+      "from": 374,
+      "to": 702,
+      "label": "1 \u00b7 propose"
+    },
+    {
+      "from": 712,
+      "to": 1444,
+      "label": "2 \u00b7 collect"
+    },
+    {
+      "from": 1454,
+      "to": 1722,
+      "label": "3 \u00b7 answer"
+    },
+    {
+      "from": 1732,
+      "to": 1861,
+      "label": "Result"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-post",
+      "from": "browser",
+      "to": "api",
+      "y": 175,
+      "label": "POST {question}",
+      "variant": "emphasis",
+      "note": "Any field besides question is rejected (422); 1 to 500 characters"
+    },
+    {
+      "id": "m-ask",
+      "from": "api",
+      "to": "agent",
+      "y": 267,
+      "label": "ask(question, context)",
+      "variant": "emphasis",
+      "note": "context comes from operator config, never the request"
+    },
+    {
+      "id": "m-propose",
+      "from": "agent",
+      "to": "model",
+      "y": 389,
+      "label": "system + question + tools",
+      "note": "System prompt names the namespace and asks for one tool call"
+    },
+    {
+      "id": "m-http1",
+      "from": "model",
+      "to": "provider",
+      "y": 481,
+      "label": "POST chat/completions",
+      "note": "API key read from its reference now; 0 retries; reply body capped"
+    },
+    {
+      "id": "m-reply1",
+      "from": "provider",
+      "to": "model",
+      "y": 573,
+      "label": "tool_calls",
+      "variant": "return"
+    },
+    {
+      "id": "m-propose-back",
+      "from": "model",
+      "to": "agent",
+      "y": 605,
+      "label": "Reply",
+      "variant": "return",
+      "note": "A call without an id, name or JSON args is a ModelError"
+    },
+    {
+      "id": "m-call",
+      "from": "agent",
+      "to": "host",
+      "y": 727,
+      "label": "call(tool, args, context)",
+      "variant": "emphasis",
+      "note": "Tool must be reviewed + enabled; args validated; namespace set by host"
+    },
+    {
+      "id": "m-init",
+      "from": "host",
+      "to": "proxy",
+      "y": 819,
+      "label": "initialize, tools/list",
+      "variant": "security",
+      "note": "New session per call; Bearer token read from file now; TLS to Vyom's CA"
+    },
+    {
+      "id": "m-review",
+      "from": "proxy",
+      "to": "k8s",
+      "y": 911,
+      "label": "TokenReview + SubjectAccessReview",
+      "variant": "security",
+      "note": "Audience vyom-mcp; may vyom-api create mcpendpoints/kubernetes?"
+    },
+    {
+      "id": "m-review-ok",
+      "from": "k8s",
+      "to": "proxy",
+      "y": 1003,
+      "label": "allowed",
+      "variant": "return"
+    },
+    {
+      "id": "m-fwd1",
+      "from": "proxy",
+      "to": "mcp",
+      "y": 1035,
+      "label": "forward",
+      "note": "Host compares the advertised schema digest with the reviewed one"
+    },
+    {
+      "id": "m-tool",
+      "from": "host",
+      "to": "proxy",
+      "y": 1127,
+      "label": "tools/call pods_list_in_namespace",
+      "variant": "security"
+    },
+    {
+      "id": "m-fwd2",
+      "from": "proxy",
+      "to": "mcp",
+      "y": 1159,
+      "label": "forward (checked again)"
+    },
+    {
+      "id": "m-list",
+      "from": "mcp",
+      "to": "k8s",
+      "y": 1191,
+      "label": "list pods in demo",
+      "note": "As its own SA, kubernetes-mcp; the caller's token is not passed on"
+    },
+    {
+      "id": "m-pods",
+      "from": "k8s",
+      "to": "mcp",
+      "y": 1283,
+      "label": "pods",
+      "variant": "return"
+    },
+    {
+      "id": "m-table",
+      "from": "mcp",
+      "to": "host",
+      "y": 1315,
+      "label": "pod table text (via proxy)",
+      "variant": "return"
+    },
+    {
+      "id": "m-evidence",
+      "from": "host",
+      "to": "agent",
+      "y": 1347,
+      "label": "Evidence",
+      "variant": "return",
+      "note": "6 columns kept, IDs assigned, state set; failures are Evidence too"
+    },
+    {
+      "id": "m-answer",
+      "from": "agent",
+      "to": "model",
+      "y": 1469,
+      "label": "history + evidence JSON",
+      "note": "At most 50 items, each with a ref number to cite as [n]"
+    },
+    {
+      "id": "m-http2",
+      "from": "model",
+      "to": "provider",
+      "y": 1561,
+      "label": "POST chat/completions"
+    },
+    {
+      "id": "m-reply2",
+      "from": "provider",
+      "to": "model",
+      "y": 1593,
+      "label": "text with [n]",
+      "variant": "return"
+    },
+    {
+      "id": "m-answer-back",
+      "from": "model",
+      "to": "agent",
+      "y": 1625,
+      "label": "Reply",
+      "variant": "return",
+      "note": "Graph checks: no new tool call, finish=stop, \u22644000 chars, every [n] was collected"
+    },
+    {
+      "id": "m-result",
+      "from": "agent",
+      "to": "api",
+      "y": 1747,
+      "label": "ChatResult answered",
+      "variant": "return"
+    },
+    {
+      "id": "m-response",
+      "from": "api",
+      "to": "browser",
+      "y": 1779,
+      "label": "200 + trace_id",
+      "variant": "return",
+      "note": "answer, citations and evidence; every outcome is a 200 with an outcome field"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "api",
+      "from": 175,
+      "to": 1779,
+      "type": "backend"
+    },
+    {
+      "participant": "agent",
+      "from": 267,
+      "to": 1747,
+      "type": "backend"
+    },
+    {
+      "participant": "model",
+      "from": 389,
+      "to": 605,
+      "type": "backend"
+    },
+    {
+      "participant": "host",
+      "from": 727,
+      "to": 1347,
+      "type": "security"
+    },
+    {
+      "participant": "proxy",
+      "from": 819,
+      "to": 1315,
+      "type": "security"
+    },
+    {
+      "participant": "model",
+      "from": 1469,
+      "to": 1625,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "The happy path",
+      "items": [
+        "Two model requests and one MCP tool call per question",
+        "The answer is passed on only if its citations match items that were read"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Where authority comes from",
+      "items": [
+        "Browser: the question only",
+        "Scope and endpoint: operator config",
+        "Tool policy: McpHost; caller check: kube-rbac-proxy; Kubernetes read: the MCP server's own SA"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "When it does not go this way",
+      "items": [
+        "The graph stops early with a fixed limitation text instead of an answer",
+        "See the chat graph outcomes diagram for all eight endings"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261018-000714/candidate.json",
+    "sha256": "1131014e75bc5f01bdb0da336e0726916b97071e28b52d18bbca3e17d3f7921f",
+    "bytes": 10195
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261018-000714/chat-request.html",
+    "sha256": "3cc71dbdfc04e23d33f7b9707d744aa8148a09eb891b874494593a2bedb65f30",
+    "bytes": 833980
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261018-000714/review-1/chat-request.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261018-000714/review-1/chat-request.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261018-000714/review-1/chat-request.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-17T17:26:09.543Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5238
+}

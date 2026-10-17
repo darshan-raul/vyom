@@ -1,0 +1,448 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Vyom backend: components and the two read paths",
+    "output": ".archify/architecture-backend-overview-20261018-000714/backend-overview.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser console",
+      "sublabel": "React UI :5173",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI routes",
+      "sublabel": "uvicorn :8000",
+      "pos": [
+        305,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 84,
+          "end_line": 165,
+          "label": "create_app and routes"
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "ChatAgent",
+      "sublabel": "LangGraph, 3 steps",
+      "tag": "60 s deadline",
+      "pos": [
+        570,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 186,
+          "end_line": 227,
+          "label": "graph and ask()"
+        }
+      ]
+    },
+    {
+      "id": "model",
+      "type": "backend",
+      "label": "ModelClient",
+      "sublabel": "LangChain ChatOpenAI",
+      "pos": [
+        835,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 290,
+          "end_line": 388,
+          "label": "chat() and _invoke()"
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "type": "external",
+      "label": "Model provider",
+      "sublabel": "OpenRouter (dev)",
+      "pos": [
+        1100,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "scripts/dev-up.sh",
+          "line": 83,
+          "end_line": 88,
+          "label": "model endpoint config"
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "type": "database",
+      "label": "Operator config",
+      "sublabel": "VYOM_CONFIG JSON",
+      "tag": "trusted scope",
+      "pos": [
+        40,
+        250
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/registry.py",
+          "line": 97,
+          "end_line": 121
+        },
+        {
+          "path": "backend/src/vyom/context.py",
+          "line": 20,
+          "end_line": 48,
+          "label": "TrustedContext"
+        }
+      ]
+    },
+    {
+      "id": "host",
+      "type": "security",
+      "label": "McpHost",
+      "sublabel": "allowlist + scope",
+      "tag": "1 session per call",
+      "pos": [
+        570,
+        250
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 293,
+          "end_line": 360,
+          "label": "call()"
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 365,
+          "end_line": 395,
+          "label": "_session()"
+        }
+      ]
+    },
+    {
+      "id": "proxy",
+      "type": "security",
+      "label": "kube-rbac-proxy",
+      "sublabel": "TLS :8443",
+      "tag": "TokenReview + SAR",
+      "pos": [
+        835,
+        250
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "deploy/kubernetes-mcp/manifests.yaml",
+          "line": 165,
+          "end_line": 173
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "Kubernetes MCP",
+      "sublabel": "upstream v0.0.67",
+      "tag": "127.0.0.1:8080",
+      "pos": [
+        1100,
+        250
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "deploy/kubernetes-mcp/config.toml",
+          "line": 4,
+          "end_line": 27
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/kubernetes.py",
+          "line": 81,
+          "end_line": 98,
+          "label": "reviewed tool spec"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "type": "backend",
+      "label": "build_evidence",
+      "sublabel": "one shape, six states",
+      "pos": [
+        570,
+        440
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/evidence.py",
+          "line": 185,
+          "end_line": 257
+        }
+      ]
+    },
+    {
+      "id": "k8s",
+      "type": "cloud",
+      "label": "Kubernetes API",
+      "sublabel": "namespace demo",
+      "tag": "list pods only",
+      "pos": [
+        1100,
+        440
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "deploy/kubernetes-mcp/manifests.yaml",
+          "line": 24,
+          "end_line": 31,
+          "label": "MCP SA: list pods"
+        },
+        {
+          "path": "deploy/collector/rbac.yaml",
+          "line": 14,
+          "end_line": 21,
+          "label": "collector SA: list pods"
+        }
+      ]
+    },
+    {
+      "id": "collector",
+      "type": "backend",
+      "label": "PodCollector",
+      "sublabel": "direct, no model",
+      "tag": "Table, \u226420 pages",
+      "pos": [
+        305,
+        620
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/src/vyom/collectors/kubernetes.py",
+          "line": 141,
+          "end_line": 257
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Kind cluster vyom",
+      "wraps": [
+        "proxy",
+        "mcp",
+        "k8s"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "MCP pod (ns vyom)",
+      "wraps": [
+        "proxy",
+        "mcp"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-api",
+      "from": "browser",
+      "to": "api",
+      "label": "JSON over HTTP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-agent",
+      "from": "api",
+      "to": "agent",
+      "label": "ask(q, context)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "agent-model",
+      "from": "agent",
+      "to": "model",
+      "label": "propose, answer"
+    },
+    {
+      "id": "model-provider",
+      "from": "model",
+      "to": "provider",
+      "label": "HTTPS, 0 retries"
+    },
+    {
+      "id": "agent-host",
+      "from": "agent",
+      "to": "host",
+      "label": "call(tool, args)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "host-proxy",
+      "from": "host",
+      "to": "proxy",
+      "label": "MCP + Bearer",
+      "variant": "security"
+    },
+    {
+      "id": "proxy-mcp",
+      "from": "proxy",
+      "to": "mcp",
+      "label": "if allowed"
+    },
+    {
+      "id": "mcp-k8s",
+      "from": "mcp",
+      "to": "k8s",
+      "label": "list pods, own SA"
+    },
+    {
+      "id": "host-evidence",
+      "from": "host",
+      "to": "evidence",
+      "label": "normalize"
+    },
+    {
+      "id": "config-api",
+      "from": "config",
+      "to": "api",
+      "label": "scope at startup",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "api-collector",
+      "from": "api",
+      "to": "collector",
+      "label": "GET /api/kubernetes/pods"
+    },
+    {
+      "id": "collector-evidence",
+      "from": "collector",
+      "to": "evidence",
+      "label": "normalize",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "collector-k8s",
+      "from": "collector",
+      "to": "k8s",
+      "label": "Table read, own SA",
+      "fromSide": "right",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two paths, one evidence shape",
+      "items": [
+        "Chat: the model proposes a read, McpHost makes it through the MCP server",
+        "Pods page: PodCollector reads the API directly, with no model and no MCP",
+        "Both end in build_evidence, so IDs, time, coverage and state mean the same"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust",
+      "items": [
+        "The browser sends only a question: extra fields are rejected (HTTP 422)",
+        "Scope (connection, namespace) comes from operator config, never the request",
+        "Each credential is a file: or env: reference, read fresh on every use"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Three identities",
+      "items": [
+        "vyom-api: may only call the MCP endpoint (token audience vyom-mcp)",
+        "kubernetes-mcp: the MCP server's own SA, list pods in demo",
+        "vyom-collector: the direct path's own SA, list pods in demo"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Not drawn here",
+      "items": [
+        "Telemetry: see the telemetry diagram",
+        "GET /api/agent and /api/health report config only and call nothing",
+        "McpHost.discover is used only by scripts/mcp_live_check.py",
+        "On dev the backend runs on the laptop; MCP is reached by port-forward 127.0.0.1:18443"
+      ]
+    }
+  ]
+}

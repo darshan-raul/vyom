@@ -1,0 +1,334 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "ModelClient.chat: one model request, no retries",
+    "output": ".archify/workflow-model-request-20261018-000714/model-request.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "lanes": [
+    {
+      "id": "req",
+      "label": "Request"
+    },
+    {
+      "id": "err",
+      "label": "ModelError, fixed kind",
+      "variant": "exception"
+    },
+    {
+      "id": "tel",
+      "label": "Telemetry (always)"
+    }
+  ],
+  "mainPath": [
+    "caller",
+    "key",
+    "client",
+    "invoke",
+    "check",
+    "reply"
+  ],
+  "nodes": [
+    {
+      "id": "caller",
+      "lane": "req",
+      "col": 0,
+      "type": "external",
+      "label": "Graph step",
+      "sublabel": "messages + tool list",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 237,
+          "end_line": 242,
+          "label": "propose"
+        },
+        {
+          "path": "backend/src/vyom/agent/graph.py",
+          "line": 303,
+          "end_line": 306,
+          "label": "answer"
+        }
+      ]
+    },
+    {
+      "id": "key",
+      "lane": "req",
+      "col": 1,
+      "type": "security",
+      "label": "Read API key",
+      "sublabel": "file: or env: ref, now",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 354,
+          "end_line": 358
+        },
+        {
+          "path": "backend/src/vyom/credentials.py",
+          "line": 29,
+          "end_line": 43
+        }
+      ]
+    },
+    {
+      "id": "client",
+      "lane": "req",
+      "col": 2,
+      "type": "backend",
+      "label": "Build ChatOpenAI",
+      "sublabel": "0 retries, body capped",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 360,
+          "end_line": 378
+        },
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 267,
+          "end_line": 284,
+          "label": "_CappedTransport"
+        }
+      ]
+    },
+    {
+      "id": "invoke",
+      "lane": "req",
+      "col": 3,
+      "type": "cloud",
+      "label": "chat/completions",
+      "sublabel": "HTTPS, 30 s timeout",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 379,
+          "end_line": 388
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "lane": "req",
+      "col": 4,
+      "type": "security",
+      "label": "Tool calls well formed?",
+      "sublabel": "id, name, JSON args",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 188,
+          "end_line": 199
+        },
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 319,
+          "end_line": 323
+        }
+      ]
+    },
+    {
+      "id": "reply",
+      "lane": "req",
+      "col": 5,
+      "type": "backend",
+      "label": "Reply",
+      "sublabel": "message, finish, usage",
+      "icon": "success",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 99,
+          "end_line": 104
+        },
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 324,
+          "end_line": 325
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "lane": "err",
+      "col": 1,
+      "type": "external",
+      "label": "missing_credential",
+      "sublabel": "key not readable",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 357,
+          "end_line": 358
+        }
+      ]
+    },
+    {
+      "id": "classify",
+      "lane": "err",
+      "col": 3,
+      "type": "external",
+      "label": "_classify(error)",
+      "sublabel": "auth, quota, rate_limited, \u2026",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 211,
+          "end_line": 240
+        },
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 157,
+          "end_line": 168,
+          "label": "HTTP status map"
+        }
+      ]
+    },
+    {
+      "id": "malformed",
+      "lane": "err",
+      "col": 4,
+      "type": "external",
+      "label": "malformed_tool_call",
+      "sublabel": "proposal unusable",
+      "icon": "failure",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 322,
+          "end_line": 323
+        }
+      ]
+    },
+    {
+      "id": "record",
+      "lane": "tel",
+      "col": 5,
+      "type": "messagebus",
+      "label": "record_model_request",
+      "sublabel": "span, metrics, log",
+      "sources": [
+        {
+          "path": "backend/src/vyom/agent/model.py",
+          "line": 334,
+          "end_line": 348
+        },
+        {
+          "path": "backend/src/vyom/telemetry.py",
+          "line": 274,
+          "end_line": 312
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "m1",
+      "from": "caller",
+      "to": "key",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "key",
+      "to": "client",
+      "label": "ok",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m3",
+      "from": "client",
+      "to": "invoke",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m4",
+      "from": "invoke",
+      "to": "check",
+      "label": "AIMessage",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m5",
+      "from": "check",
+      "to": "reply",
+      "label": "yes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "x1",
+      "from": "key",
+      "to": "missing",
+      "label": "unreadable",
+      "role": "error"
+    },
+    {
+      "id": "x2",
+      "from": "invoke",
+      "to": "classify",
+      "label": "any exception",
+      "role": "error"
+    },
+    {
+      "id": "x3",
+      "from": "check",
+      "to": "malformed",
+      "label": "no",
+      "role": "error"
+    },
+    {
+      "id": "t1",
+      "from": "reply",
+      "to": "record",
+      "label": "finally",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "t2",
+      "from": "malformed",
+      "to": "record",
+      "variant": "dashed",
+      "role": "async"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Error kinds (provider text is never used)",
+      "items": [
+        "401/403 auth, 402 quota, 429 rate_limited, 408/504 timeout",
+        "5xx or no connection: unavailable; other 4xx: rejected",
+        "Body over 256 KiB: oversized; not an AIMessage: invalid_response",
+        "In the graph every ModelError ends the question as model_unavailable"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "What the caller cannot change",
+      "items": [
+        "Endpoint, model and key come from operator config",
+        "Only https base_url without credentials, query or fragment is accepted",
+        "Output capped at 1024 tokens"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Telemetry, once per request",
+      "items": [
+        "The finally block records ok or the error kind, every time",
+        "Tokens only as the provider reported them; none reported is counted as unavailable, not zero",
+        "LangSmith export is switched off; no prompt or reply is recorded"
+      ]
+    }
+  ]
+}

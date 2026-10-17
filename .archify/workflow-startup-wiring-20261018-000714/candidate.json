@@ -1,0 +1,390 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Startup: what create_app builds from operator config",
+    "output": ".archify/workflow-startup-wiring-20261018-000714/startup-wiring.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "link_mode": "local-only",
+      "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388"
+    }
+  },
+  "lanes": [
+    {
+      "id": "start",
+      "label": "Process start (once)"
+    },
+    {
+      "id": "built",
+      "label": "Chat path objects"
+    },
+    {
+      "id": "routes",
+      "label": "Chat routes"
+    },
+    {
+      "id": "direct",
+      "label": "Direct path"
+    },
+    {
+      "id": "none",
+      "label": "Missing config",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "import",
+    "logging",
+    "load",
+    "create",
+    "resolver",
+    "host",
+    "agent",
+    "chat"
+  ],
+  "nodes": [
+    {
+      "id": "import",
+      "lane": "start",
+      "col": 0,
+      "type": "external",
+      "label": "uvicorn imports",
+      "sublabel": "vyom.api.app:app",
+      "sources": [
+        {
+          "path": "scripts/dev-up.sh",
+          "line": 99,
+          "end_line": 100
+        },
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 176,
+          "end_line": 177
+        }
+      ]
+    },
+    {
+      "id": "logging",
+      "lane": "start",
+      "col": 1,
+      "type": "messagebus",
+      "label": "configure_logging",
+      "sublabel": "JSON to stdout",
+      "sources": [
+        {
+          "path": "backend/src/vyom/telemetry.py",
+          "line": 123,
+          "end_line": 135
+        }
+      ]
+    },
+    {
+      "id": "load",
+      "lane": "start",
+      "col": 2,
+      "type": "security",
+      "label": "Load operator config",
+      "sublabel": "VYOM_CONFIG, validated",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 169,
+          "end_line": 171
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/registry.py",
+          "line": 43,
+          "end_line": 121
+        },
+        {
+          "path": "backend/src/vyom/credentials.py",
+          "line": 20,
+          "end_line": 26,
+          "label": "refs only, never values"
+        }
+      ]
+    },
+    {
+      "id": "create",
+      "lane": "start",
+      "col": 3,
+      "type": "backend",
+      "label": "create_app",
+      "sublabel": "FastAPI + instrument",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 84,
+          "end_line": 98
+        }
+      ]
+    },
+    {
+      "id": "resolver",
+      "lane": "built",
+      "col": 3,
+      "type": "security",
+      "label": "FixedContextResolver",
+      "sublabel": "one trusted context",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 101,
+          "end_line": 101
+        },
+        {
+          "path": "backend/src/vyom/context.py",
+          "line": 38,
+          "end_line": 48
+        }
+      ]
+    },
+    {
+      "id": "host",
+      "lane": "built",
+      "col": 4,
+      "type": "security",
+      "label": "McpHost(SPECS)",
+      "sublabel": "reviewed AND enabled",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 103,
+          "end_line": 104
+        },
+        {
+          "path": "backend/src/vyom/mcp_client/host.py",
+          "line": 205,
+          "end_line": 233
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "lane": "built",
+      "col": 5,
+      "type": "backend",
+      "label": "ChatAgent",
+      "sublabel": "needs model + tools",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 106,
+          "end_line": 110
+        }
+      ]
+    },
+    {
+      "id": "status",
+      "lane": "routes",
+      "col": 4,
+      "type": "frontend",
+      "label": "GET /api/agent",
+      "sublabel": "config only, no calls",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 121,
+          "end_line": 136
+        }
+      ]
+    },
+    {
+      "id": "chat",
+      "lane": "routes",
+      "col": 5,
+      "type": "frontend",
+      "label": "POST /api/chat",
+      "sublabel": "agent.ask(\u2026)",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 148,
+          "end_line": 162
+        }
+      ]
+    },
+    {
+      "id": "collector",
+      "lane": "direct",
+      "col": 2,
+      "type": "backend",
+      "label": "PodCollector",
+      "sublabel": "needs kubernetes block",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 112,
+          "end_line": 112
+        },
+        {
+          "path": "backend/src/vyom/collectors/kubernetes.py",
+          "line": 38,
+          "end_line": 73
+        }
+      ]
+    },
+    {
+      "id": "pods",
+      "lane": "direct",
+      "col": 3,
+      "type": "frontend",
+      "label": "GET /api/kubernetes/pods",
+      "sublabel": "collect(context)",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 139,
+          "end_line": 145
+        }
+      ]
+    },
+    {
+      "id": "noconfig",
+      "lane": "none",
+      "col": 1,
+      "type": "external",
+      "label": "No VYOM_CONFIG",
+      "sublabel": "nothing built",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 169,
+          "end_line": 171
+        }
+      ]
+    },
+    {
+      "id": "notconf",
+      "lane": "none",
+      "col": 5,
+      "type": "external",
+      "label": "not_configured",
+      "sublabel": "or configured false",
+      "icon": "stop",
+      "sources": [
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 143,
+          "end_line": 144
+        },
+        {
+          "path": "backend/src/vyom/api/app.py",
+          "line": 152,
+          "end_line": 153
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "w1",
+      "from": "import",
+      "to": "logging",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w2",
+      "from": "logging",
+      "to": "load",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w3",
+      "from": "load",
+      "to": "create",
+      "label": "valid",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w4",
+      "from": "create",
+      "to": "resolver",
+      "label": "context",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w5",
+      "from": "resolver",
+      "to": "host",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w6",
+      "from": "host",
+      "to": "agent",
+      "label": "\u22651 tool",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w7",
+      "from": "agent",
+      "to": "chat",
+      "variant": "emphasis"
+    },
+    {
+      "id": "w8",
+      "from": "host",
+      "to": "status",
+      "label": "tool list"
+    },
+    {
+      "id": "w9",
+      "from": "create",
+      "to": "collector",
+      "label": "kubernetes set",
+      "role": "branch"
+    },
+    {
+      "id": "w10",
+      "from": "collector",
+      "to": "pods"
+    },
+    {
+      "id": "x1",
+      "from": "load",
+      "to": "noconfig",
+      "label": "unset",
+      "role": "error"
+    },
+    {
+      "id": "x2",
+      "from": "chat",
+      "to": "notconf",
+      "label": "no agent",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Config is checked at load, then frozen",
+      "items": [
+        "Every credential is a file: or env: reference; a pasted value is rejected without being echoed",
+        "MCP URLs must be http(s) without user, query or fragment; http needs allow_cleartext",
+        "Model and Kubernetes API URLs must be https; server ids unique"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "What is built only if configured",
+      "items": [
+        "ChatAgent: a model block, an MCP server and at least one enabled, reviewed tool",
+        "PodCollector: a kubernetes block",
+        "Missing parts never fall back to something else: the route says not configured"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Always present",
+      "items": [
+        "GET /api/health: liveness only, checks nothing else",
+        "GET /metrics, request middleware and FastAPI spans from telemetry.instrument"
+      ]
+    }
+  ]
+}

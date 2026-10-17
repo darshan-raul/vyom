@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7386c828-3a03-4f0a-aab8-91e8edce413e",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/backend-overview.html",
+  "specification": {
+    "sha256": "93e18c44d2da7a5ca5ccd350510c3152f5d8547d43861370cc76b6ac4e6e1f67",
+    "bytes": 9531
+  },
+  "artifact": {
+    "sha256": "36bf3959f524c69a13c26ba3196e120ba792ae18b077e8d63617b23e6459ce7c",
+    "bytes": 836047
+  }
+}

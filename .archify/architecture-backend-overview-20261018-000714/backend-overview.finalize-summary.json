@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/candidate.json",
+    "sha256": "93e18c44d2da7a5ca5ccd350510c3152f5d8547d43861370cc76b6ac4e6e1f67",
+    "bytes": 9531
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/backend-overview.html",
+    "sha256": "36bf3959f524c69a13c26ba3196e120ba792ae18b077e8d63617b23e6459ce7c",
+    "bytes": 836047
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "skipped"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/backend-overview.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/backend-overview.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/backend-overview.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/architecture-backend-overview-20261018-000714/backend-overview.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-17T17:26:09.543Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2987
+}

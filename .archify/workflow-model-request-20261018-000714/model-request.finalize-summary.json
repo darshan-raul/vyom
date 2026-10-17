@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/workflow-model-request-20261018-000714/candidate.json",
+    "sha256": "ec8c910aa7fc1d7dddaadaffae66a59eee7a80463f3574cc15cac4e20c3ecf69",
+    "bytes": 7474
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/workflow-model-request-20261018-000714/model-request.html",
+    "sha256": "7fef3f7d0dd9531a99408b59ba134362ff2adfc4259ff3fb36a4080333c800f5",
+    "bytes": 823764
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "skipped"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/.archify/workflow-model-request-20261018-000714/model-request.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/workflow-model-request-20261018-000714/model-request.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/workflow-model-request-20261018-000714/model-request.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/workflow-model-request-20261018-000714/model-request.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-17T17:26:09.543Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3377
+}

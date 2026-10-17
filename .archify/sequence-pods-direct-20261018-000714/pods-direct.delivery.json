@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "56175bbb-7dc9-4d28-b778-250de0803f82",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/sequence-pods-direct-20261018-000714/pods-direct.html",
+  "specification": {
+    "sha256": "c4709ff5da72572c186955bcef8cfb6b99f1f3a40c46c56816e8b8eaf7588366",
+    "bytes": 5657
+  },
+  "artifact": {
+    "sha256": "9e1f7ad36c905346af287dec614811964776db16e0a7d00840dff43b7316c2dc",
+    "bytes": 815806
+  }
+}

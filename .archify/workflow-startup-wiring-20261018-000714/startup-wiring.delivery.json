@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9aa54507-dd0a-4a9b-8fbb-a513ed23c3c2",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/home/darshan/projects/vyom/.archify/workflow-startup-wiring-20261018-000714/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/workflow-startup-wiring-20261018-000714/startup-wiring.html",
+  "specification": {
+    "sha256": "d7b32ddf5a0d9013740aced45bf8b8e885cc060709c3239ed709df7a097b25ae",
+    "bytes": 8455
+  },
+  "artifact": {
+    "sha256": "3e1ec4e92942f52461268c3c41706ae32a827b8f3e4b10c3c5a283450895b9c2",
+    "bytes": 829057
+  }
+}

@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "workflow",
+  "quality": "showcase",
+  "startedAt": "2026-10-17T18:37:14.820Z",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/candidate.json",
+    "sha256": "eccad6746fd0f319ce533d42a8ba565c282bc95b18d2d112f065d43264c3c4ef",
+    "bytes": 7974
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+    "sha256": "1e93af5ecb534cacaa3aac0d27f9ff75bf0cfa29daa0f19ec6b80975668019f9",
+    "bytes": 827635
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "workflow",
+        "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/candidate.json",
+        "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "eccad6746fd0f319ce533d42a8ba565c282bc95b18d2d112f065d43264c3c4ef",
+          "bytes": 7974
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 3222,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "workflow",
+        "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/candidate.json",
+        "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "6831f4e9-60c4-4531-8beb-3b684d7fff2d",
+        "ok": true,
+        "command": "deliver",
+        "type": "workflow",
+        "input": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/candidate.json",
+        "output": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+        "specification": {
+          "sha256": "eccad6746fd0f319ce533d42a8ba565c282bc95b18d2d112f065d43264c3c4ef",
+          "bytes": 7974
+        },
+        "artifact": {
+          "sha256": "1e93af5ecb534cacaa3aac0d27f9ff75bf0cfa29daa0f19ec6b80975668019f9",
+          "bytes": 827635
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:darshan-raul/vyom",
+          "revision": "18bfd6197cfd9ad398571fdfbccd8359164cf388",
+          "references": 14,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 272,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+        "artifact": {
+          "sha256": "1e93af5ecb534cacaa3aac0d27f9ff75bf0cfa29daa0f19ec6b80975668019f9",
+          "bytes": 827635
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 9,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.739130434782609,
+            "maxBends": 0,
+            "routesOverSuggestedBends": 0,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 8,
+            "minInteriorSegmentPx": null,
+            "shortSegmentCount": 4,
+            "shortEndpointSegmentCount": 4,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": []
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": null,
+            "requestedTargetMet": null,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "limit"
+            },
+            "minimumSourceTextPx": 7,
+            "minimumProjectedTextPx": 6.739130434782609,
+            "semanticTextCount": 33
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "6831f4e9-60c4-4531-8beb-3b684d7fff2d"
+      }
+    },
+    "browser-check": {
+      "status": "skipped",
+      "exitCode": 2,
+      "durationMs": 60,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "skipped",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "6831f4e9-60c4-4531-8beb-3b684d7fff2d",
+        "artifact": {
+          "path": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html",
+          "sha256": "1e93af5ecb534cacaa3aac0d27f9ff75bf0cfa29daa0f19ec6b80975668019f9",
+          "bytes": 827635
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "unavailable",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/chrome-unavailable",
+            "severity": "warning",
+            "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+            "subject": {
+              "artifact": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html"
+            },
+            "evidence": {
+              "executable": null
+            },
+            "supportedFixes": [
+              "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "skipped",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "readability": {
+          "status": "skipped",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "evidence-state.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/workflow-evidence-state-20261018-000714/evidence-state.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-17T18:37:18.643Z",
+  "durationMs": 3823,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-17T17:26:09.543Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}
