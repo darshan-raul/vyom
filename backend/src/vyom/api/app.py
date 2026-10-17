@@ -1,5 +1,7 @@
+# os gives access to environment variables.
 import os
 
+# FastAPI is the web framework; pydantic models describe the JSON the API returns.
 from fastapi import FastAPI
 from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,26 +16,33 @@ from vyom.mcp_client.host import McpHost
 from vyom.mcp_client.kubernetes import SPECS
 from vyom.mcp_client.registry import OperatorConfig, load_operator_config
 
+# Name of the environment variable that holds the config file path.
 CONFIG_ENV = "VYOM_CONFIG"  # path of the operator configuration file
 
 
+# Each BaseModel below is the shape of one JSON response (or request). FastAPI validates
+# and documents it automatically.
 class Health(BaseModel):
     status: str
     service: str
     version: str
 
 
+# What the browser may send to /api/chat.
 class ChatRequest(BaseModel):
     # The question is the only thing a browser may send: no scope, tool or endpoint field.
     model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
+    # min_length/max_length: reject an empty or oversized question.
     question: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
 
 
+# Everything in ChatResult (inherited) plus a trace ID.
 class ChatResponse(ChatResult):
     trace_id: str | None = None  # for finding this request's logs and trace; absent untraced
 
 
+# Which connection and namespace the agent is limited to.
 class Scope(BaseModel):
     connection_id: str
     namespace: str
@@ -49,16 +58,19 @@ class ToolInfo(BaseModel):
     description: str
 
 
+# Used by GET /api/agent.
 class AgentStatus(BaseModel):
     """What is configured, from operator configuration. It does not probe the model or MCP."""
 
     configured: bool
     scope: Scope | None = None
     model: ModelInfo | None = None
+    # A default of ``[]`` is safe here: pydantic copies defaults per object.
     tools: list[ToolInfo] = []
     max_question_chars: int = MAX_QUESTION_CHARS
 
 
+# Used by GET /api/kubernetes/pods.
 class PodsView(BaseModel):
     """The direct collector's current read. ``evidence`` is absent only when no collector
     is configured; a failed read is evidence with an error, not an absent field."""
@@ -67,6 +79,8 @@ class PodsView(BaseModel):
     evidence: Evidence | None = None
 
 
+# A factory function: builds the app from settings. Tests call it with fakes (host,
+# model, pods) instead of real services. The bare ``*`` makes those keyword-only.
 def create_app(
     operator: OperatorConfig | None = None,
     *,
@@ -78,12 +92,17 @@ def create_app(
 
     ``host``, ``model`` and ``pods`` replace the ones built from ``operator`` (tests only).
     """
+    # The web application object. Routes are attached to it below.
     app = FastAPI(title="Vyom API", version=__version__)
+    # Adds request logging, /metrics and tracing.
     telemetry.instrument(app)
 
+    # ``X if condition else Y``: build only what the config provides, otherwise None.
     resolver = FixedContextResolver(operator.context) if operator else None
+    # ``a or b`` uses ``a`` if it was passed in (tests), otherwise builds the real one.
     host = host or (McpHost(operator, SPECS) if operator else None)
     tools = host.tools() if host else []
+    # The agent exists only if a model, a host and at least one tool are all configured.
     agent = (
         ChatAgent(model or ModelClient(operator.model), host)
         if operator and operator.model and host and tools
@@ -92,12 +111,15 @@ def create_app(
 
     pods = pods or (PodCollector(operator.kubernetes) if operator and operator.kubernetes else None)
 
+    # A decorator: ``@app.get(path)`` registers the function below as the handler for GET
+    # requests to that path. The return type tells FastAPI the response shape.
     @app.get("/api/health")
     def health() -> Health:
         """Process liveness only; it does not check Kubernetes, MCP or the model provider."""
         return Health(status="ok", service=telemetry.SERVICE_NAME, version=__version__)
 
     @app.get("/api/agent")
+    # Reports what is configured; it does not call the model or MCP.
     def agent_status() -> AgentStatus:
         if operator is None:
             return AgentStatus(configured=False)
@@ -106,11 +128,14 @@ def create_app(
             scope=Scope(
                 connection_id=operator.context.connection_id, namespace=operator.context.namespace
             ),
+            # ``x and Y`` is None when ``x`` is None, otherwise Y. Avoids a separate if.
             model=operator.model
             and ModelInfo(provider=operator.model.provider, model=operator.model.model),
+            # A list comprehension: build a list by looping over ``tools`` in one expression.
             tools=[ToolInfo(id=tool.id, description=tool.description) for tool in tools],
         )
 
+    # ``async def`` handlers can pause at ``await`` while waiting on the network.
     @app.get("/api/kubernetes/pods")
     async def kubernetes_pods() -> PodsView:
         """Pods in the configured namespace, read directly from the Kubernetes API with the
@@ -119,6 +144,7 @@ def create_app(
             return PodsView(configured=False)
         return PodsView(configured=True, evidence=await pods.collect(resolver.resolve()))
 
+    # POST: the browser sends a JSON body, which FastAPI turns into a ChatRequest.
     @app.post("/api/chat")
     async def chat(request: ChatRequest) -> ChatResponse:
         """One question, one bounded tool round, one answer. Every outcome is a 200 with an
@@ -128,19 +154,24 @@ def create_app(
         else:
             # Authority comes from the server-side resolver, never from the request.
             result = await agent.ask(request.question, resolver.resolve())
+        # Get the current trace's ID so a user can find this request's logs and trace.
         context = trace.get_current_span().get_span_context()
         return ChatResponse(
             **result.model_dump(),
             trace_id=format(context.trace_id, "032x") if context.is_valid else None,
         )
 
+    # Hand the finished app back to the caller.
     return app
 
 
+# Read the config file path from the environment; no variable means no config.
 def _operator_from_environment() -> OperatorConfig | None:
     path = os.environ.get(CONFIG_ENV)
     return load_operator_config(path) if path else None
 
 
+# These two lines run when the module is imported. ``app`` is what the server (uvicorn)
+# starts: ``uvicorn vyom.api.app:app``.
 telemetry.configure_logging()
 app = create_app(_operator_from_environment())

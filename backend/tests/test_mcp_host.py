@@ -1,13 +1,18 @@
 """Host behavior against the offline fixture server. Fixture evidence only: nothing here
 proves behavior of the upstream Kubernetes MCP server, which arrives in S1.3."""
 
+# Standard library: asyncio (run async code), json, logging, socket (find a free network
+# port), uuid (random IDs).
 import asyncio
 import json
 import logging
 import socket
 import uuid
+
+# replace(obj, field=value) returns a copy of a frozen dataclass with one field changed.
 from dataclasses import replace
 
+# pytest is the test framework. Shared fake-server helpers come from tests/mcp_fixture.py.
 import pytest
 from mcp_fixture import (
     CONTEXT,
@@ -20,6 +25,8 @@ from mcp_fixture import (
     config,
     run,
 )
+
+# Tools to capture spans and read metrics so tests can inspect what telemetry emitted.
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from prometheus_client import generate_latest
@@ -31,19 +38,24 @@ from vyom.mcp_client.host import McpHost
 from vyom.mcp_client.registry import OperatorConfig
 
 
+# Helper: call the tool through the host once. ``**kwargs`` forwards extra named options.
 def call(upstream, operator_config, arguments=None, *, tool=TOOL, context=CONTEXT, **kwargs):
     return run(
         upstream, operator_config, lambda host: host.call(tool, arguments, context), **kwargs
     )
 
 
+# Just the error kinds, to keep assertions short.
 def kinds(evidence):
     return [error.kind for error in evidence.errors]
 
 
+# Tests grouped by theme.
 # ---- The working path ----------------------------------------------------------------
 
 
+# Happy path: the right items, the namespace and credential come from the host, and
+# nothing extra from the upstream leaks into the result.
 def test_call_returns_projected_evidence_with_host_supplied_scope_and_credential(tmp_path):
     upstream = Upstream()
 
@@ -63,9 +75,11 @@ def test_call_returns_projected_evidence_with_host_supplied_scope_and_credential
     ]
     # The upstream returned literal env values; the projection did not keep them.
     assert SECRET_ENV not in evidence.model_dump_json()
+    # A set comprehension: every request used exactly the host's own token.
     assert {headers["authorization"] for headers in upstream.headers} == {f"Bearer {TOKEN}"}
 
 
+# The MCP path and the direct path must produce identical items, IDs and coverage.
 def test_evidence_matches_the_direct_path_for_the_same_resources(tmp_path):
     drafts = [
         ItemDraft(
@@ -88,6 +102,7 @@ def test_evidence_matches_the_direct_path_for_the_same_resources(tmp_path):
     assert via_mcp.items[0].id == "k8s:c1uster-uid:demo:pod:web-1"
     assert via_mcp.coverage == direct.coverage
     assert via_mcp.state is direct.state
+    # model_dump(include=...) keeps only the named fields, so we compare just the scope.
     scope = {"workspace_id", "connection_id", "cluster_uid", "namespace"}
     assert via_mcp.source.model_dump(include=scope) == direct.source.model_dump(include=scope)
     # Provenance differs by design and is recorded separately.
@@ -99,9 +114,11 @@ def test_evidence_matches_the_direct_path_for_the_same_resources(tmp_path):
     assert via_mcp.id != direct.id and via_mcp.id.startswith("ev_")
 
 
+# A model or caller must not be able to choose scope, endpoint or credentials.
 # ---- Caller- and model-controlled authority is refused -------------------------------
 
 
+# Run the test below once per (input, expected) row.
 @pytest.mark.parametrize(
     ("arguments", "expected"),
     [
@@ -115,6 +132,7 @@ def test_evidence_matches_the_direct_path_for_the_same_resources(tmp_path):
         ("namespace=kube-system", ErrorKind.INVALID_ARGUMENTS),
     ],
 )
+# Each hostile argument is refused and the upstream is never contacted.
 def test_proposed_scope_endpoint_and_credential_arguments_never_reach_upstream(
     tmp_path, arguments, expected
 ):
@@ -127,6 +145,7 @@ def test_proposed_scope_endpoint_and_credential_arguments_never_reach_upstream(
     assert upstream.calls == [] and upstream.headers == []
 
 
+# Passing the same namespace as the trusted one is harmless.
 def test_repeating_the_trusted_namespace_is_accepted(tmp_path):
     assert call(Upstream(), config(tmp_path), {"namespace": "demo"}).state is State.COMPLETE
 
@@ -142,6 +161,7 @@ def test_repeating_the_trusted_namespace_is_accepted(tmp_path):
         None,
     ],
 )
+# Unknown, unreviewed or invented tool names are refused before any network traffic.
 def test_tools_outside_the_allowlist_are_refused_without_contacting_any_server(tmp_path, tool):
     upstream = Upstream()
 
@@ -153,6 +173,7 @@ def test_tools_outside_the_allowlist_are_refused_without_contacting_any_server(t
     assert upstream.headers == []
 
 
+# A reviewed tool still needs the operator to enable it.
 def test_a_reviewed_tool_the_operator_did_not_enable_is_refused(tmp_path):
     upstream = Upstream()
 
@@ -162,6 +183,7 @@ def test_a_reviewed_tool_the_operator_did_not_enable_is_refused(tmp_path):
     assert upstream.headers == []
 
 
+# A server tied to one connection can't be used from a context for another.
 def test_an_endpoint_bound_to_another_connection_is_not_used(tmp_path):
     upstream = Upstream()
     other = CONTEXT.model_copy(update={"connection_id": "other-cluster"})
@@ -173,10 +195,13 @@ def test_an_endpoint_bound_to_another_connection_is_not_used(tmp_path):
     assert upstream.headers == []
 
 
+# Bad settings (literal secret, URLs with passwords, odd tool names, duplicates) fail.
 def test_configuration_takes_credential_references_and_plain_endpoints_only(tmp_path):
+    # A small helper inside the test.
     def load(**overrides):
         return config(tmp_path, **overrides)
 
+    # Passes only if the code inside raises ValidationError; the error is kept in ``literal``.
     with pytest.raises(ValidationError) as literal:
         load(credential_ref="eyJhbGciOi.literal-token-value")
     assert "literal-token-value" not in str(literal.value)
@@ -199,12 +224,16 @@ def test_configuration_takes_credential_references_and_plain_endpoints_only(tmp_
         )
 
 
+# Discovery lists what a server offers, but never enables anything by itself.
 # ---- Annotations and discovery -------------------------------------------------------
 
 
+# The server's own "read-only" claims and extra tools change nothing.
 def test_discovery_enables_nothing_and_ignores_upstream_annotations(tmp_path):
     upstream = Upstream()
 
+    # ``async def`` marks a coroutine, which can pause at ``await`` for network I/O. The
+    # helper ``run`` executes it.
     async def work(host: McpHost):
         return await host.discover("kubernetes"), host.tools()
 
@@ -220,6 +249,7 @@ def test_discovery_enables_nothing_and_ignores_upstream_annotations(tmp_path):
     assert list(tools[0].parameters["properties"]) == ["label_selector"]
 
 
+# Asking about a server not in the config is refused.
 def test_an_unconfigured_server_cannot_be_discovered(tmp_path):
     discovery = run(Upstream(), config(tmp_path), lambda host: host.discover("http://x/mcp"))
 
@@ -227,9 +257,11 @@ def test_an_unconfigured_server_cannot_be_discovered(tmp_path):
     assert discovery.server_id == "unlisted"
 
 
+# Every failure should give its own, explicit error kind.
 # ---- Explicit failures ---------------------------------------------------------------
 
 
+# If the server's tool schema differs from the reviewed one, the call is blocked.
 def test_schema_drift_is_reported_by_discovery_and_blocks_the_call(tmp_path):
     upstream = Upstream(drifted=True)
 
@@ -244,6 +276,7 @@ def test_schema_drift_is_reported_by_discovery_and_blocks_the_call(tmp_path):
     assert upstream.calls == []
 
 
+# A tool the server doesn't offer at all is also a schema mismatch.
 def test_an_enabled_tool_the_server_does_not_advertise_is_a_mismatch(tmp_path):
     missing = replace(PODS_LIST, name="pods_top")
 
@@ -257,6 +290,7 @@ def test_an_enabled_tool_the_server_does_not_advertise_is_a_mismatch(tmp_path):
     assert kinds(evidence) == [ErrorKind.SCHEMA_MISMATCH]
 
 
+# A 401/403 reply from the server becomes AUTH.
 def test_a_rejected_credential_is_an_auth_error(tmp_path):
     upstream = Upstream()
 
@@ -267,6 +301,7 @@ def test_a_rejected_credential_is_an_auth_error(tmp_path):
     assert upstream.calls == []
 
 
+# If the secret can't be read, no request is sent.
 def test_an_unreadable_credential_is_an_auth_error_without_a_request(tmp_path):
     upstream = Upstream()
 
@@ -276,6 +311,7 @@ def test_an_unreadable_credential_is_an_auth_error_without_a_request(tmp_path):
     assert upstream.headers == []
 
 
+# Too-large replies are dropped entirely, not cut into misleading evidence.
 def test_oversized_output_is_discarded_not_truncated_into_evidence(tmp_path):
     big = {"pods": [{**PODS[0], "name": f"web-{n}", "note": "x" * 200} for n in range(400)]}
     limits = {"max_response_bytes": 8192}
@@ -287,6 +323,7 @@ def test_oversized_output_is_discarded_not_truncated_into_evidence(tmp_path):
     assert evidence.items == ()
 
 
+# Over the item limit the result is cut and marked PARTIAL.
 def test_more_items_than_the_tool_limit_is_partial_and_says_so(tmp_path):
     many = {"pods": [{**PODS[0], "name": f"web-{n}"} for n in range(60)]}
 
@@ -297,6 +334,7 @@ def test_more_items_than_the_tool_limit_is_partial_and_says_so(tmp_path):
     assert (evidence.coverage.returned, evidence.coverage.truncated) == (50, True)
 
 
+# A slow server hits the time limit and gives TIMEOUT.
 def test_a_slow_tool_ends_at_the_time_limit(tmp_path):
     limits = {"connect_timeout_seconds": 0.5, "call_timeout_seconds": 0.5}
 
@@ -306,6 +344,7 @@ def test_a_slow_tool_ends_at_the_time_limit(tmp_path):
     assert kinds(evidence) == [ErrorKind.TIMEOUT]
 
 
+# Output not in the expected shape is INVALID_OUTPUT.
 def test_an_unexpected_result_shape_is_invalid_output(tmp_path):
     evidence = call(Upstream(payload={"items": "not pods"}), config(tmp_path))
 
@@ -313,6 +352,7 @@ def test_an_unexpected_result_shape_is_invalid_output(tmp_path):
     assert kinds(evidence) == [ErrorKind.INVALID_OUTPUT]
 
 
+# Pods from a namespace we didn't ask for are not believed.
 def test_results_from_another_namespace_are_refused(tmp_path):
     stray = {"pods": [{**PODS[0], "namespace": "kube-system"}]}
 
@@ -323,6 +363,7 @@ def test_results_from_another_namespace_are_refused(tmp_path):
     assert evidence.items == ()
 
 
+# The upstream's error text never reaches the evidence.
 def test_an_upstream_tool_error_is_reported_without_its_text(tmp_path):
     evidence = call(Upstream(fail=True), config(tmp_path))
 
@@ -330,6 +371,7 @@ def test_an_upstream_tool_error_is_reported_without_its_text(tmp_path):
     assert "fixture-upstream-detail" not in evidence.model_dump_json()
 
 
+# A tool may translate a specific upstream error into FORBIDDEN.
 def test_a_tool_can_map_an_upstream_denial_to_forbidden(tmp_path):
     spec = replace(PODS_LIST, error_kind=lambda text: ErrorKind.FORBIDDEN)
 
@@ -340,8 +382,10 @@ def test_a_tool_can_map_an_upstream_denial_to_forbidden(tmp_path):
     assert "fixture-upstream-detail" not in evidence.model_dump_json()
 
 
+# Uses a real unused port: the connection failure must come back as UNAVAILABLE.
 def test_an_unreachable_endpoint_is_unavailable_not_an_exception_group(tmp_path):
     """Real sockets, no fixture: the SDK raises an ExceptionGroup that the host normalizes."""
+    # Bind to port 0 so the OS picks a free port; then nothing is listening there.
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
@@ -354,19 +398,24 @@ def test_an_unreachable_endpoint_is_unavailable_not_an_exception_group(tmp_path)
     assert kinds(evidence) == [ErrorKind.UNAVAILABLE]
 
 
+# Telemetry tests.
 # ---- Telemetry -----------------------------------------------------------------------
 
 
+# A log handler that stores each record as parsed JSON in a list.
 class _Records(logging.Handler):
     def __init__(self):
         super().__init__()
         self.lines = []
         self.setFormatter(telemetry.JsonFormatter())
 
+    # ``emit`` is called for each log record; we parse our formatter's JSON output.
     def emit(self, record):
         self.lines.append(json.loads(self.format(record)))
 
 
+# Spans, metrics and logs use only configured IDs and never contain payloads; an invented
+# tool name is recorded as "unlisted".
 def test_spans_metrics_and_logs_carry_configured_ids_and_no_payload(tmp_path):
     exported = InMemorySpanExporter()
     telemetry.tracer_provider().add_span_processor(
@@ -375,6 +424,7 @@ def test_spans_metrics_and_logs_carry_configured_ids_and_no_payload(tmp_path):
     records = _Records()
     logging.getLogger("vyom.mcp").addHandler(records)
     logging.getLogger("vyom.mcp").setLevel(logging.INFO)
+    # A random tool name, to prove invented names never become labels.
     invented = f"kubernetes__{uuid.uuid4().hex}"
     selector = "app=selector-value-in-arguments"
 
@@ -394,6 +444,7 @@ def test_spans_metrics_and_logs_carry_configured_ids_and_no_payload(tmp_path):
     spans = exported.get_finished_spans()
     by_name = {span.name: span for span in spans}
     assert {"mcp.client.discover", "mcp.client.call", "evidence.normalize"} <= set(by_name)
+    # next(generator) returns the first span that matches.
     ok = next(s for s in spans if s.attributes.get("vyom.mcp.tool") == TOOL)
     assert ok.attributes["vyom.mcp.server"] == "kubernetes"
     assert ok.attributes["vyom.outcome"] == "ok"
@@ -402,6 +453,7 @@ def test_spans_metrics_and_logs_carry_configured_ids_and_no_payload(tmp_path):
     assert not refused.status.is_ok
 
     exposition = generate_latest().decode()
+    # Build the exact text of a Prometheus metric line with str.format placeholders ({}).
     labels = 'operation="call",outcome="{}",server="{}",tool="{}"'
     counter = "vyom_mcp_client_operations_total{{{}}}"
     assert counter.format(labels.format("ok", "kubernetes", TOOL)) in exposition
@@ -420,6 +472,7 @@ def test_spans_metrics_and_logs_carry_configured_ids_and_no_payload(tmp_path):
     assert all(line["trace_id"] == trace_id for line in records.lines[:3])
 
     everything = exposition + json.dumps(records.lines) + "".join(s.to_json() for s in spans)
+    # Nothing sensitive may appear anywhere in spans, metrics or logs.
     for forbidden in (
         invented,
         selector,
@@ -432,7 +485,9 @@ def test_spans_metrics_and_logs_carry_configured_ids_and_no_payload(tmp_path):
         assert forbidden not in everything
 
 
+# Log records from third-party libraries are dropped; Vyom's own are kept.
 def test_client_library_log_records_are_dropped():
+    # Helper: would a record from this logger name pass the filter?
     def passes(name):
         record = logging.LogRecord(
             name, logging.INFO, __file__, 1, "HTTP Request: POST ...", (), None

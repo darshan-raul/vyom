@@ -2,10 +2,14 @@
 proves that the configured provider or model supports tool calling; scripts/model-check.sh
 does that against the real endpoint."""
 
+# asyncio runs async code from ordinary test functions; json parses text; logging is the
+# built-in log system.
 import asyncio
 import json
 import logging
 
+# Third-party: httpx (HTTP), pytest (tests), langchain/langsmith (the model library and its
+# tracing), opentelemetry + prometheus (spans and metrics to inspect), pydantic (validation).
 import httpx
 import langsmith.utils
 import pytest
@@ -21,9 +25,12 @@ from vyom.agent.model import ModelClient, ModelConfig, ModelError, ModelErrorKin
 from vyom.mcp_client.host import ToolDescriptor
 from vyom.mcp_client.registry import OperatorConfig
 
+# Fake values only. The test text contains "marker" strings so we can check they never
+# leak into logs, metrics or errors.
 KEY = "sk-test-0123456789abcdef"
 PROMPT = "which pods are unhealthy? prompt-marker-51"
 PROVIDER_TEXT = "provider-error-text-77 echoing prompt-marker-51"
+# A sample tool the model may propose to call.
 TOOL = ToolDescriptor(
     "kubernetes__pods_list_in_namespace",
     "List pods.",
@@ -32,6 +39,8 @@ TOOL = ToolDescriptor(
 LABELS = {"provider": "testprovider", "model": "vendor/test-model"}
 
 
+# A fixture is setup code pytest passes to tests that ask for it by parameter name.
+# ``monkeypatch`` sets environment variables only for the duration of one test.
 @pytest.fixture
 def config(monkeypatch) -> ModelConfig:
     monkeypatch.setenv("VYOM_TEST_MODEL_KEY", KEY)
@@ -44,6 +53,9 @@ def config(monkeypatch) -> ModelConfig:
 
 
 @pytest.fixture
+# ``yield`` splits a fixture: code before runs as setup, the value after ``yield`` is what
+# the test receives, and code after it runs as cleanup. Here the test gets a function that
+# returns everything emitted (spans and log lines) so far.
 def observed():
     """Everything the adapter emits: spans as exported, and log lines as formatted."""
     exported = InMemorySpanExporter()
@@ -52,6 +64,7 @@ def observed():
     lines: list[str] = []
     handler = logging.Handler()
     handler.setFormatter(telemetry.JsonFormatter())
+    # Replace the handler's emit with a tiny function that stores each formatted log line.
     handler.emit = lambda record: lines.append(handler.format(record))
     logger = logging.getLogger("vyom.model")
     logger.addHandler(handler)
@@ -61,6 +74,8 @@ def observed():
     processor.shutdown()
 
 
+# Build a fake provider reply in the chat-completions JSON shape. ``**message`` merges
+# the given dict into the message.
 def completion(message: dict, *, finish="stop", usage=None) -> dict:
     body = {"choices": [{"message": {"role": "assistant", **message}, "finish_reason": finish}]}
     if usage is not None:
@@ -68,15 +83,19 @@ def completion(message: dict, *, finish="stop", usage=None) -> dict:
     return body
 
 
+# A fake reply in which the model proposes a tool call. ``arguments`` is usually JSON text.
 def proposing(arguments, *, name=TOOL.id) -> dict:
     call = {"id": "call_1", "type": "function", "function": {"name": name, "arguments": arguments}}
     return completion({"content": None, "tool_calls": [call]}, finish="tool_calls")
 
 
+# Run one chat against fake responses; returns the reply and the requests sent.
 def chat(config, respond, messages=None, tools=(TOOL,)):
     """Run one chat against ``respond``; returns the reply and the requests that were sent."""
     sent: list[httpx.Request] = []
 
+    # The fake server: record the request, answer with ``respond`` (a dict becomes a 200 JSON
+    # reply; anything else is used as the response).
     def handler(request: httpx.Request) -> httpx.Response:
         sent.append(request)
         answer = respond(request) if callable(respond) else respond
@@ -84,25 +103,35 @@ def chat(config, respond, messages=None, tools=(TOOL,)):
             return httpx.Response(200, json=answer)
         return answer
 
+    # MockTransport routes requests to our handler instead of the internet.
     client = ModelClient(config, transport=httpx.MockTransport(handler))
+    # Default to a single human message if none was given.
     messages = messages or [HumanMessage(PROMPT)]
     return asyncio.run(client.chat(messages, tools)), sent
 
 
+# Run a chat that must fail and return the error. ``**kwargs`` forwards extra named
+# parameters to ``chat``.
 def failure(config, respond, **kwargs) -> ModelError:
+    # Passes only if ModelError is raised inside; ``caught.value`` is the exception.
     with pytest.raises(ModelError) as caught:
         chat(config, respond, **kwargs)
     return caught.value
 
 
+# Read a Prometheus counter's current value (0.0 if it has not been created yet).
 def metric(name: str, **labels) -> float:
     return REGISTRY.get_sample_value(name, {**LABELS, **labels}) or 0.0
 
 
+# Out and back: a proposed tool call is understood, then the call and its result are
+# sent back in the provider's format.
 def test_tool_call_round_trip_is_normalized_both_ways(config):
     usage = {"prompt_tokens": 120, "completion_tokens": 18, "total_tokens": 138}
+    # Counters are shared by the whole process, so compare the change, not the absolute value.
     before = metric("vyom_model_tokens_total", direction="input")
 
+    # ``{**a, "k": v}`` copies dict ``a`` and adds a key.
     proposed, sent = chat(config, {**proposing('{"labelSelector": "app=web"}'), "usage": usage})
 
     call = {"name": TOOL.id, "args": {"labelSelector": "app=web"}, "id": "call_1"}
@@ -126,6 +155,7 @@ def test_tool_call_round_trip_is_normalized_both_ways(config):
         }
     ]
 
+    # (history is the conversation so far: question, proposal, tool result)
     # Second leg: the call and its result go back in the provider's shape.
     history = [
         HumanMessage(PROMPT),
@@ -154,6 +184,7 @@ def test_tool_call_round_trip_is_normalized_both_ways(config):
 
 
 @pytest.mark.parametrize("reported", [None, {}, {"prompt_tokens": 12}])
+# No usage report must be recorded as unavailable (None), never as 0 tokens.
 def test_absent_usage_is_unavailable_not_zero(config, reported):
     tokens = metric("vyom_model_tokens_total", direction="input")
     unavailable = metric("vyom_model_usage_unavailable_total")
@@ -169,28 +200,35 @@ def test_absent_usage_is_unavailable_not_zero(config, reported):
     "arguments",
     ['{"labelSelector": ', '["app=web"]', '"app=web"', 7, {"labelSelector": "app=web"}],
 )
+# Each parametrize case above is run as its own test. Arguments that are not a JSON object
+# must be rejected.
 def test_malformed_tool_arguments_are_rejected(config, arguments):
     assert failure(config, proposing(arguments)).kind is ModelErrorKind.MALFORMED_TOOL_CALL
 
 
 @pytest.mark.parametrize("name", ["", None, 3])
+# A proposed call needs a non-empty string name.
 def test_tool_call_without_a_name_is_rejected(config, name):
     assert failure(config, proposing("{}", name=name)).kind is ModelErrorKind.MALFORMED_TOOL_CALL
 
 
 @pytest.mark.parametrize("identifier", ["", None])
+# A proposed call needs a non-empty ID.
 def test_tool_call_without_an_id_is_rejected(config, identifier):
     reply = proposing("{}")
     reply["choices"][0]["message"]["tool_calls"][0]["id"] = identifier
     assert failure(config, reply).kind is ModelErrorKind.MALFORMED_TOOL_CALL
 
 
+# Even if LangSmith tracing is switched on in the environment, no prompts may be exported.
 def test_ambient_langsmith_settings_export_nothing(config, monkeypatch):
     monkeypatch.setenv("LANGSMITH_TRACING", "true")
     monkeypatch.setenv("LANGSMITH_API_KEY", "lsv2_not_a_real_key")
     monkeypatch.setenv("LANGSMITH_ENDPOINT", "https://langsmith.test")
     tracers: list[object] = []
+    # Swap in a recorder for the tracer's constructor: if one is ever created, it lands here.
     monkeypatch.setattr(LangChainTracer, "__init__", lambda self, *a, **k: tracers.append(self))
+    # LangSmith caches settings, so clear the cache before and after.
     langsmith.utils.get_env_var.cache_clear()  # LangSmith caches its settings per process
     try:
         chat(config, completion({"content": "ok"}))
@@ -201,6 +239,7 @@ def test_ambient_langsmith_settings_export_nothing(config, monkeypatch):
     assert not tracers
 
 
+# Returns a function that raises ``error`` when called, to simulate network failures.
 def _raise(error):
     def respond(request):
         raise error
@@ -226,6 +265,8 @@ def _raise(error):
         (_raise(httpx.ReadTimeout(PROVIDER_TEXT)), ModelErrorKind.TIMEOUT),
     ],
 )
+# Every provider failure maps to one fixed kind, and the provider's text/keys/prompt never
+# appear in errors, logs, spans or metrics.
 def test_provider_failures_are_explicit_and_sanitized(config, observed, respond, kind):
     before = metric("vyom_model_requests_total", outcome=kind.value)
 
@@ -239,12 +280,15 @@ def test_provider_failures_are_explicit_and_sanitized(config, observed, respond,
         assert secret not in emitted
 
 
+# A reply bigger than max_response_bytes is discarded.
 def test_reply_over_the_size_limit_is_discarded(config):
     small = config.model_copy(update={"max_response_bytes": 512})
     error = failure(small, completion({"content": "x" * 2048}))
     assert error.kind is ModelErrorKind.OVERSIZED
 
 
+# With no readable key no request is sent. The lambda records the request, then ``or {}``
+# returns an empty dict (``list.append`` returns None).
 def test_missing_key_fails_before_any_request(config, observed, monkeypatch, tmp_path):
     monkeypatch.delenv("VYOM_TEST_MODEL_KEY")
     sent: list = []
@@ -258,6 +302,7 @@ def test_missing_key_fails_before_any_request(config, observed, monkeypatch, tmp
     assert not sent
 
 
+# Successful calls log identities and counts only, never content.
 def test_success_telemetry_has_identities_and_counts_but_no_content(config, observed):
     usage = {"prompt_tokens": 9, "completion_tokens": 4}
     chat(config, completion({"content": "answer-marker-93"}, usage=usage))
@@ -281,12 +326,15 @@ def test_success_telemetry_has_identities_and_counts_but_no_content(config, obse
         {"api_key": KEY},
     ],
 )
+# Unsafe settings (http, embedded key, wrong shapes) are rejected without repeating the key.
 def test_config_rejects_unsafe_endpoints_and_inline_keys_without_echoing(config, change):
     with pytest.raises(ValidationError) as caught:
+        # ``**`` unpacks a dict into named arguments; the second dict overrides the first.
         ModelConfig(**{**config.model_dump(), **change})
     assert KEY not in str(caught.value)
 
 
+# The model section is optional in the config: absent means None.
 def test_operator_file_carries_the_model_section():
     context = {"workspace_id": "w", "connection_id": "c", "cluster_uid": "u", "namespace": "demo"}
     model = {

@@ -4,7 +4,11 @@ A throwaway server built with the SDK's own server side, reached through the rea
 stack over an in-process HTTP transport. It exists only under ``tests/``.
 """
 
+# asyncio runs async code from ordinary (sync) test functions; anyio.sleep is an async
+# delay; httpx2 is the HTTP library.
 import asyncio
+
+# @dataclass writes __init__ for classes that mostly hold named values.
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -19,21 +23,25 @@ from vyom.mcp_client.host import McpHost
 from vyom.mcp_client.registry import OperatorConfig
 from vyom.mcp_client.tools import Projection, ToolArguments, ToolOutput, ToolSpec, schema_digest
 
+# Made-up values used across tests. None of these is a real secret.
 TOKEN = "fixture-host-token"
 SECRET_ENV = "fixture-database-password"
 URL = "http://127.0.0.1:8000/mcp"
 TOOL = "kubernetes__pods_list"
 
+# The trusted scope used by all host tests.
 CONTEXT = TrustedContext(
     workspace_id="ws-local", connection_id="kind-vyom", cluster_uid="c1uster-uid", namespace="demo"
 )
 
+# Sample pods the fake server returns.
 PODS = [
     {"name": "web-1", "namespace": "demo", "uid": "uid-web-1", "phase": "Running", "restarts": 0},
     {"name": "job-7", "namespace": "demo", "uid": "uid-job-7", "phase": "Failed", "restarts": 4},
 ]
 
 # The input schema as it was "reviewed"; the host refuses a server that advertises another.
+# A dict standing in for the JSON description of the tool's inputs.
 REVIEWED_SCHEMA = {
     "type": "object",
     "properties": {
@@ -49,10 +57,12 @@ REVIEWED_SCHEMA = {
 }
 
 
+# Test version of the tool's typed argument list.
 class PodsListArguments(ToolArguments):
     label_selector: str | None = None
 
 
+# Keep only the fields we want from the fake server's reply (note it drops ``env``).
 def project_pods(output: ToolOutput) -> Projection:
     return Projection(
         items=tuple(
@@ -68,6 +78,7 @@ def project_pods(output: ToolOutput) -> Projection:
     )
 
 
+# The reviewed definition of the fake tool, as the real code would define it.
 PODS_LIST = ToolSpec(
     server_id="kubernetes",
     name="pods_list",
@@ -81,6 +92,7 @@ PODS_LIST = ToolSpec(
 
 
 @dataclass
+# A fake MCP server that also records every call and header it receives.
 class Upstream:
     """The fixture server plus what it observed."""
 
@@ -88,13 +100,18 @@ class Upstream:
     drifted: bool = False  # advertise pods_list with an unreviewed extra parameter
     delay: float = 0.0
     fail: bool = False
+    # default_factory=list gives each instance its own list.
     calls: list[dict[str, Any]] = field(default_factory=list)
     headers: list[dict[str, str]] = field(default_factory=list)
 
+    # Runs right after the dataclass sets its fields: builds the fake server.
     def __post_init__(self) -> None:
         self.server = MCPServer("fixture-kubernetes", version="0.0.1")
+        # An inner function can read this local name; it is the way to reach the object from
+        # inside the nested function.
         upstream = self
 
+        # Shared reply logic: record the call, wait, maybe fail, then return data.
         async def respond(tool: str, **arguments: Any) -> dict[str, Any]:
             upstream.calls.append({"tool": tool, **arguments})
             await anyio.sleep(upstream.delay)
@@ -104,6 +121,8 @@ class Upstream:
                 return upstream.payload
             return {"pods": [{**pod, "env": [{"DB_PASSWORD": SECRET_ENV}]} for pod in PODS]}
 
+        # "Drift": the server advertises a different schema than the one reviewed.
+        # (A decorator registers the function below as a tool on the fake server.)
         if self.drifted:
 
             @self.server.tool()
@@ -122,16 +141,21 @@ class Upstream:
                     "pods_list", namespace=namespace, label_selector=label_selector
                 )
 
+        # pods_delete exists to prove that a server's own "read-only" claim does not make a
+        # tool callable.
         # Claims to be read-only. The claim must not make it callable.
         @self.server.tool(annotations=ToolAnnotations(read_only_hint=True))
         async def pods_delete(namespace: str, name: str) -> dict[str, Any]:
             return await respond("pods_delete", namespace=namespace, name=name)
 
+        # The fake server as a web app (ASGI), served in-process with no real network.
         self._app = self.server.streamable_http_app(json_response=True, stateless_http=True)
 
+    # A fake network layer. It rejects requests with a wrong token and records headers.
     def transport(self) -> httpx2.AsyncBaseTransport:
         app = self._app
 
+        # ASGI function: ``scope`` describes the request, ``receive``/``send`` exchange messages.
         async def authenticated(scope, receive, send):
             if scope["type"] == "http":
                 headers = {key.decode(): value.decode() for key, value in scope["headers"]}
@@ -145,7 +169,9 @@ class Upstream:
         return httpx2.ASGITransport(app=authenticated)
 
 
+# Build an OperatorConfig for the tests; extra settings can override the defaults.
 def config(tmp_path, *, token: str | None = TOKEN, **server_overrides: Any) -> OperatorConfig:
+    # tmp_path is a temporary folder pytest provides; ``/`` joins path parts.
     credential = tmp_path / "mcp-token"
     if token is not None:
         credential.write_text(token + "\n")
@@ -161,12 +187,15 @@ def config(tmp_path, *, token: str | None = TOKEN, **server_overrides: Any) -> O
     return OperatorConfig.model_validate({"context": CONTEXT.model_dump(), "mcp_servers": [server]})
 
 
+# Run an async test body from sync code: start the fake server and call ``work(host)``.
 def run(upstream: Upstream, operator_config: OperatorConfig, work, specs=(PODS_LIST,)):
     """Run ``work(host)`` against the fixture server and return its result."""
+    # lambda _server: ... is a tiny unnamed function that ignores its argument.
     host = McpHost(operator_config, specs, transport_factory=lambda _server: upstream.transport())
 
     async def main():
         async with upstream.server.session_manager.run():
             return await work(host)
 
+    # asyncio.run starts an event loop, runs ``main`` to completion, and returns its result.
     return asyncio.run(main())

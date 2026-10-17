@@ -1,6 +1,9 @@
+# json parses log lines; logging is Python's built-in log system.
 import json
 import logging
 
+# TestClient calls a FastAPI app in-process. The InMemory exporter keeps spans in a list
+# so tests can inspect them.
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -10,6 +13,8 @@ from vyom import telemetry
 from vyom.api.app import app
 
 
+# Helper: create a log record by hand, run our JSON formatter on it, parse the result.
+# ``**log_kwargs`` forwards named arguments to makeRecord.
 def _format(**log_kwargs) -> dict:
     record = logging.getLogger("vyom.test").makeRecord(
         "vyom.test", logging.INFO, __file__, 1, "tool call finished", (), **log_kwargs
@@ -17,7 +22,9 @@ def _format(**log_kwargs) -> dict:
     return json.loads(telemetry.JsonFormatter().format(record))
 
 
+# Only allowlisted fields appear in logs ("prompt" must not), plus the trace IDs.
 def test_log_keeps_allowlisted_fields_and_current_trace_ids():
+    # Open a span so the log line happens inside a trace.
     with telemetry.tracer_provider().get_tracer("test").start_as_current_span("step") as span:
         entry = _format(
             exc_info=None,
@@ -31,7 +38,9 @@ def test_log_keeps_allowlisted_fields_and_current_trace_ids():
     assert "prompt" not in entry
 
 
+# The exception's type is logged but its text (which may hold a secret) is not.
 def test_log_records_exception_type_without_its_text():
+    # Raise an error on purpose, then catch it to build the exception info for the record.
     try:
         raise ValueError("token=abc123")
     except ValueError as error:
@@ -41,6 +50,7 @@ def test_log_records_exception_type_without_its_text():
     assert "abc123" not in json.dumps(entry)
 
 
+# Metric labels use the route pattern, so IDs and query strings never become labels.
 def test_metrics_label_route_templates_not_raw_paths():
     client = TestClient(app)
     client.get("/api/health?probe=secret-value")
@@ -53,6 +63,8 @@ def test_metrics_label_route_templates_not_raw_paths():
     assert "secret" not in exposition
 
 
+# Build a throwaway app whose route fails with a message containing fake secrets, then
+# check none of them are in the exported spans.
 def test_exported_spans_drop_queries_headers_and_exception_text():
     exported = InMemorySpanExporter()
     telemetry.tracer_provider().add_span_processor(
@@ -61,10 +73,12 @@ def test_exported_spans_drop_queries_headers_and_exception_text():
     failing = FastAPI()
     telemetry.instrument(failing)
 
+    # Registers the function below as the handler for GET /boom.
     @failing.get("/boom")
     def boom():
         raise RuntimeError("upstream said password=hunter2")
 
+    # raise_server_exceptions=False returns a 500 response instead of re-raising the error.
     response = TestClient(failing, raise_server_exceptions=False).get(
         "/boom?token=abc123", headers={"Authorization": "Bearer abc123"}
     )
@@ -72,6 +86,7 @@ def test_exported_spans_drop_queries_headers_and_exception_text():
     assert response.status_code == 500
     spans = exported.get_finished_spans()
     assert any(span.name == "GET /boom" for span in spans)
+    # Join every span's JSON into one string to search it for leaked text.
     dumped = "".join(span.to_json() for span in spans)
     assert "abc123" not in dumped
     assert "hunter2" not in dumped

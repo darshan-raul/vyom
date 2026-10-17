@@ -5,18 +5,26 @@ identifiers, time, coverage and state mean the same thing whichever path collect
 Nothing here holds raw upstream objects: items carry a host-chosen projection only.
 """
 
-import uuid
-from datetime import UTC, datetime, timedelta
-from enum import StrEnum
-from typing import Literal
+# --- Imports ---------------------------------------------------------------------------
+# ``import x`` loads a whole module; ``from x import y`` loads just one name out of it.
+import uuid  # makes random unique IDs
+from datetime import UTC, datetime, timedelta  # date/time types; UTC is the timezone
+from enum import StrEnum  # a fixed set of named string values (see ``State`` below)
+from typing import Literal  # a type that only allows specific exact values
 
+# pydantic is a third-party library that validates data against type hints.
+# BaseModel = a class whose fields are type-checked; ConfigDict = settings for that class.
 from pydantic import BaseModel, ConfigDict
 
 from vyom.context import TrustedContext
 
+# A type alias: ``Scalar`` is just a short name for "one plain value". The ``|`` means "or",
+# so a Scalar is a string, int, float, bool, or None (Python's "no value").
 Scalar = str | int | float | bool | None
 
 
+# ``class State(StrEnum)`` makes an enum: a closed list of allowed values. Using ``State.ZERO``
+# instead of the raw string "zero" avoids typos, and an editor can list every option.
 class State(StrEnum):
     """What a consumer may conclude. These are never collapsed into one another."""
 
@@ -29,6 +37,7 @@ class State(StrEnum):
 
 
 class ErrorKind(StrEnum):
+    # Every way a collection can go wrong, as a fixed list instead of free-form error text.
     # Refused by host policy before any upstream call.
     TOOL_NOT_ALLOWED = "tool_not_allowed"
     SCOPE_VIOLATION = "scope_violation"
@@ -48,11 +57,15 @@ class ErrorKind(StrEnum):
     TRUNCATED = "truncated"
 
 
+# A leading underscore means "private to this file". A frozenset is a set (unique items, fast
+# ``in`` checks) that cannot be changed after creation. These are the errors that count as
+# "someone said no" rather than "something broke".
 _DENIED = frozenset(
     {ErrorKind.TOOL_NOT_ALLOWED, ErrorKind.SCOPE_VIOLATION, ErrorKind.AUTH, ErrorKind.FORBIDDEN}
 )
 
 # Fixed text per kind: upstream and exception messages never enter the contract.
+# (A dict maps a key to a value; here each ErrorKind maps to its safe, fixed message.)
 _MESSAGES = {
     ErrorKind.TOOL_NOT_ALLOWED: "This tool is not enabled for this deployment.",
     ErrorKind.SCOPE_VIOLATION: "The request is outside the configured scope.",
@@ -70,14 +83,21 @@ _MESSAGES = {
 }
 
 
+# Base class for every model below. ``frozen=True``: objects can't be changed after they are
+# created. ``extra="forbid"``: passing a field the class doesn't declare is an error.
+# Subclasses inherit both settings, so they are written once here.
 class _Frozen(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class EvidenceError(_Frozen):
+    # In a pydantic model, ``name: type`` declares a field. Both are required (no default).
     kind: ErrorKind
     message: str
 
+    # @classmethod: the method belongs to the class, not one instance, and receives the class
+    # as ``cls``. This one is an alternate constructor: ``EvidenceError.of(kind)`` fills in
+    # the fixed message so callers cannot supply their own text.
     @classmethod
     def of(cls, kind: ErrorKind) -> "EvidenceError":
         return cls(kind=kind, message=_MESSAGES[kind])
@@ -87,6 +107,7 @@ class McpProvenance(_Frozen):
     server_id: str
     tool_id: str
     # What the upstream reported about itself; absent when it did not say.
+    # ``str | None = None`` means "a string, or None, and None if not given".
     upstream_name: str | None = None
     upstream_version: str | None = None
     protocol_version: str | None = None
@@ -95,6 +116,7 @@ class McpProvenance(_Frozen):
 class Source(_Frozen):
     """Who was asked, within which authority. Scope fields come from the trusted context."""
 
+    # ``Literal["mcp", "direct"]``: the value must be exactly one of these two strings.
     path: Literal["mcp", "direct"]
     workspace_id: str
     connection_id: str
@@ -112,9 +134,12 @@ class ItemDraft(_Frozen):
     name: str
     uid: str | None = None
     observed_at: datetime | None = None  # the source's own timestamp; never invented
+    # A dict of text keys to plain values, e.g. {"status": "Running", "restarts": 0}.
+    # ``= {}`` is the default (pydantic copies it for each object, unlike a plain function).
     attributes: dict[str, Scalar] = {}
 
 
+# Inherits every field from ItemDraft and adds ``id``, assigned later by ``build_evidence``.
 class EvidenceItem(ItemDraft):
     id: str
 
@@ -131,12 +156,17 @@ class Evidence(_Frozen):
     collected_at: datetime
     state: State
     coverage: Coverage
+    # ``tuple[X, ...]`` is an immutable sequence of any length holding X; ``()`` is empty.
     items: tuple[EvidenceItem, ...] = ()
     errors: tuple[EvidenceError, ...] = ()
 
+    # A method on the model; ``self`` is the Evidence object it is called on.
     def state_at(self, now: datetime, max_age: timedelta) -> State:
         """The state for a reader at ``now``: usable evidence past ``max_age`` is stale."""
+        # Usable means it carries real data (complete, zero results, or partial).
         usable = self.state in (State.COMPLETE, State.ZERO, State.PARTIAL)
+        # Subtracting two datetimes gives a timedelta (a duration) that can be compared.
+        # ``A if condition else B`` is Python's one-line if/else.
         return State.STALE if usable and now - self.collected_at > max_age else self.state
 
 
@@ -146,9 +176,12 @@ def resource_id(cluster_uid: str, namespace: str, kind: str, name: str) -> str:
     Built from fields every path can supply. The object UID is carried beside it when the
     source reports one; it distinguishes incarnations but is not required for identity.
     """
+    # An f-string: text in {} is replaced by that value, e.g. "k8s:abc:default:pod:web-1".
     return f"k8s:{cluster_uid}:{namespace}:{kind.lower()}:{name}"
 
 
+# The bare ``*`` below means every parameter after it must be passed by name, e.g.
+# ``build_evidence(context=ctx, path="mcp")``. That keeps the many options readable.
 def build_evidence(
     *,
     context: TrustedContext,
@@ -162,19 +195,25 @@ def build_evidence(
     collected_at: datetime | None = None,
 ) -> Evidence:
     """Normalize one collection. The only constructor either path should use."""
+    # ``dict.fromkeys(errors)`` is a trick to drop duplicates while keeping order
+    # (dict keys are unique and remember insertion order).
     kinds = list(dict.fromkeys(errors))
     drafts = list(drafts)
 
     # A path must not return resources outside the authority it was asked under.
+    # ``any(...)`` is True if at least one item matches the condition.
     if any(draft.namespace != context.namespace for draft in drafts):
+        # Tuple assignment: discard every item and mark the result incomplete in one line.
         drafts, complete = [], False
         kinds.append(ErrorKind.SCOPE_VIOLATION)
 
     truncated = max_items is not None and len(drafts) > max_items
     if truncated:
-        drafts = drafts[:max_items]
+        drafts = drafts[:max_items]  # slicing: keep only the first ``max_items`` entries
         kinds.append(ErrorKind.TRUNCATED)
 
+    # Build one EvidenceItem per draft. ``**draft.model_dump()`` unpacks the draft's fields
+    # into keyword arguments, and we add the host-computed ``id`` alongside them.
     items = tuple(
         EvidenceItem(
             id=resource_id(context.cluster_uid, draft.namespace, draft.kind, draft.name),
@@ -182,10 +221,14 @@ def build_evidence(
         )
         for draft in drafts
     )
+    # Truncation alone is not a failure; every other error blocks a trustworthy answer.
+    # ``is not`` compares identity, the usual way to compare enum members.
     blocking = [kind for kind in kinds if kind is not ErrorKind.TRUNCATED]
     complete = complete and not kinds
 
+    # Decide the single state. Order matters: the first matching branch wins.
     if blocking and not items:
+        # Failed and nothing to show: "denied" if someone refused, otherwise "missing".
         state = State.DENIED if any(kind in _DENIED for kind in blocking) else State.MISSING
     elif not complete:
         state = State.PARTIAL
@@ -195,7 +238,7 @@ def build_evidence(
         state = State.ZERO
 
     return Evidence(
-        id=f"ev_{uuid.uuid4().hex}",
+        id=f"ev_{uuid.uuid4().hex}",  # random unique ID, e.g. "ev_3f9a..."
         source=Source(
             path=path,
             workspace_id=context.workspace_id,
@@ -205,6 +248,7 @@ def build_evidence(
             mcp=mcp,
             collector=collector,
         ),
+        # ``a or b``: use ``a`` if it has a value, otherwise ``b`` (here: the current UTC time).
         collected_at=collected_at or datetime.now(UTC),
         state=state,
         coverage=Coverage(complete=complete, returned=len(items), truncated=truncated),
