@@ -17,7 +17,7 @@ function headline(api: ApiHealth, agent?: AgentStatus) {
   if (api.state === 'unreachable') return 'The API is not answering.'
   if (api.state === 'checking' || !agent) return 'Checking the API.'
   return agent.configured
-    ? 'The API is up and the agent is ready.'
+    ? 'The API is up and the agent is configured.'
     : 'The API is up. The agent is not configured.'
 }
 
@@ -31,7 +31,7 @@ function agentState(agent: AgentStatus | undefined, chat: Ask): { tone: Tone; la
 }
 
 // The path a question takes. A stage is drawn nominal or failed only from a real exchange;
-// until one happens it shows what is configured, and later stages show their sprint.
+// until one happens it shows what is configured, only configured stages are shown.
 function stages(api: ApiHealth, agent: AgentStatus | undefined, chat: Ask): Stage[] {
   const result = chat.result
   const evidence = result?.evidence[0]
@@ -70,8 +70,6 @@ function stages(api: ApiHealth, agent: AgentStatus | undefined, chat: Ask): Stag
           : 'not configured',
       tone: evidence ? evidenceTone[evidence.state] : 'idle',
     },
-    { code: 'AWS MCP', name: 'Account reads', detail: 'not built · S2', tone: 'idle' },
-    { code: 'GROUND', name: 'Runbooks', detail: 'not built · S3', tone: 'idle' },
   ]
 }
 
@@ -83,14 +81,14 @@ export function Today({ api }: { api: ApiHealth }) {
   return (
     <>
       <Ticker aside={api.state === 'checking' ? undefined : `Checked ${clockTime(api.checkedAt)}`}>
-        <span className="vy-label tracking-[0.12em] text-vy-text-3">Today</span>
+        <span className="vy-label tracking-[0.12em] text-vy-text-3">Overview</span>
         <StatusText tone={apiTone(api)}>{apiLabel(api)}</StatusText>
         <StatusText tone={state.tone}>{state.label}</StatusText>
       </Ticker>
 
       <div className="flex max-w-190 min-w-0 flex-col gap-3">
         <SectionLabel number="00" className="text-vy-caution">
-          Flight status
+          Operations overview
         </SectionLabel>
         <h1 className="text-[44px] leading-[1.05] font-semibold tracking-[-0.02em] text-balance">
           {greeting()} {headline(api, agent)}

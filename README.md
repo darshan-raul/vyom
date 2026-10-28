@@ -3,121 +3,72 @@
 </p>
 
 <h1 align="center">Vyom</h1>
+<p align="center">AWS + Kubernetes Operations Toolkit</p>
 
-A progressively built AWS + Kubernetes intelligence cockpit: ask a question, inspect live read-only evidence, and understand the answer.
+**Vyom helps engineers understand what is running, what is unhealthy, and what is risky across Kubernetes and AWS.**
 
-**Current state:** S1.1–S1.6 and S1.9 are done: a [frontend](frontend/) and [backend](backend/) with an MCP host, a reasoning adapter and a telemetry baseline; the pinned upstream Kubernetes MCP server on Kind; and a pinned Prometheus/Grafana, Loki, Tempo and Alloy stack. The chat (question → model → one MCP tool call → cited answer) and the direct Kubernetes pods view both passed their live checks on Kind. There is no application chart yet; the rest of S1 and every sprint gate remain open. See [Run the scaffold](#run-the-scaffold), [Run the observability stack on Kind](#run-the-observability-stack-on-kind) and [Ask a question](#ask-a-question). The [learning exercises](learning/kind-chat/README.md) are outside the roadmap and give no S1–S6 completion credit.
+Designed for DevOps engineers, SREs, cloud engineers and platform engineers, Vyom brings infrastructure inventory, operational investigation and configuration security into one read-only operations station. Vyom continuously watches authorized environments for meaningful changes, failures and security signals, then brings the evidence into focused investigations.
 
-## Planned service overview
+## Continuous operations
 
-The planned deployment runs on Kind in S1 and EKS in S2. Service groups distinguish application workloads, cluster integration, persistent state, observability and external dependencies. Sprint labels show when each component enters the plan.
+Follow the operational loop from discovery to recovery: **observe → detect → triage → investigate → explain**.
 
-![Vyom planned deployment architecture: application workloads, cluster integration, state and RAG, observability and external providers](docs/diagrams/readme-architecture.svg)
+An operations overview brings together active issues, recent changes, inventory freshness and investigation progress. Related observations update a tracked issue with affected resources, evidence and a timeline. Deterministic conditions trigger bounded agent investigations; fresh recovery evidence updates the issue when the problem clears.
 
-[Open full-size diagram](docs/diagrams/readme-architecture.svg) · [Detailed architecture and request paths](docs/ARCHITECTURE.md) · [Observability collection topology](docs/OBSERVABILITY.md#collection-topology)
+Open an issue and continue in natural language: “What changed before this started?”, “Which workloads are affected?” or “What evidence would confirm that?” Automatic triage and user-led investigation share the same evidence and permission boundaries.
 
-FastAPI, LangGraph, the MCP host and deterministic collectors share one backend workload. Chat explores through upstream MCP integrations; inventory uses direct SDKs. Postgres and Qdrant use normal clients, while jobs reuse backend libraries. The model provider is explicitly configured, with Bedrock introduced in S3. **RAG starts in S3 inside the backend:** jobs ingest curated runbooks using Bedrock embeddings, Qdrant retrieves relevant sections, and LangGraph combines that guidance with live evidence using distinct citations.
+## Inventory
 
-The diagram shows primary connections; placement identifies deployment ownership. Observability starts in S1, with bounded exports and private Grafana access. Access stays private through localhost port-forwarding before S6; backend membership/grant policy supplies authority after Keycloak verifies identity.
+Understand what exists, where it runs and how it connects. Search and filter resources by provider, account, region, cluster, namespace, type, status, tags and labels. Resource details bring together metadata, health, relationships, findings and supporting evidence.
 
-| Workload / dependency | Responsibility | Starts |
-|---|---|---|
-| Frontend Deployment | Chat, evidence panels and deterministic resource views | S1 |
-| FastAPI backend Deployment | Trusted context, agent, MCP client, SDK collectors and evidence; RAG/history added S3 | S1 |
-| Upstream Kubernetes MCP Deployment | Read-only cluster exploration with its own scoped provider identity | S1 |
-| Prometheus, Loki, Tempo, Grafana and Alloy | Metrics, sanitized logs, traces and private operational dashboards | S1 |
-| Remote AWS MCP + direct AWS SDK | Agent exploration and independent inventory/metrics | S2 |
-| Postgres / Qdrant / observation and ingest jobs | Scoped durable evidence/history and curated retrieval | S3 |
-| Bedrock | Reasoning and separately configured embeddings | S3 |
-| External backup destination | Native state recovery outside the cluster | S5 |
-| Keycloak | Login and verified user identity; membership/grants remain backend policy | S6 |
+Follow relationships from a Deployment to its Pods and Nodes, or from an EC2 instance through its network interfaces, subnets and security groups. Cross-platform relationships connect Kubernetes workloads to the AWS infrastructure beneath them.
 
-One Vyom application chart and pinned vendor observability releases share a reproducible environment workflow. Optional Jev classification in S4 and conditional Vault in S6 are described in the [architecture](docs/ARCHITECTURE.md); they are not mandatory service dependencies. See the [interactive application overview](docs/diagrams/application.html), [interactive observability view](docs/diagrams/observability.html) and [observability design](docs/OBSERVABILITY.md) for further detail and verification limits.
+## Investigation
 
-## Start here
+Investigate unhealthy workloads and infrastructure failures through guided diagnostic workflows. Ask why a Pod is pending, why a workload is not ready, or why one server cannot reach another on a specific port.
 
-1. [Constitution](vyom-12-week-sprint-plan.md) — scope and six-sprint delivery order.
-2. [Agent agreement](AGENTS.md) — how coding sessions work.
-3. [Implementation plan](docs/IMPLEMENTATION_PLAN.md) — task details and acceptance.
-4. [Tracker](docs/TRACKER.md) — authoritative task status and evidence.
-5. [Current handoff](docs/HANDOFF.md) — where the next session starts.
-6. [Architecture](docs/ARCHITECTURE.md) — intended S6 design and detailed diagrams.
-7. [Verification](docs/VERIFICATION.md) — what constitutes proof.
-8. [MCP integrations](docs/MCP_INTEGRATIONS.md) — upstream ownership, dual execution paths and deployment/auth gates.
-9. [Observability](docs/OBSERVABILITY.md) — S1 metrics/logs/traces topology, privacy and live gates.
-10. [Branding](docs/BRANDING.md) — canonical logo and reuse for the application, documents and future site.
-11. [Decisions](docs/DECISIONS.md) — open choices and accepted implementation decisions.
+Stored inventory provides context. Selective live queries verify missing or stale facts. Each investigation presents its steps, evidence, hypotheses, conclusion, confidence and suggested next diagnostic actions. Configuration evidence and observed traffic remain distinct, and incomplete evidence stays visible.
 
-First milestone: on Kind, ask which pods are unhealthy in a demo namespace and receive an answer citing the upstream Kubernetes MCP server through Vyom’s MCP client; the resource view uses a direct SDK path. The same real chat must expose Prometheus metrics, sanitized Loki logs and an OTel/Tempo trace through privately accessed Grafana. S1 adds 10 estimated hours; the aggregate is 12.5 weeks at current capacity, with twelve weeks still the target.
+## Security
 
-## Run the scaffold
+Detect configuration risks through deterministic rules and investigate source-attributed security signals. Configuration findings remain distinct from confirmed incidents. Findings identify affected resources, explain why a rule triggered, cite evidence and suggest remediation. Categories distinguish security issues from reliability, operational and configuration concerns.
 
-Needs Node 26 with npm and [uv](https://docs.astral.sh/uv/); uv installs the pinned Python 3.13. Both servers bind to localhost only.
+Framework mappings provide context from Kubernetes Pod Security Standards, CIS benchmarks, the AWS Well-Architected Security Pillar and internal policies. AI explains and contextualizes findings; it does not invent them or certify compliance.
 
-```sh
-# terminal 1: API on http://127.0.0.1:8000
-cd backend
-uv sync --locked
-uv run uvicorn vyom.api.app:app --host 127.0.0.1 --port 8000
+## Ask Vyom
 
-# terminal 2: UI on http://127.0.0.1:5173, proxying /api to the backend
-cd frontend
-npm ci
-npm run dev
-```
+- What is running in namespace payments?
+- What is wrong with checkout?
+- Why is this Pod pending?
+- Why can't app-a reach db-b on TCP/5432?
+- Which workloads are privileged?
+- Which security groups expose SSH publicly?
+- Show resources related to this load balancer.
 
-Open the UI: the header and the sidebar show `● API NOMINAL`, and the first cell of the question-path strip shows the service name, version and `ok`. `curl http://127.0.0.1:8000/api/health` returns the same data. Stop the backend and they turn to `■ API UNREACHABLE` within 10 seconds, then recover when the backend returns. Started this way the backend has no agent configuration, so the Ask Vyom panel is disabled and says so; [Ask a question](#ask-a-question) connects it. The UI follows the [design spec](docs/design/DESIGN.md).
+Conversation stays focused on inventory, investigation and security.
 
-Checks, also run by [CI](.github/workflows/ci.yml):
+## How it works
 
-```sh
-cd frontend && npm run typecheck && npm run lint && npm run build
-cd backend && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
-```
+A React interface connects to FastAPI and three shared product domains:
 
-## Run the observability stack on Kind
+- **Inventory collectors** use native Kubernetes and AWS APIs to maintain normalized resources and relationships in Postgres.
+- **Investigation workflows** combine existing inventory with bounded agent tools and explicit diagnostic skills. MCP provides an integration boundary for agent-driven queries.
+- **Security rules** evaluate inventory deterministically and attach evidence to findings.
 
-Needs Docker, kind, kubectl, Helm, curl and openssl. Nothing is published on host ports.
+Collection policies control freshness. Evidence records source identity, resource identity, observation time, coverage and limitations. External metrics, events and logs supply diagnostic evidence without making Vyom an observability backend. AI-generated text is explanation, never infrastructure evidence.
 
-```sh
-kind create cluster --config deploy/kind/cluster.yaml   # cluster "vyom", context kind-vyom
-./scripts/observability-up.sh      # pinned Prometheus/Grafana, Loki, Tempo and Alloy; safe to re-run
-./scripts/observability-check.sh   # login required, targets up, logs bounded, synthetic trace in Tempo
-./scripts/mcp-up.sh                # pinned upstream Kubernetes MCP server behind an authenticating proxy, plus demo pods
-./scripts/mcp-check.sh             # live: handshake, pod list equal to kubectl, callers and scope refused
+## Read-only by design
 
-kubectl --context kind-vyom -n observability port-forward svc/grafana 3000:80 --address 127.0.0.1
-# http://127.0.0.1:3000  user admin, password in .local/grafana-admin-password
-```
+The server enforces tenant, account, cluster, namespace and tool permissions. Prompts and browser filters cannot grant access. Credentials remain server-side, sensitive values are excluded from evidence, and tool execution is bounded. Infrastructure mutations and autonomous remediation are outside the product boundary.
 
-Reasoning endpoint (S1.4): OpenRouter with `anthropic/claude-haiku-5.5`. Run the live check yourself in a terminal that has the API key; it sends a few small requests, which costs a little. The key can be an environment variable in that terminal or an ignored file.
+Vyom focuses on AWS and Kubernetes operations. Cost optimization, general-purpose chat, deployment orchestration, SIEM and compliance certification are outside that boundary.
 
-```sh
-export OPENROUTER_API_KEY=...             # in your own terminal; or instead:
-(umask 077; cat > .local/model-api-key)   # paste the key, press Enter, then Ctrl-D
+## Project documentation
 
-./scripts/model-check.sh                  # live: tool-call round trip, refused arguments, wrong and missing key, no key in telemetry or bundle
-```
-
-### Ask a question
-
-With the cluster and `mcp-up.sh` in place, run the backend against Kind and ask through the UI. The backend reads the model key the same way as above.
-
-```sh
-./scripts/dev-up.sh                  # terminal 1: MCP port-forward, collector token, operator config in .local/, API on 127.0.0.1:8000
-cd frontend && npm run dev           # terminal 2: UI on http://127.0.0.1:5173
-
-curl -s 127.0.0.1:8000/api/chat -H 'content-type: application/json' \
-  -d '{"question":"Which pods are unhealthy in the demo namespace?"}'
-
-./scripts/chat-check.sh              # live gate for S1.5: real model and real MCP, plus the failure paths
-./scripts/pods-check.sh              # live gate for S1.6: pods table against kubectl, MCP down, a scale change seen by both paths
-```
-
-The answer names the failing pod and cites it; the response also carries the evidence (tool, namespace, collection time, items) and a trace ID. If the model, the MCP endpoint or the evidence is unavailable the response says which, with no answer. Workflow and outcomes: [chat workflow](docs/MCP_INTEGRATIONS.md#chat-workflow-in-s15).
-
-The Kubernetes page (`/kubernetes`, or `curl -s 127.0.0.1:8000/api/kubernetes/pods`) lists the same namespace's pods read straight from the Kubernetes API by a separate read-only identity. It does not use the agent or MCP and keeps working when they are down: [direct pod view](docs/MCP_INTEGRATIONS.md#direct-pod-view-in-s16).
-
-The first install pulls about ten images and takes several minutes. `kind delete cluster --name vyom` removes everything, including stored telemetry. What is installed and its limits: [observability](docs/OBSERVABILITY.md#installed-on-kind-in-s19).
-
-Backend layout under `backend/src/vyom/`: `api` (HTTP), `mcp_client` (outbound MCP through the official SDK with the endpoint registry, tool allowlist, limits and the reviewed Kubernetes pod-list tool; Vyom serves no MCP protocol), `evidence.py` and `context.py` (shared evidence contract and server-side scope), `telemetry.py` (payload-free JSON logs, `/metrics`, OTLP traces), `agent` (`model.py`, the reasoning adapter: LangChain `ChatOpenAI` against one OpenAI-compatible endpoint; `graph.py`, the LangGraph chat workflow with one bounded tool call), `credentials.py` (credential references) and `collectors` (`kubernetes.py`, the direct pod read for the deterministic view).
+- [Architecture](docs/ARCHITECTURE.md)
+- [Continuous operations](docs/CONTINUOUS_OPERATIONS.md)
+- [Product scope](vyom-12-week-sprint-plan.md)
+- [Local development and deployment](docs/LOCAL_DEVELOPMENT.md)
+- [Design system](docs/design/DESIGN.md)
+- [Branding](docs/BRANDING.md)
+- [Contributor agreement](AGENTS.md)

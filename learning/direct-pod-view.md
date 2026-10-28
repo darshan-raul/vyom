@@ -109,7 +109,7 @@ A namespace can have thousands of pods. `limit=100` asks for the first hundred; 
 
 ## 4. A separate identity
 
-`deploy/collector/rbac.yaml` creates three objects:
+The three objects below are written in `deploy/chart/vyom/templates/identities.yaml` since S1.7 (they were `deploy/collector/rbac.yaml` when this guide was written):
 
 ```yaml
 kind: ServiceAccount        # vyom-collector, in namespace vyom
@@ -350,7 +350,7 @@ kubectl --context kind-vyom -n demo scale deployment/web --replicas=1
 # See "denied" for yourself, then repair it
 kubectl --context kind-vyom -n demo delete rolebinding vyom-collector-pod-reader
 curl -s 127.0.0.1:8000/api/kubernetes/pods | python3 -m json.tool      # state "denied", error "forbidden"
-kubectl --context kind-vyom apply -f deploy/collector/rbac.yaml
+./scripts/vyom-up.sh     # re-applies the chart, including the RoleBinding
 
 # Collector metrics after those reads
 curl -s 127.0.0.1:8000/metrics | grep vyom_collector

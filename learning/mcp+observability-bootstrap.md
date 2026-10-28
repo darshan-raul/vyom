@@ -352,7 +352,7 @@ Results you can match to this (all in `mcp-check.sh`):
 
 In the host, a 401 or 403 seen by `_GuardedTransport` becomes error `auth` and state `denied`.
 
-**TLS.** The proxy serves HTTPS with a self-signed certificate that `mcp-up.sh` generates into `.local/mcp-tls/`. The host is told to trust exactly that certificate through `ca_file` in the server config. Without `ca_file` the connection fails verification, which is the correct default.
+**TLS.** The proxy serves HTTPS with a self-signed certificate that `vyom-up.sh` (`mcp-up.sh` before S1.7) generates into `.local/mcp-tls/`. The host is told to trust exactly that certificate through `ca_file` in the server config. Without `ca_file` the connection fails verification, which is the correct default.
 
 **Why a sidecar at all.** The upstream server has its own OAuth option, but in v0.0.67 it refuses to start with that option combined with "use my own identity for Kubernetes". That was found by running it, and is recorded as decision MCPK01.
 
@@ -863,8 +863,8 @@ Tests: `backend/tests/test_telemetry.py`.
 | `deploy/observability/*.values.yaml` | Settings per chart: retention, limits, what is switched off |
 | `deploy/observability/config.alloy` | The collector pipeline. Worth reading once against the two diagrams in 3.3 and 3.4 |
 | `deploy/observability/dashboards/*.json` | Two Grafana dashboards, provisioned as code |
-| `deploy/kubernetes-mcp/config.toml` | The MCP server's settings: read-only, one enabled tool, Secrets denied, bound to localhost, log level 0 (higher levels log parameters and results) |
-| `deploy/kubernetes-mcp/manifests.yaml` | Read in this order, matching 2.7: the two ServiceAccounts; the Role in `demo` (pods `list` only); the ClusterRole letting the proxy create TokenReviews and SubjectAccessReviews; the Role granting `vyom-api` the made-up endpoint resource; the proxy's ConfigMap naming that resource; the Service (ClusterIP, 8443); the Deployment with its two containers (`server`, `proxy`) |
+| `deploy/chart/vyom/files/kubernetes-mcp.toml` (was `deploy/kubernetes-mcp/config.toml`) | The MCP server's settings: read-only, one enabled tool, Secrets denied, bound to localhost, log level 0 (higher levels log parameters and results) |
+| `deploy/chart/vyom/templates/kubernetes-mcp.yaml` and `identities.yaml` (were `deploy/kubernetes-mcp/manifests.yaml`) | Read in this order, matching 2.7: the two ServiceAccounts; the Role in `demo` (pods `list` only); the ClusterRole letting the proxy create TokenReviews and SubjectAccessReviews; the Role granting `vyom-api` the made-up endpoint resource; the proxy's ConfigMap naming that resource; the Service (ClusterIP, 8443); the Deployment with its two containers (`server`, `proxy`) |
 
 Both images in the Deployment are pinned by digest (`@sha256:…`), not by tag, so the image cannot change underneath a tag.
 
@@ -873,7 +873,7 @@ Both images in the Deployment are pinned by digest (`@sha256:…`), not by tag, 
 | Script | Does |
 |---|---|
 | `scripts/observability-up.sh` / `observability-check.sh` | Install the stack; verify it through localhost port-forwards |
-| `scripts/mcp-up.sh` | Generate the endpoint certificate once into `.local/mcp-tls/`, apply the manifests and demo workloads |
+| `scripts/vyom-up.sh` (was `mcp-up.sh`) | Generate the endpoint certificate once into `.local/mcp-tls/`, build and load the images, install the chart and the demo workloads |
 | `scripts/mcp-check.sh` + `mcp_live_check.py` | 22 live checks: RBAC, who is refused, pod list equals `kubectl`, nothing sensitive in telemetry |
 | `scripts/model-check.sh` + `model_live_check.py` | The live model checks you ran |
 | `scripts/dev-up.sh` | Run the backend on your machine against Kind (guides 2 and 3) |

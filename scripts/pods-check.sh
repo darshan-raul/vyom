@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Live gate for S1.6: the direct pod view against kubectl on Kind, its independence from
 # MCP, and a controlled workload change seen by both the direct view and the MCP path.
-# Needs scripts/mcp-up.sh to have run. Scales the demo `web` Deployment to 2 replicas and
+# Needs scripts/vyom-up.sh to have run. Scales the demo `web` Deployment to 2 replicas and
 # back to 1 (that is this script changing the demo workload with your kubectl access, not
 # Vyom). Opens a localhost-only port-forward for its duration.
 # With a model key it also asks the agent about the changed workload (two small requests):
@@ -15,6 +15,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export VYOM_MODE=development  # these checks build the API in process with the fixed development identity
 export KUBE_CONTEXT="${KUBE_CONTEXT:-kind-vyom}"
 port="${MCP_PORT:-18443}"
 export VYOM_LOCAL="$root/.local"
@@ -37,9 +38,9 @@ fail() { echo "FAIL  $*" >&2; exit 1; }
 for tool in kubectl curl uv base64; do
   command -v "$tool" >/dev/null || fail "missing required tool: $tool"
 done
-[[ -s "$ca" ]] || fail "no endpoint certificate; run scripts/mcp-up.sh first"
+[[ -s "$ca" ]] || fail "no endpoint certificate; run scripts/vyom-up.sh first"
 k -n vyom get serviceaccount vyom-collector >/dev/null 2>&1 ||
-  fail "no collector ServiceAccount; run scripts/mcp-up.sh"
+  fail "no collector ServiceAccount; run scripts/vyom-up.sh"
 
 export VYOM_MODEL_CREDENTIAL_REF=""
 if [[ -n "${OPENROUTER_API_KEY:-}" ]]; then

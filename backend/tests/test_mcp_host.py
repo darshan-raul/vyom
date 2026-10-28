@@ -79,6 +79,21 @@ def test_call_returns_projected_evidence_with_host_supplied_scope_and_credential
     assert {headers["authorization"] for headers in upstream.headers} == {f"Bearer {TOKEN}"}
 
 
+# Some upstreams refuse a non-localhost Host on a loopback connection (a sidecar proxy's).
+# The option sends "localhost" and nothing else changes; without it the real Host is used.
+def test_loopback_host_header_is_sent_only_when_configured(tmp_path):
+    plain = Upstream()
+    call(plain, config(tmp_path), None)
+    assert all(headers["host"] != "localhost" for headers in plain.headers)
+
+    guarded = Upstream()
+    # The in-process fake applies its own Host rules, so only the header is asserted here;
+    # the real upstream accepting it is checked live (scripts/vyom-check.sh).
+    call(guarded, config(tmp_path, loopback_host_header=True), None)
+    assert {headers["host"] for headers in guarded.headers} == {"localhost"}
+    assert {headers["authorization"] for headers in guarded.headers} == {f"Bearer {TOKEN}"}
+
+
 # The MCP path and the direct path must produce identical items, IDs and coverage.
 def test_evidence_matches_the_direct_path_for_the_same_resources(tmp_path):
     drafts = [

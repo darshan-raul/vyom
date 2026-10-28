@@ -1,0 +1,140 @@
+# The four identities. None can read anything in the cluster beyond what its Role below says.
+# The pods that use them mount only the tokens they need (automount is off everywhere).
+# MCP server: reads pods in the scoped namespace through its own ServiceAccount.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubernetes-mcp
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+automountServiceAccountToken: true  # the server and the proxy call the Kubernetes API in-cluster
+---
+# The backend's identity towards the MCP endpoint. It has no Kubernetes permissions.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vyom-api
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+# The direct collector's identity (S1.6). The API reads the Kubernetes API as this account
+# using a short-lived token from the refresher below; the API pod itself runs as vyom-api.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vyom-collector
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+# Mints the collector's token and writes it to one Secret; it can do nothing else.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vyom-token-refresher
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubernetes-mcp-pod-reader
+  namespace: {{ .Values.context.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubernetes-mcp-pod-reader
+  namespace: {{ .Values.context.namespace }}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: kubernetes-mcp-pod-reader}
+subjects:
+  - {kind: ServiceAccount, name: kubernetes-mcp, namespace: {{ .Release.Namespace }}}
+---
+# No get/watch, no logs, no exec, no Secrets, no other namespace, no cluster-scoped resource.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vyom-collector-pod-reader
+  namespace: {{ .Values.context.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vyom-collector-pod-reader
+  namespace: {{ .Values.context.namespace }}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: vyom-collector-pod-reader}
+subjects:
+  - {kind: ServiceAccount, name: vyom-collector, namespace: {{ .Release.Namespace }}}
+---
+# What kube-rbac-proxy needs to check callers. These verbs read no cluster resources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Namespace }}-kubernetes-mcp-caller-review
+rules:
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["subjectaccessreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Namespace }}-kubernetes-mcp-caller-review
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Namespace }}-kubernetes-mcp-caller-review
+subjects:
+  - {kind: ServiceAccount, name: kubernetes-mcp, namespace: {{ .Release.Namespace }}}
+---
+# Permission to call the MCP endpoint, expressed on a resource that exists only as an
+# authorization name: it grants nothing in the Kubernetes API itself.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubernetes-mcp-caller
+rules:
+  - apiGroups: ["vyom.dev"]
+    resources: ["mcpendpoints"]
+    resourceNames: ["kubernetes"]
+    verbs: ["get", "create", "delete"]  # GET, POST and DELETE on the endpoint
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubernetes-mcp-caller
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: kubernetes-mcp-caller}
+subjects:
+  - {kind: ServiceAccount, name: vyom-api, namespace: {{ .Release.Namespace }}}
+---
+# The refresher: mint tokens for vyom-collector only, and write the one named Secret only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vyom-token-refresher
+rules:
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    resourceNames: ["vyom-collector"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: [{{ .Values.collector.tokenSecret | quote }}]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vyom-token-refresher
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: vyom-token-refresher}
+subjects:
+  - {kind: ServiceAccount, name: vyom-token-refresher, namespace: {{ .Release.Namespace }}}

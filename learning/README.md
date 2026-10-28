@@ -19,11 +19,11 @@ About an hour each if you read with the code open and do the exercises.
 
 ## Run the app
 
-You need the Kind cluster `vyom` with the MCP server installed. If it is not there yet, see "Run the observability stack on Kind" in the [project README](../README.md#run-the-observability-stack-on-kind).
+You need the Kind cluster `vyom` with the MCP server installed. If it is not there yet, see [local development](../docs/LOCAL_DEVELOPMENT.md).
 
 ```sh
 # once per cluster (safe to re-run): MCP server, collector identity, demo pods
-./scripts/mcp-up.sh
+./scripts/vyom-up.sh     # since S1.7 this installs the whole Vyom chart; before that it applied plain MCP manifests
 
 # terminal 1: the backend, wired to Kind. Needs the model key for chat; the pods page works without it.
 export OPENROUTER_API_KEY=...        # or put the key in .local/model-api-key with mode 600

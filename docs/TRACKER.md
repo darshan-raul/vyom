@@ -1,101 +1,59 @@
 # Execution tracker
 
-This is the sole status ledger. Details and acceptance are in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Constitution wins on conflicts.
+Status authority for the active roadmap. States: pending, in_progress, partial, blocked, done, deferred. Done requires linked evidence; blocked requires an exact retry condition. Only one implementation task is in_progress. Planning completion is not runtime delivery.
 
-States: `pending`, `in_progress`, `blocked`, `done`, `deferred`. `blocked` requires an exact retry condition; `deferred` requires an explicit scope/date decision. `done` requires linked verification, not merely code. Session IDs refer to `docs/sessions/`.
+## Active implementation
 
-## Reset and planning
-
-| ID | Task | Status | Session | Evidence / next action |
-|---|---|---|---|---|
-| R0 | Remove previous project working files | done | prior reset | Constitution reset evidence; Git metadata and protected environment directories retained |
-| P0 | Fresh guidance, implementation plan, tracker, handoff and architecture sources | done | [2026-10-03-01](sessions/2026-10-03-01.md) | Documentation consistency check; six detailed Mermaid views; interactive draft structural checks 9/9. Interactive diagram browser review is an optional note in [diagrams/README.md](diagrams/README.md), not a tracked task |
-| P2 | MCP host/client architecture revision (planning only) | done | [2026-10-03-02](sessions/2026-10-03-02.md) | Constitution, 38-task roadmap, responsibilities/auth/deployment and seven Mermaid views synchronized; doc checks pass; interactive draft direct checker 9/9 |
-| P3 | Observability scope synchronization (planning only) | done | [2026-10-04-01](sessions/2026-10-04-01.md) | 39-task roadmap and eight architecture views synchronized; docs checks pass; both interactive drafts direct checker 9/9. Atomic/browser acceptance remains unverified; all runtime gates pending |
-| P4 | Detailed README service diagram | done | [2026-10-04-02](sessions/2026-10-04-02.md) | Application + observability Mermaid diagrams and workload table; doc checks/source review pass; local Mermaid rendering unavailable; runtime tasks pending |
-| P5 | README Mermaid parse fix | done | [2026-10-04-03](sessions/2026-10-04-03.md) | Reserved graph node ID renamed throughout; both diagram source checks and docs/whitespace pass. Parser install failed EAI_AGAIN; actual rendering unverified |
-| P6 | Compact README architecture overview | done | [2026-10-04-04](sessions/2026-10-04-04.md) | One overview: seven nodes / six connections; source/docs/whitespace checks pass; rendering unverified |
-| P7 | README diagram detail and readability balance | done | [2026-10-04-05](sessions/2026-10-04-05.md) | Named-service map: 12 nodes / nine connections; expandable telemetry: five nodes / five connections. Source/docs/whitespace pass; rendering unverified |
-| P8 | README deployment architecture SVG | done | [2026-10-04-06](sessions/2026-10-04-06.md) | Standalone SVG with service boundaries/icons and five primary connectors; XML, 1200px/760px rendering and visual review pass; doc/whitespace checks pass |
-| P9 | Owner-supplied canonical Vyom logo | done | [2026-10-04-07](sessions/2026-10-04-07.md) | Original PNG preserved; README/diagram branded; future reuse documented. Byte/dimension/XML checks, raster/visual review and docs/whitespace pass |
-| P10 | Explicit RAG in README architecture | done | [2026-10-04-08](sessions/2026-10-04-08.md) | Backend RAG S3, ingestion/retrieval/citations visible; five connectors retained. SVG/labels/logo, rendering/visual review and docs/whitespace pass |
-| P11 | Frontend design spec adoption and shell redesign (owner-requested, outside S1.x) | done | [2026-10-12-04](sessions/2026-10-12-04.md) | Spec, mockups and circular mark in [design/](design/DESIGN.md), adapted to the plan in its §0; tokens, fonts, app shell, Today, Ask Vyom (not connected) and question-path strip in `frontend/`. Typecheck, lint, build pass; rendered in a browser at 1440px and 500px with the API up and down. No new data or route: S1.5 and S1.6 remain pending and gain no credit |
-
-## S1 — Smallest real agent with observability
-
-| ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
+| ID | Task | Depends on | Status | Session | Evidence / next action |
 |---|---|---|---|---|---|
-| S1.1 | Fresh development scaffold | — | done | [2026-10-11-02](sessions/2026-10-11-02.md) | Clean `npm ci` + typecheck + lint + build; clean `uv sync --locked` + ruff + 3 tests; live `/api/health` 200 direct and through the dev proxy; browser render checked up and down; no MCP server import in `backend/src`. CI workflow written but never run (nothing pushed) |
-| S1.9 | Observability stack and instrumentation baseline | S1.1 | done | [2026-10-11-03](sessions/2026-10-11-03.md) | Clean Kind install from four checksum-pinned charts; `scripts/observability-check.sh` 5/5; single log ingestion, redaction, namespace allowlist, observer RBAC, Tempo and collector outage signals and recovery verified live; 7 backend tests. Not yet possible: Prometheus scraping the backend (needs the S1.7 chart). Dashboards and log/trace links checked through APIs only, not in the Grafana UI. Real correlation closes in S1.8 |
-| S1.2 | Evidence, MCP client and trusted context | S1.1 | done | [2026-10-12-01](sessions/2026-10-12-01.md) | `uv sync --locked` + ruff + 46 backend tests. All four acceptance items are proven against an offline fixture MCP server through the real SDK client and HTTP stack (unreachable-endpoint case uses a real socket); no upstream Kubernetes MCP server was contacted. Host-to-upstream authentication is chosen but only its client half exists ([MCPC01](DECISIONS.md#s12-mcp-host-and-evidence-contract--2026-10-12), proposed); S1.3 must verify the server half and register the first real tool. MCP dashboard panels not added |
-| S1.3 | Upstream Kubernetes MCP on Kind | S1.2 | done | [2026-10-12-02](sessions/2026-10-12-02.md) | Live on Kind: `scripts/mcp-up.sh` deploys `kubernetes-mcp-server` v0.0.67 and `kube-rbac-proxy` v0.23.0 by digest; `scripts/mcp-check.sh` 22/22 (handshake, discovery, pod list equal to kubectl, unauthenticated/wrong-audience/ungranted callers, forbidden namespace, writes/exec/Secret, RBAC, oversized, no env value or credential in evidence/telemetry/upstream logs); a 41-pod result discarded as oversized at a 4 KiB limit. 53 backend tests. Not done: backend not yet deployed in-cluster, so the projected-token mount and Service DNS path are untested (S1.7); upstream tracing not enabled; token rotation not exercised |
-| S1.4 | Initial reasoning adapter | S1.2 | done | [2026-10-12-03](sessions/2026-10-12-03.md) | Live against OpenRouter with `anthropic/claude-haiku-5.5`, run by the owner: `scripts/model-check.sh` passes (tool-call round trip with reported usage; a real proposed selector outside the allowed pattern refused as `invalid_arguments`; wrong key `auth`; missing key `missing_credential`; unknown model `rejected`; unreachable provider `unavailable`; no key, prompt, tool result, answer or endpoint in spans, logs, metrics or error texts; key in no committable file or the frontend bundle). 91 backend tests. Limits: the tool result in the round trip was canned, not from MCP (S1.5 joins them); the model declined to send arguments outside the offered schema, so that refusal is proven offline only; malformed JSON arguments from a model are proven offline only |
-| S1.5 | Bounded graph and MCP-backed chat | S1.3, S1.4 | done | [2026-10-13-01](sessions/2026-10-13-01.md) | Live on Kind against OpenRouter with `anthropic/claude-haiku-5.5`, run by the owner: `scripts/chat-check.sh` passes all 22 lines (a real question answered through the API, graph, model and upstream MCP; evidence equal to `kubectl -n demo get pods`; unhealthy pod named and cited, citations resolve; one trace with request, graph, model-client and MCP-client spans; ungroundable question, change request and other-namespace question each `no_tool_used`; request carrying a namespace 422; unreachable MCP `no_evidence`/`unavailable`; unreadable namespace `forbidden`; wrong key, missing key and unreachable provider `model_unavailable`; no key, token, question, answer, pod name or env value in telemetry, responses or upstream logs; demo pods unchanged). 110 backend tests. Limits: the host ran on the owner's machine through a port-forward, not in-cluster (S1.7); injected tool text, a second tool round, uncited answers and the 60 s deadline are proven offline only; chat metrics have no dashboard panels and are not scraped until S1.7 |
-| S1.6 | Direct Kubernetes evidence view | S1.5 | done | [2026-10-13-02](sessions/2026-10-13-02.md) | Live on Kind with OpenRouter `anthropic/claude-haiku-5.5`, run by the owner: `scripts/pods-check.sh` passes all 15 checks (collector may list pods in `demo` and is denied 11 other requests; table equal to `kubectl -n demo get pods` with UIDs and shared resource IDs; the API server sends no pod spec or env value; MCP path returns the same IDs and values; table complete with MCP unreachable; scaling `web` to 2 shows the new pod in a new, later collection, in a fresh MCP read under the same ID, and in a fresh MCP-backed answer that names and cites it with every citation a row of the table; scale back followed; forbidden namespace `denied/forbidden`; invalid token and the MCP-endpoint token `denied/auth`; unreachable API `missing/unavailable`; nothing sensitive in telemetry or responses). 125 backend tests. Limits: the collector ran on the owner's machine with a `kubectl create token` credential; how the in-cluster pod holds that identity is open (K8S02, S1.7). The UI was checked in headless Brave by the agent, not by the live script. Collector metrics have no dashboard panels and are not scraped until S1.7 |
-| S1.7 | Fresh Kind packaging | S1.5, S1.6, S1.9 | pending | — | — |
-| S1.8 | S1 agent + observability live gate and walkthrough | S1.7 | pending | — | — |
+| R1 | Repository and local packaging cleanup | — | in_progress | 2026-10-29-05 | Docs/checker consolidation, profile validation and fresh Kind gates in progress |
+| R2 | Scoped Postgres resource and evidence foundation | R1 | pending | — | See acceptance in implementation plan |
+| R3 | Scheduled Kubernetes inventory and workload detail | R2 | pending | — | See acceptance in implementation plan |
+| R4 | Manual workload investigation and diagnostic labs | R3 | pending | — | See acceptance in implementation plan |
+| R4a | Continuous workload issue and automatic triage loop | R4 | pending | — | See acceptance in implementation plan |
+| R5 | Kubernetes deterministic posture | R4a | pending | — | See acceptance in implementation plan |
+| R6 | AWS native inventory | R5 | pending | — | See acceptance in implementation plan |
+| R7 | AWS connectivity investigation | R6 | pending | — | See acceptance in implementation plan |
+| R8 | AWS deterministic posture | R7 | pending | — | See acceptance in implementation plan |
+| R9 | Cross-platform relationships | R8 | pending | — | See acceptance in implementation plan |
+| R10 | Recovery and identity/exposure gate | R4a | pending | — | See acceptance in implementation plan |
 
-S1 estimate: 40 task hours + 10 reserve; S2–S6: 30 + 10 each. Total 250h / 12.5 weeks at 20h/week. Re-estimate after first clean Kind install; no observability runtime acceptance is claimed.
+File-level checklists: [OVERHAUL_CHANGE_MAP](OVERHAUL_CHANGE_MAP.md). They do not own status.
 
-## S2 — AWS and EKS evidence
+## Completed planning
 
-| ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
-|---|---|---|---|---|---|
-| S2.1 | EKS, observability and AWS MCP connectivity | S1.8 | pending | — | — |
-| S2.2 | Direct EC2 inventory and AWS MCP investigation | S2.1 | pending | — | — |
-| S2.3 | Workload and node health | S2.1 | pending | — | — |
-| S2.4 | Current resource metrics | S2.3 | pending | — | — |
-| S2.5 | CloudWatch EC2 metrics | S2.2 | pending | — | — |
-| S2.6 | S2 dual-path + observability gate and teardown rehearsal | S2.2, S2.3, S2.4, S2.5 | pending | — | — |
+| Task | Evidence |
+|---|---|
+| Continuous operations scope | [2026-10-29-03](sessions/2026-10-29-03.md) |
+| Repository overhaul review | [2026-10-29-04](sessions/2026-10-29-04.md) |
 
-## S3 — Bedrock, runbooks and history
+## Historical completed work
 
-| ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
-|---|---|---|---|---|---|
-| S3.1 | Bedrock reasoning | S2.6 | pending | — | — |
-| S3.2 | Curated corpus and embeddings | S3.1 | pending | — | — |
-| S3.3 | Qdrant ingestion and retrieval | S3.2 | pending | — | — |
-| S3.4 | Minimal Postgres history | S3.1 | pending | — | — |
-| S3.5 | Graph retrieval and evaluation | S3.3, S3.4 | pending | — | — |
-| S3.6 | Direct-SDK observation schedule | S3.4 | pending | — | — |
-| S3.7 | S3 live gate | S3.5, S3.6 | pending | — | — |
+These results prove their original scope only. Superseded pending S2–S6 tasks are no longer delivery obligations; applicable safety requirements are incorporated above. No archived code is to be restored.
 
-## S4 — Investigation and cost
-
-| ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
-|---|---|---|---|---|---|
-| S4.1 | Events and relationships | S3.7 | pending | — | — |
-| S4.2 | Bounded multi-server investigation | S4.1 | pending | — | — |
-| S4.3 | Daily cost collection and questions | S3.7 | pending | — | — |
-| S4.4 | Two deterministic findings | S4.1 | pending | — | — |
-| S4.5 | Optional Jev evaluation | S4.2 | pending | — | — |
-| S4.6 | S4 live gate | S4.2, S4.3, S4.4, S4.5 | pending | — | — |
-
-## S5 — Reliability baseline
-
-| ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
-|---|---|---|---|---|---|
-| S5.1 | Release and upstream compatibility automation | S4.6 | pending | — | — |
-| S5.2 | Runtime, integration and telemetry hardening | S5.1 | pending | — | — |
-| S5.3 | External backup and native restore | S3.7 | pending | — | — |
-| S5.4 | Answer and integration fault evaluation | S5.2, S5.3 | pending | — | — |
-| S5.5 | S5 operational gate | S5.4 | pending | — | — |
-
-## S6 — Identity and tenant boundary
-
-| ID | Task | Depends on | Status | Session | Evidence / blocker / next action |
-|---|---|---|---|---|---|
-| S6.1 | Keycloak login | S5.5 | pending | — | — |
-| S6.2 | Membership resolver and migration | S6.1 | pending | — | — |
-| S6.3 | Grants, MCP isolation and telemetry access policy | S6.2 | pending | — | — |
-| S6.4 | Persisted and asynchronous isolation | S6.3 | pending | — | — |
-| S6.5 | Audit, credentials and identity recovery | S6.4 | pending | — | — |
-| S6.6 | S6 isolation and exposure gate | S6.5 | pending | — | — |
-
-## Separate owner-requested POC — outside S1–S6
-
-| ID | Task | Status | Session | Evidence / next action |
-|---|---|---|---|---|
-| POC1 | Two-Kind-cluster shadcn chat, direct Kubernetes reads and Helm packaging | done | [2026-10-04-09](sessions/2026-10-04-09.md) | Code deliverable: 11 backend fixture tests, frontend typecheck/build pass; [owner setup](../learning/kind-chat/README.md). Docker/Kind/Helm/live model unverified by owner request. No RAG/MCP or sprint completion credit |
-| POC2 | Use LangChain for POC model integration | done | [2026-10-04-10](sessions/2026-10-04-10.md) | 14 backend fixtures pass using real LangChain/SDK with mocked HTTP; response limits and disabled tracing verified. Sandbox harness bounds selector polling; Docker/Kind/Helm/live model checks remain owner-run |
-| POC3 | Owner live run of the Kind chat POC with OpenRouter | done | [2026-10-11-01](sessions/2026-10-11-01.md) | Owner confirmed the live run complete on 2026-10-11; the agent did not observe or capture the step-6 output. Agent part: npm lockfile regenerated ([2026-10-10-01](sessions/2026-10-10-01.md)), model key as the `OPENROUTER_API_KEY` Secret key/env var, 15 backend tests pass, both charts lint and render. No sprint completion credit |
+| ID | Completed work | Original evidence |
+|---|---|---|
+| R0 | Remove previous project working files | prior reset — Constitution reset evidence; Git metadata and protected environment directories retained |
+| P0 | Fresh guidance, implementation plan, tracker, handoff and architecture sources | [2026-10-03-01](sessions/2026-10-03-01.md) — Documentation consistency check; six detailed Mermaid views; interactive draft structural checks 9/9. Interactive diagram browser review is an optional note in [diagrams/README.md](diagrams/README.md), not a tracked task |
+| P2 | MCP host/client architecture revision (planning only) | [2026-10-03-02](sessions/2026-10-03-02.md) — Constitution, 38-task roadmap, responsibilities/auth/deployment and seven Mermaid views synchronized; doc checks pass; interactive draft direct checker 9/9 |
+| P3 | Observability scope synchronization (planning only) | [2026-10-04-01](sessions/2026-10-04-01.md) — 39-task roadmap and eight architecture views synchronized; docs checks pass; both interactive drafts direct checker 9/9. Atomic/browser acceptance remains unverified; all runtime gates pending |
+| P4 | Detailed README service diagram | [2026-10-04-02](sessions/2026-10-04-02.md) — Application + observability Mermaid diagrams and workload table; doc checks/source review pass; local Mermaid rendering unavailable; runtime tasks pending |
+| P5 | README Mermaid parse fix | [2026-10-04-03](sessions/2026-10-04-03.md) — Reserved graph node ID renamed throughout; both diagram source checks and docs/whitespace pass. Parser install failed EAI_AGAIN; actual rendering unverified |
+| P6 | Compact README architecture overview | [2026-10-04-04](sessions/2026-10-04-04.md) — One overview: seven nodes / six connections; source/docs/whitespace checks pass; rendering unverified |
+| P7 | README diagram detail and readability balance | [2026-10-04-05](sessions/2026-10-04-05.md) — Named-service map: 12 nodes / nine connections; expandable telemetry: five nodes / five connections. Source/docs/whitespace pass; rendering unverified |
+| P8 | README deployment architecture SVG | [2026-10-04-06](sessions/2026-10-04-06.md) — Standalone SVG with service boundaries/icons and five primary connectors; XML, 1200px/760px rendering and visual review pass; doc/whitespace checks pass |
+| P9 | Owner-supplied canonical Vyom logo | [2026-10-04-07](sessions/2026-10-04-07.md) — Original PNG preserved; README/diagram branded; future reuse documented. Byte/dimension/XML checks, raster/visual review and docs/whitespace pass |
+| P10 | Explicit RAG in README architecture | [2026-10-04-08](sessions/2026-10-04-08.md) — Backend RAG S3, ingestion/retrieval/citations visible; five connectors retained. SVG/labels/logo, rendering/visual review and docs/whitespace pass |
+| P11 | Frontend design spec adoption and shell redesign (owner-requested, outside S1.x) | [2026-10-12-04](sessions/2026-10-12-04.md) — Spec, mockups and circular mark in [design/](design/DESIGN.md), adapted to the plan in its §0; tokens, fonts, app shell, Today, Ask Vyom (not connected) and question-path strip in `frontend/`. Typecheck, lint, build pass; rendered in a browser at 1440px and 500px with the API up and down. No new data or route: S1.5 and S1.6 remain pending and gain no credit |
+| S1.1 | Fresh development scaffold | [2026-10-11-02](sessions/2026-10-11-02.md) — Clean `npm ci` + typecheck + lint + build; clean `uv sync --locked` + ruff + 3 tests; live `/api/health` 200 direct and through the dev proxy; browser render checked up and down; no MCP server import in `backend/src`. CI workflow written but never run (nothing pushed) |
+| S1.9 | Observability stack and instrumentation baseline | [2026-10-11-03](sessions/2026-10-11-03.md) — Clean Kind install from four checksum-pinned charts; `scripts/observability-check.sh` 5/5; single log ingestion, redaction, namespace allowlist, observer RBAC, Tempo and collector outage signals and recovery verified live; 7 backend tests. Not yet possible: Prometheus scraping the backend (needs the S1.7 chart). Dashboards and log/trace links checked through APIs only, not in the Grafana UI. Real correlation closes in S1.8 |
+| S1.2 | Evidence, MCP client and trusted context | [2026-10-12-01](sessions/2026-10-12-01.md) — `uv sync --locked` + ruff + 46 backend tests. All four acceptance items are proven against an offline fixture MCP server through the real SDK client and HTTP stack (unreachable-endpoint case uses a real socket); no upstream Kubernetes MCP server was contacted. Host-to-upstream authentication is chosen but only its client half exists ([MCPC01](DECISIONS.md#s12-mcp-host-and-evidence-contract--2026-10-12), proposed); S1.3 must verify the server half and register the first real tool. MCP dashboard panels not added |
+| S1.3 | Upstream Kubernetes MCP on Kind | [2026-10-12-02](sessions/2026-10-12-02.md) — Live on Kind: `scripts/mcp-up.sh` deploys `kubernetes-mcp-server` v0.0.67 and `kube-rbac-proxy` v0.23.0 by digest; `scripts/mcp-check.sh` 22/22 (handshake, discovery, pod list equal to kubectl, unauthenticated/wrong-audience/ungranted callers, forbidden namespace, writes/exec/Secret, RBAC, oversized, no env value or credential in evidence/telemetry/upstream logs); a 41-pod result discarded as oversized at a 4 KiB limit. 53 backend tests. Not done: backend not yet deployed in-cluster, so the projected-token mount and Service DNS path are untested (S1.7); upstream tracing not enabled; token rotation not exercised |
+| S1.4 | Initial reasoning adapter | [2026-10-12-03](sessions/2026-10-12-03.md) — Live against OpenRouter with `anthropic/claude-haiku-5.5`, run by the owner: `scripts/model-check.sh` passes (tool-call round trip with reported usage; a real proposed selector outside the allowed pattern refused as `invalid_arguments`; wrong key `auth`; missing key `missing_credential`; unknown model `rejected`; unreachable provider `unavailable`; no key, prompt, tool result, answer or endpoint in spans, logs, metrics or error texts; key in no committable file or the frontend bundle). 91 backend tests. Limits: the tool result in the round trip was canned, not from MCP (S1.5 joins them); the model declined to send arguments outside the offered schema, so that refusal is proven offline only; malformed JSON arguments from a model are proven offline only |
+| S1.5 | Bounded graph and MCP-backed chat | [2026-10-13-01](sessions/2026-10-13-01.md) — Live on Kind against OpenRouter with `anthropic/claude-haiku-5.5`, run by the owner: `scripts/chat-check.sh` passes all 22 lines (a real question answered through the API, graph, model and upstream MCP; evidence equal to `kubectl -n demo get pods`; unhealthy pod named and cited, citations resolve; one trace with request, graph, model-client and MCP-client spans; ungroundable question, change request and other-namespace question each `no_tool_used`; request carrying a namespace 422; unreachable MCP `no_evidence`/`unavailable`; unreadable namespace `forbidden`; wrong key, missing key and unreachable provider `model_unavailable`; no key, token, question, answer, pod name or env value in telemetry, responses or upstream logs; demo pods unchanged). 110 backend tests. Limits: the host ran on the owner's machine through a port-forward, not in-cluster (S1.7); injected tool text, a second tool round, uncited answers and the 60 s deadline are proven offline only; chat metrics have no dashboard panels and are not scraped until S1.7 |
+| S1.6 | Direct Kubernetes evidence view | [2026-10-13-02](sessions/2026-10-13-02.md) — Live on Kind with OpenRouter `anthropic/claude-haiku-5.5`, run by the owner: `scripts/pods-check.sh` passes all 15 checks (collector may list pods in `demo` and is denied 11 other requests; table equal to `kubectl -n demo get pods` with UIDs and shared resource IDs; the API server sends no pod spec or env value; MCP path returns the same IDs and values; table complete with MCP unreachable; scaling `web` to 2 shows the new pod in a new, later collection, in a fresh MCP read under the same ID, and in a fresh MCP-backed answer that names and cites it with every citation a row of the table; scale back followed; forbidden namespace `denied/forbidden`; invalid token and the MCP-endpoint token `denied/auth`; unreachable API `missing/unavailable`; nothing sensitive in telemetry or responses). 125 backend tests. Limits: the collector ran on the owner's machine with a `kubectl create token` credential; how the in-cluster pod holds that identity is open (K8S02, S1.7). The UI was checked in headless Brave by the agent, not by the live script. Collector metrics have no dashboard panels and are not scraped until S1.7 |
+| S1.7 | Fresh Kind packaging | [2026-10-18-01](sessions/2026-10-18-01.md), [2026-10-18-02](sessions/2026-10-18-02.md) — Fresh Kind install builds the API and UI images and installs the one chart (pinned upstream MCP server and proxy, API, UI, collector-token refresher, ServiceMonitor). `scripts/vyom-check.sh` passes 21 checks (identities and denials, restricted pods, ClusterIP only, no credential in the release, hourly collector token replaced by the refresher, direct pod view equal to kubectl, in-cluster MCP path, production mode refusing to start, Prometheus scrape); teardown and a second clean install pass. **The real-model chat through the cluster passed** (OpenRouter `anthropic/claude-haiku-5.5`, key from a mode-600 file into a Secret): the answer named the `ImagePullBackOff` pod and cited it, and the same question was answered in every S1.8 run. 131 backend tests. Limits: the UI was not opened in a browser against the in-cluster install; the model step of `pods-check.sh` was not re-run |
+| S1.8 | S1 agent + observability live gate and walkthrough | [2026-10-18-02](sessions/2026-10-18-02.md) — `scripts/s18-gate.sh` passes end to end on Kind (output: [evidence](sessions/evidence/s1-gate-2026-10-18.txt)): unhealthy-pod question with resolving citations; table equal to kubectl; a scaled workload seen by both paths; metrics, exactly-once logs and one connected 12-span Tempo trace for the request; log-to-trace and trace-to-log links; provider failure (`model_unavailable`) and MCP failure (`no_evidence`) each visible as an outcome, counters, a log line and a span while the pods table stays complete; Alloy stopped (question still answered in 3.6 s vs 3.7 s baseline, outage visible in Prometheus, no log loss, outage spans dropped) and Tempo stopped (still answered, lost spans counted, new traces queryable 16 s after recovery); no question text, key, token, literal env value, pod name or resource ID in any stored log, trace or metric; no duplicates. **Not done by the agent:** the two links were exercised through Grafana's APIs, not clicked in the Grafana UI; the S1 sprint gate is the owner's to close. The gate found and fixed a real defect (Alloy lost its log-discovery Role after `vyom-down.sh`) |
+| POC1 | Two-Kind-cluster shadcn chat, direct Kubernetes reads and Helm packaging | [2026-10-04-09](sessions/2026-10-04-09.md) — Code deliverable: 11 backend fixture tests, frontend typecheck/build pass; [owner setup](../learning/kind-chat/README.md). Docker/Kind/Helm/live model unverified by owner request. No RAG/MCP or sprint completion credit |
+| POC2 | Use LangChain for POC model integration | [2026-10-04-10](sessions/2026-10-04-10.md) — 14 backend fixtures pass using real LangChain/SDK with mocked HTTP; response limits and disabled tracing verified. Sandbox harness bounds selector polling; Docker/Kind/Helm/live model checks remain owner-run |
+| POC3 | Owner live run of the Kind chat POC with OpenRouter | [2026-10-11-01](sessions/2026-10-11-01.md) — Owner confirmed the live run complete on 2026-10-11; the agent did not observe or capture the step-6 output. Agent part: npm lockfile regenerated ([2026-10-10-01](sessions/2026-10-10-01.md)), model key as the `OPENROUTER_API_KEY` Secret key/env var, 15 backend tests pass, both charts lint and render. No sprint completion credit |

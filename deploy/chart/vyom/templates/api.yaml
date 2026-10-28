@@ -1,0 +1,101 @@
+# The Vyom API. It reaches the MCP endpoint with a projected token for the audience
+# "vyom-mcp" and the Kubernetes API with the collector's refreshed token; its own account
+# has no Kubernetes access. The model key and the endpoint certificate are mounted from
+# Secrets created beside the release (never from values).
+apiVersion: v1
+kind: Service
+metadata:
+  name: vyom-api
+  labels:
+    app.kubernetes.io/name: vyom-api
+    {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: vyom-api
+  ports:
+    - {name: http, port: 8000, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vyom-api
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vyom-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vyom-api
+      annotations:
+        vyom.dev/operator-checksum: {{ include (print $.Template.BasePath "/operator-config.yaml") . | sha256sum | trunc 16 | quote }}
+    spec:
+      serviceAccountName: vyom-api
+      automountServiceAccountToken: false
+      securityContext: {{- include "vyom.podSecurity" . | nindent 8 }}
+      containers:
+        - name: api
+          image: {{ .Values.images.api.repository }}:{{ .Values.images.api.tag }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          env:
+            - {name: VYOM_MODE, value: {{ .Values.mode | quote }}}
+            - {name: VYOM_CONFIG, value: /etc/vyom/operator.json}
+            {{- with .Values.telemetry.otlpEndpoint }}
+            - {name: OTEL_EXPORTER_OTLP_ENDPOINT, value: {{ . | quote }}}
+            {{- end }}
+          ports:
+            - {name: http, containerPort: 8000}
+          readinessProbe:
+            httpGet: {path: /api/health, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /api/health, port: http}
+            periodSeconds: 20
+          resources: {{- toYaml .Values.api.resources | nindent 12 }}
+          securityContext: {{- include "vyom.containerSecurity" . | nindent 12 }}
+          volumeMounts:
+            - {name: operator, mountPath: /etc/vyom, readOnly: true}
+            - {name: mcp-ca, mountPath: /etc/vyom/mcp-ca, readOnly: true}
+            - {name: kube-ca, mountPath: /etc/vyom/kube-ca, readOnly: true}
+            - {name: mcp-token, mountPath: /var/run/vyom/mcp, readOnly: true}
+            - {name: collector-token, mountPath: /var/run/vyom/collector, readOnly: true}
+            - {name: model-key, mountPath: /var/run/vyom/model, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: operator
+          configMap: {name: vyom-operator}
+        - name: mcp-ca  # the endpoint's self-signed certificate: public half only
+          secret:
+            secretName: {{ .Values.mcp.tlsSecret }}
+            items: [{key: tls.crt, path: tls.crt}]
+        - name: kube-ca  # published by Kubernetes in every namespace
+          configMap:
+            name: kube-root-ca.crt
+            items: [{key: ca.crt, path: ca.crt}]
+        - name: mcp-token  # issued for the audience the MCP proxy accepts; renewed by the kubelet
+          projected:
+            sources:
+              - serviceAccountToken: {audience: vyom-mcp, expirationSeconds: 3600, path: token}
+        - name: collector-token
+          secret: {secretName: {{ .Values.collector.tokenSecret }}}
+        - name: model-key
+          secret: {secretName: {{ .Values.model.keySecret }}, optional: true}
+        - name: tmp
+          emptyDir: {sizeLimit: 16Mi}
+{{- if .Values.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vyom-api
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vyom-api
+  endpoints:
+    - {port: http, path: /metrics, interval: 30s}
+{{- end }}

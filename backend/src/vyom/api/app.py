@@ -18,6 +18,15 @@ from vyom.mcp_client.registry import OperatorConfig, load_operator_config
 
 # Name of the environment variable that holds the config file path.
 CONFIG_ENV = "VYOM_CONFIG"  # path of the operator configuration file
+# Which identity mode the process runs in. Unset means production, so a deployment that
+# forgets to choose fails closed instead of starting with the development identity.
+MODE_ENV = "VYOM_MODE"
+DEVELOPMENT = "development"
+PRODUCTION = "production"
+
+
+class DevelopmentIdentityRefused(Exception):
+    """Production mode was asked to serve every request as the one configured operator."""
 
 
 # Each BaseModel below is the shape of one JSON response (or request). FastAPI validates
@@ -84,14 +93,25 @@ class PodsView(BaseModel):
 def create_app(
     operator: OperatorConfig | None = None,
     *,
+    mode: str = DEVELOPMENT,
     host: McpHost | None = None,
     model: ModelClient | None = None,
     pods: PodCollector | None = None,
 ) -> FastAPI:
     """Build the API. Without ``operator`` there is no agent and chat reports that.
 
-    ``host``, ``model`` and ``pods`` replace the ones built from ``operator`` (tests only).
+    ``mode`` is "development" or "production". Until S6 supplies a resolver that derives the
+    context from a verified token, the only resolver is the fixed development one, so
+    production mode refuses to build the app. ``host``, ``model`` and ``pods`` replace the
+    ones built from ``operator`` (tests only).
     """
+    if mode not in (DEVELOPMENT, PRODUCTION):
+        raise ValueError(f"{MODE_ENV} must be '{DEVELOPMENT}' or '{PRODUCTION}'")
+    if mode == PRODUCTION:
+        raise DevelopmentIdentityRefused(
+            "production mode needs an identity resolver that verifies the caller; "
+            "only the fixed development identity exists until S6"
+        )
     # The web application object. Routes are attached to it below.
     app = FastAPI(title="Vyom API", version=__version__)
     # Adds request logging, /metrics and tracing.
@@ -174,4 +194,4 @@ def _operator_from_environment() -> OperatorConfig | None:
 # These two lines run when the module is imported. ``app`` is what the server (uvicorn)
 # starts: ``uvicorn vyom.api.app:app``.
 telemetry.configure_logging()
-app = create_app(_operator_from_environment())
+app = create_app(_operator_from_environment(), mode=os.environ.get(MODE_ENV) or PRODUCTION)

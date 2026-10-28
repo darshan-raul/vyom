@@ -50,6 +50,10 @@ class ServerConfig(BaseModel):
     # Cleartext is an explicit operator choice (an in-cluster Service without TLS).
     allow_cleartext: bool = False
     ca_file: str | None = None
+    # Send ``Host: localhost`` whatever the URL says. Some upstreams (the Go MCP SDK) refuse a
+    # non-localhost Host on a connection that arrives over loopback, which is how a sidecar
+    # proxy delivers it. TLS is still verified against the URL's host name.
+    loopback_host_header: bool = False
     # Where the host reads its bearer credential at connect time: "file:/path" or
     # "env:NAME". The value itself never appears in configuration.
     credential_ref: str

@@ -1,3 +1,5 @@
+> Review marking (2026-10-29): these diagrams are historical references, not the current continuous-operations architecture. See [active architecture](../ARCHITECTURE.md) and [required changes](../OVERHAUL_CHANGE_MAP.md). Do not infer RAG, cost or mandatory telemetry scope from these assets.
+
 # Planned architecture diagrams
 
 Updated for the owner-required S1 observability revision on 2026-10-04. These are **planned personal-alpha architecture**, with sprint additions labelled; none proves deployed capability.

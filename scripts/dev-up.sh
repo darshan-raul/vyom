@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run the backend on this machine wired to the Kind cluster, for development: the agent
 # through the Kubernetes MCP endpoint, and the direct pod collector against the API server.
-# Needs scripts/mcp-up.sh to have run. Opens a localhost-only port-forward to the MCP
+# Needs scripts/vyom-up.sh to have run. Opens a localhost-only port-forward to the MCP
 # endpoint, writes two one-hour tokens (MCP endpoint, collector), the cluster CA and an
 # operator configuration under .local/ (ignored by Git), and serves the API on
 # 127.0.0.1:8000 until interrupted. Start the UI separately with `npm run dev` in frontend/.
@@ -29,7 +29,7 @@ k() { kubectl --context "$context" "$@"; }
 for tool in kubectl curl uv; do
   command -v "$tool" >/dev/null || { echo "missing required tool: $tool" >&2; exit 1; }
 done
-[[ -s "$ca" ]] || { echo "no endpoint certificate; run scripts/mcp-up.sh first" >&2; exit 1; }
+[[ -s "$ca" ]] || { echo "no endpoint certificate; run scripts/vyom-up.sh first" >&2; exit 1; }
 
 cleanup() {
   [[ -n "${forward:-}" ]] && kill "$forward" 2>/dev/null || true
@@ -96,5 +96,5 @@ cat >"$local_dir/operator.json" <<JSON
 JSON
 
 echo "API on http://127.0.0.1:8000 (scope: namespace ${VYOM_NAMESPACE:-demo}); the two tokens last one hour"
-VYOM_CONFIG="$local_dir/operator.json" uv run --project "$root/backend" --locked \
+VYOM_MODE=development VYOM_CONFIG="$local_dir/operator.json" uv run --project "$root/backend" --locked \
   uvicorn vyom.api.app:app --host 127.0.0.1 --port 8000

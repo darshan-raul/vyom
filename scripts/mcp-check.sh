@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Live checks of the upstream Kubernetes MCP server and the Vyom MCP host on Kind.
-# Needs scripts/mcp-up.sh to have run. Opens a localhost-only port-forward for its duration.
+# Needs scripts/vyom-up.sh to have run. Opens a localhost-only port-forward for its duration.
 #   KUBE_CONTEXT  kubectl context (default: kind-vyom)
 #   MCP_PORT      local port for the forward (default: 18443)
 # Writes short-lived test tokens under .local/ (ignored by Git) and removes them on exit.
@@ -21,7 +21,7 @@ fail() { echo "FAIL  $*" >&2; exit 1; }
 for tool in kubectl curl uv; do
   command -v "$tool" >/dev/null || fail "missing required tool: $tool"
 done
-[[ -s "$ca" ]] || fail "no endpoint certificate; run scripts/mcp-up.sh first"
+[[ -s "$ca" ]] || fail "no endpoint certificate; run scripts/vyom-up.sh first"
 
 tokens=(mcp-token mcp-token-wrong-audience mcp-token-other-identity)
 cleanup() {

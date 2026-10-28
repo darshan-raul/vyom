@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Live gate for S1.5: a real question through the API, the graph, the configured model and
 # the upstream Kubernetes MCP server on Kind, plus the failure paths.
-# Needs scripts/mcp-up.sh to have run. Sends about ten small requests to the model provider,
+# Needs scripts/vyom-up.sh to have run. Sends about ten small requests to the model provider,
 # which costs a little. Opens a localhost-only port-forward for its duration.
 # The model key comes from one of, in this order:
 #   OPENROUTER_API_KEY   environment variable in the terminal that runs this script
@@ -12,6 +12,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export VYOM_MODE=development  # these checks build the API in process with the fixed development identity
 export KUBE_CONTEXT="${KUBE_CONTEXT:-kind-vyom}"
 port="${MCP_PORT:-18443}"
 export VYOM_LOCAL="$root/.local"
@@ -30,7 +31,7 @@ fail() { echo "FAIL  $*" >&2; exit 1; }
 for tool in kubectl curl uv git; do
   command -v "$tool" >/dev/null || fail "missing required tool: $tool"
 done
-[[ -s "$ca" ]] || fail "no endpoint certificate; run scripts/mcp-up.sh first"
+[[ -s "$ca" ]] || fail "no endpoint certificate; run scripts/vyom-up.sh first"
 if [[ -n "${OPENROUTER_API_KEY:-}" ]]; then
   export VYOM_MODEL_CREDENTIAL_REF=env:OPENROUTER_API_KEY
   pass "key taken from the OPENROUTER_API_KEY environment variable"

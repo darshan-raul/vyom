@@ -12,6 +12,12 @@ context="${KUBE_CONTEXT:-kind-vyom}"
 namespace=observability
 password_file="$root/.local/grafana-admin-password"
 
+profile="${VYOM_TELEMETRY:-metrics}"
+case "$profile" in
+  metrics|full) ;;
+  *) echo "VYOM_TELEMETRY must be metrics or full (none needs no telemetry install)" >&2; exit 1 ;;
+esac
+
 k() { kubectl --context "$context" "$@"; }
 
 for tool in kubectl helm curl sha256sum openssl; do
@@ -25,6 +31,7 @@ for ns in "$namespace" vyom; do
 done
 
 mkdir -p "$cache"
+if [[ "$profile" == full ]]; then
 if [[ ! -s "$password_file" ]]; then
   (umask 077 && openssl rand -hex 24 | tr -d '\n' >"$password_file")
   echo "generated Grafana admin password in ${password_file#"$root"/}"
@@ -37,6 +44,8 @@ k -n "$namespace" create secret generic grafana-admin \
 k -n "$namespace" create configmap vyom-dashboards --from-file="$obs/dashboards" \
   --dry-run=client -o yaml |
   k label --local -f - grafana_dashboard=1 -o yaml | k apply --server-side -f - >/dev/null
+
+fi
 
 install() {
   local release=$1 chart=$2 version=$3 url=$4 sha=$5
@@ -57,15 +66,22 @@ install() {
 
 while read -r release chart version url sha; do
   [[ -z "$release" || "$release" == \#* ]] && continue
+  [[ "$profile" == metrics && "$release" != kube-prometheus-stack ]] && continue
   extra=()
+  [[ "$profile" == metrics ]] && extra=(--set grafana.enabled=false)
   [[ "$release" == alloy ]] && extra=(--set-file "alloy.configMap.content=$obs/config.alloy")
   install "$release" "$chart" "$version" "$url" "$sha" "${extra[@]}"
 done <"$obs/charts.lock"
 
 k -n "$namespace" get pods
+if [[ "$profile" == full ]]; then
 cat <<MSG
 
 Grafana (localhost only):
   kubectl --context $context -n $namespace port-forward svc/grafana 3000:80 --address 127.0.0.1
   user: admin   password: contents of ${password_file#"$root"/}
 MSG
+
+else
+  echo "Prometheus installed without Grafana, Loki, Tempo or Alloy. Existing optional releases are not uninstalled."
+fi

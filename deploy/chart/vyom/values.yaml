@@ -1,0 +1,58 @@
+# Vyom chart defaults. Nothing here is a credential: keys, certificates and tokens live in
+# Secrets that scripts/vyom-up.sh creates beside the release and that the pods mount.
+
+# "development" serves every request as the one operator configured below. "production"
+# makes the API refuse to start until S6 provides a resolver that verifies callers.
+mode: development
+
+# The cluster and namespace Vyom may read. clusterUid is filled in by scripts/vyom-up.sh.
+context:
+  workspaceId: ws-local
+  connectionId: kind-vyom
+  clusterUid: ""
+  namespace: demo
+
+images:
+  # Built locally and loaded into Kind by scripts/vyom-up.sh; tags are content-derived.
+  api: {repository: vyom/api, tag: dev}
+  ui: {repository: vyom/ui, tag: dev}
+  # Upstream releases, pinned by digest. Vyom builds nothing for these.
+  kubernetesMcp: quay.io/containers/kubernetes_mcp_server@sha256:e47f6ccc5347e1ea6be495d8d9ab55ac8a995fe87800fb984fa770cebe14ad44  # v0.0.67
+  kubeRbacProxy: quay.io/brancz/kube-rbac-proxy@sha256:a6075902738eaf1780390561ea998a53a056ef1d2b312bcbf0e2e81fec084b3c  # v0.23.0
+  pullPolicy: IfNotPresent
+
+api:
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 384Mi}
+
+ui:
+  resources:
+    requests: {cpu: 10m, memory: 16Mi}
+    limits: {memory: 64Mi}
+
+model:
+  provider: openrouter
+  baseUrl: https://openrouter.ai/api/v1
+  model: anthropic/claude-haiku-5.5
+  # Secret holding the key under `key`. Optional: without it chat reports a missing credential.
+  keySecret: vyom-model-key
+
+mcp:
+  # Secret `kubernetes-mcp-tls` (tls.crt, tls.key) is created beside the release.
+  tlsSecret: kubernetes-mcp-tls
+  # Changes when the configuration or certificate changes, so the pod restarts to read them.
+  checksum: ""
+
+collector:
+  # Secret that the refresher keeps filled with a short-lived vyom-collector token (K8S02).
+  tokenSecret: vyom-collector-token
+  tokenDuration: 1h
+  schedule: "*/30 * * * *"
+
+telemetry:
+  # Alloy's OTLP/HTTP receiver. Empty turns trace export off.
+  otlpEndpoint: ""
+
+serviceMonitor:
+  enabled: false

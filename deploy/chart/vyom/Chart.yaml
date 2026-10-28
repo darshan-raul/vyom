@@ -1,0 +1,6 @@
+apiVersion: v2
+name: vyom
+description: Vyom API, UI and the pinned upstream Kubernetes MCP server, with scoped identities
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

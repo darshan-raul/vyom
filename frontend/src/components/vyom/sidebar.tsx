@@ -5,47 +5,16 @@ import mark from '@/assets/vyom-mark.png'
 import { apiLabel, apiTone, clockTime, type ApiHealth } from '@/lib/api-health'
 import { toneText } from '@/lib/status'
 
-// Surfaces in delivery order. A built one has a route (`to`); `sprint` marks one that is
-// planned but not built: it is listed so the console's shape is visible, and is not a link.
-type NavItem = { label: string; to?: string; sprint?: string }
+// Only implemented surfaces have navigation links.
+type NavItem = { label: string; to: string }
 
 const operate: NavItem[] = [
-  { label: 'Today', to: '/' },
-  { label: 'Kubernetes', to: '/kubernetes' },
-  { label: 'AWS', sprint: 'S2' },
-  { label: 'Findings', sprint: 'S4' },
-  { label: 'Spend', sprint: 'S4' },
-]
-
-const flightKit: NavItem[] = [
-  { label: 'Runbooks', sprint: 'S3' },
-  { label: 'History', sprint: 'S3' },
+  { label: 'Overview', to: '/' },
+  { label: 'Kubernetes inventory', to: '/kubernetes' },
 ]
 
 function NavRow({ item, number }: { item: NavItem; number?: string }) {
   const row = 'flex min-h-10 items-center gap-3 border-l-2 px-3 text-sm'
-  if (!item.to) {
-    const numberCell = number ? (
-      <span className="font-mono text-[10px] text-vy-quiet">{number}</span>
-    ) : null
-
-    return (
-      <li>
-        <span
-          aria-disabled="true"
-          title={`Planned for sprint ${item.sprint}`}
-          className={cn(row, 'border-transparent text-vy-text-4')}
-        >
-          {numberCell}
-          <span className="flex-1">{item.label}</span>
-          <span className="vy-micro tracking-[0.08em]">
-            <span className="sr-only">planned for sprint </span>
-            {item.sprint}
-          </span>
-        </span>
-      </li>
-    )
-  }
   return (
     <li>
       <NavLink
@@ -96,7 +65,7 @@ export function Sidebar({ api }: { api: ApiHealth }) {
         />
         <div className="flex flex-col gap-0.5">
           <span className="text-[19px] leading-none font-bold tracking-[0.22em]">VYOM</span>
-          <span className="vy-micro text-vy-text-3">AWS · K8s · Alpha</span>
+          <span className="vy-micro text-vy-text-3">Operations toolkit · Alpha</span>
         </div>
       </div>
 
@@ -105,15 +74,6 @@ export function Sidebar({ api }: { api: ApiHealth }) {
         <ul className="flex flex-col gap-0.5">
           {operate.map((item, index) => (
             <NavRow key={item.label} item={item} number={String(index + 1).padStart(2, '0')} />
-          ))}
-        </ul>
-      </div>
-
-      <div className="flex flex-col gap-0.5">
-        <span className="vy-micro px-3 py-1.5 tracking-[0.16em] text-vy-text-4">Flight kit</span>
-        <ul className="flex flex-col gap-0.5">
-          {flightKit.map((item) => (
-            <NavRow key={item.label} item={item} />
           ))}
         </ul>
       </div>

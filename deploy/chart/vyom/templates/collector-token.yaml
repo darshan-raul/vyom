@@ -1,0 +1,35 @@
+# K8S02: the collector's token. The Secret `collector.tokenSecret` is created by scripts/vyom-up.sh
+# and kept out of the chart on purpose, so the token never enters Helm's release history. This
+# CronJob refreshes it; the script also runs it once at install.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vyom-collector-token-refresh
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.collector.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: vyom-token-refresher
+          securityContext: {{- include "vyom.podSecurity" . | nindent 12 }}
+          containers:
+            - name: refresh
+              image: {{ .Values.images.api.repository }}:{{ .Values.images.api.tag }}
+              imagePullPolicy: {{ .Values.images.pullPolicy }}
+              command: ["python", "-m", "vyom.token_refresher"]
+              env:
+                - {name: COLLECTOR_TOKEN_SECRET, value: {{ .Values.collector.tokenSecret | quote }}}
+                - {name: TOKEN_SECONDS, value: {{ include "vyom.tokenSeconds" . | quote }}}
+              resources:
+                requests: {cpu: 10m, memory: 48Mi}
+                limits: {memory: 128Mi}
+              securityContext: {{- include "vyom.containerSecurity" . | nindent 16 }}

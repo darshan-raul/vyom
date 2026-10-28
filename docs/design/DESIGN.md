@@ -1,8 +1,12 @@
+> Continuous operations: Overview is an operations desk with active issues, changes, freshness and investigation progress; issue detail supports evidence, history and conversational follow-up. See [accepted design](../CONTINUOUS_OPERATIONS.md). Add surfaces only with working data; retain existing visual tokens.
+
+> The [2026-10-29 rescope](../RESCOPE_AUDIT.md) supersedes the old surface schedule and out-of-scope mockup content below. Retain visual tokens; do not implement Spend or mandatory RAG surfaces.
+
 # Vyom — Frontend Design Spec
 
 > Source of truth for how Vyom's UI looks. Owner-supplied on 12 October 2026 and adapted here to
 > the [constitution](../../vyom-12-week-sprint-plan.md): what Vyom shows, and when, follows the
-> sprint plan (§0). Reference mockups live in [mockups/](mockups/) (`*.dc.html`). They are
+> active roadmap (§0). Reference mockups live in [mockups/](mockups/) (`*.dc.html`). They are
 > design-tool source (HTML markup + inline styles + a small logic class), not runnable pages; read
 > them for exact layout, values and sample copy. When this spec and a mockup disagree, this spec
 > wins. When this spec and the constitution disagree on scope, the constitution wins.
@@ -14,36 +18,20 @@
 
 ## 0. Scope and rollout
 
-The mockups show the dense end state with sample data for a multi-organization AWS estate. Vyom
-gets there one sprint at a time, and each surface appears only when the backend serves real data
-for it. Until then the surface is either absent or shows an explicit "not connected" state. Nothing
-is filled with sample numbers.
+[Active roadmap](../IMPLEMENTATION_PLAN.md) determines delivery. Mockups are visual references, not requirements. Use real data or explicit unavailable/empty states; never sample numbers.
 
-Vyom's subject is **one AWS account (initially `ap-south-1`) and one Kubernetes cluster per
-environment**, read-only. Where the mockups say "organizations", read account, cluster and
-namespace.
-
-| Sprint | What the UI gains | Spec elements it uses |
+| Surface | Gate | Content |
 |---|---|---|
-| S1 (built) | App shell, tokens and fonts, Today with the API's own liveness, the question-path strip | §2, §3, `SectionLabel`, `PipelineStrip` |
-| S1.5 (built) | Ask Vyom is live: one question, one tool call, an answer with citations, the tool called, the resources read, the collection time and the trace ID; a fixed reason when there is no answer | §4.1, `Citation`, evidence rows |
-| S1.6 (built) | Kubernetes view (`/kubernetes`): pods table from the direct collector with source, collection time, coverage and loading, empty, denied, missing, partial and stale states; the ticker counts pods by state | `StatusBadge`, header ticker counts, wide table in an `overflow-x` box |
-| S2 | AWS view: EC2 inventory and CloudWatch CPU/status charts; workload and node health; current CPU and memory | `MetricCard`, `Delta`, annotated line, scope tabs All / AWS / EKS |
-| S3 | Runbook citations in answers, chat history ("last answer", continue thread), freshness of scheduled observations | `Citation` source chips, last-answer column |
-| S4 | Findings (unavailable replicas, repeated restarts), bounded investigation, related-resource graph, daily cost by service | `FindingRow`, `FindingCard`, `ConfidenceMeter`, blast-radius layout (§6.2), dot-matrix spend, "by service" list (§6.3) |
-| S6 | Identity: who is signed in, tenant scope in the sidebar | scope switcher card |
+| Inventory and resource detail | R3 | Scoped lists, ownership, health, evidence and freshness |
+| Investigation | R4 | Workload skill, bounded steps, evidence and supported conclusions |
+| Operations overview and issue detail | R4a | Changes, issues, episodes, job progress, natural-language follow-up and recovery |
+| Security | R5/R8 | Deterministic findings, categories, evidence, policy and remediation |
+| AWS/cross-platform | R6–R9 | Scoped AWS resources, connectivity and verified relationships |
+| Identity | R10 | Verified membership/current grants before exposure |
 
-**In the mockups but outside the 12-week core** (see "Keep out" in the constitution). Do not build
-these without a constitution change: multi-organization switching and per-org charts, exposure and
-security-group findings, CVE or software-risk findings, compliance matrices, Terraform drift and
-"Draft Terraform fix", CloudTrail-sourced "who changed it", idle-resource and savings
-recommendations, forecasts and account leaderboards. The patterns that carry them (diff list,
-split-diff strips, change-history calendar, compliance matrix, share strip) stay specified in §5 so
-a later milestone can use them.
+Spend, savings, forecasts, Terraform drafting, CVE/SBOM and generic compliance mockup content are excluded. Runbooks are deferred. Do not build these surfaces or disabled navigation promises. Existing tokens and reusable visual patterns below remain the look; domain examples outside this table have no scope authority.
 
-**Vyom-specific states.** Evidence can be missing, partial, stale, denied or zero, and these are
-different. A source that reports nothing is drawn with the hollow glyph `○` and `--vy-text-4`
-("not reported"), never as nominal and never as zero.
+Evidence may be zero, partial, stale, denied or missing; these remain distinct. A missing source never implies healthy resources. Display observed time and collection coverage, not a fabricated current state.
 
 ---
 
@@ -51,8 +39,8 @@ different. A source that reports nothing is drawn with the hollow glyph `○` an
 
 1. **Mission-control console, not a SaaS template.** Dark navy, hairline borders, monospace labels. Calm by default; colour only where something needs attention.
 2. **Colour = state, never decoration.** Status colours (alert / caution / nominal) appear only on things with that status. Healthy resources are quiet blue, not green.
-3. **The agent is a first-class surface.** Sky blue (`--vy-agent`) belongs to Vyom's agent: the Ask panel, agent-found items, citations, savings. Don't use it for anything else.
-4. **Show change, not just state.** Prefer "what changed since X" (diffs, before/after, deltas) over static totals. A finding should say *what changed, who changed it, and when*.
+3. **The agent is a first-class surface.** Sky blue (`--vy-agent`) belongs to Vyom's agent: the Ask panel, investigation steps and citations. Don't use it for anything else.
+4. **Show change, not just state.** Prefer "what changed since X" (diffs, before/after, deltas) over static totals. A finding should say *what changed and when it was observed*; show an actor only when evidence supports it.
 5. **Every claim is traceable.** Agent answers and evidence carry citations to the API call / CloudTrail event / runbook they came from (`ec2:DescribeSecurityGroups`, `runbook/db-network-access`).
 6. **Read-only is visible.** Primary actions are *ask* / *open the runbook* / *acknowledge*, never *remediate*. Vyom reads; it does not change a cluster or an account, and it does not draft changes in this roadmap.
 7. **No fake data in production UI.** Missing values render as an explicit empty state, not a placeholder number.
@@ -94,7 +82,7 @@ Define once as CSS variables in `frontend/src/index.css`; map them to shadcn's v
 
   /* Status */
   --vy-alert:       #FF6F5E;  /* exposed, critical, riskier */
-  --vy-caution:     #F5B84A;  /* drift, software risk, anomaly, over forecast */
+  --vy-caution:     #F5B84A;  /* unhealthy state or configuration caution */
   --vy-ok:          #4FD1A5;  /* nominal telemetry, safer, improvements */
   --vy-quiet:       #4C6FB0;  /* healthy/nominal resources in charts (NOT green) */
   --vy-quiet-2:     #2B4A88;  /* healthy fills, inactive bars */
@@ -167,12 +155,12 @@ Load with `@fontsource-variable/archivo` and `@fontsource-variable/jetbrains-mon
 - Main content max width is about 1360–1440px, centred.
 - Two-column body: findings `flex: 2 1 560px` and a right rail `flex: 1 1 320px`.
 - Wide tables go inside an `overflow-x: auto` box.
-- Header ticker (top of main): mono 11px status counts plus a timestamp, with a hairline under it. On Today it carries the API and agent state; on Kubernetes it counts pods by state (`● 1 NOMINAL  ▲ 0 CAUTION  ■ 1 ALERT`); from S2 nodes and instances as well.
+- Header ticker (top of main): mono 11px status counts plus a timestamp, with a hairline under it. On Today it carries the API and agent state; on Kubernetes it counts pods by state (`● 1 NOMINAL  ▲ 0 CAUTION  ■ 1 ALERT`); nodes and instances only when their real inventory is available.
 
 ### Sidebar
 - Logo (circular image, 40–44px, faint blue halo) + `VYOM` wordmark (19px/700, tracking 0.22em) + mono sub-label `AWS · K8S · ALPHA`.
-- Scope card (account, region, cluster, namespace) once the API serves the trusted context; it becomes a switcher only with tenants in S6. Search (with a `⌘K` hint) arrives with something to search.
-- Nav groups with mono section labels. `OPERATE`: `01` Today, `02` Kubernetes, `03` AWS, `04` Findings, `05` Spend. `FLIGHT KIT`: Runbooks, History. The active item gets a **2px amber left border** and a faint amber gradient; badges use the alert colour in mono (`2 NEW`). A surface that is planned but not built is listed dimmed with its sprint in mono (`S2`) and is not a link.
+- Scope card (account, region, cluster, namespace) once the API serves the trusted context; it becomes a switcher only with verified membership in R10. Search (with a `⌘K` hint) arrives with something to search.
+- Nav groups contain only implemented surfaces: Overview, Inventory, Investigations and Security as their gates land. Active item: **2px amber left border** and faint amber gradient. No planned/dimmed sprint links.
 - Footer card: the live status the backend reports (`● API NOMINAL` today; collector freshness later), plus a one-line read-only statement and the last check time.
 
 ---
@@ -184,7 +172,7 @@ Build these as shared components in `frontend/src/components/vyom/`, each one wh
 | Component | Spec |
 |---|---|
 | `SectionLabel` | Mono uppercase label, optional number prefix `NN /`. |
-| `StatusBadge` | Mono 10px uppercase with a glyph: `■ ALERT`, `▲ CAUTION`, `● NOMINAL`, `◆ SPEND`. Status tint recipe. Radius 4. |
+| `StatusBadge` | Mono 10px uppercase with a glyph: `■ ALERT`, `▲ CAUTION`, `● NOMINAL`. Status tint recipe. Radius 4. |
 | `ImpactPill` | `HIGH IMPACT` (alert), `MED IMPACT` (caution) or `LOW IMPACT` (agent), on a tinted pill, radius 999. |
 | `Delta` | Mono, `▲ 6%` / `▼ 3d` / `— 0`, coloured by **effect** (see the semantic rule). |
 | `Button` variants | **primary**: `--vy-text` fill, `--vy-bg` text, weight 600. **agent**: `--vy-agent` fill, `--vy-agent-ink` text. **agent-ghost**: `--vy-agent-bg` fill, `--vy-agent-line` border, `--vy-agent` text. **secondary**: `--vy-surface-3` fill, `--vy-line` border. **ghost**: transparent, `--vy-text-3`. |
@@ -203,8 +191,8 @@ Build these as shared components in `frontend/src/components/vyom/`, each one wh
 - Large textarea (17px) in a `--vy-surface-1` well. Footer row: scope (set by the server, shown, not chosen in the browser), the tools the host has really enabled in mono (`k8s-mcp` in S1, `aws-mcp` in S2, `runbooks` in S3; coloured `--vy-ok` when connected), agent button *Ask ↵*.
 - **Not-connected state**: hollow dot, `ASK VYOM · AGENT NOT CONNECTED`, the form disabled, and one sentence saying why. Model or tool failure after S1.5 is shown the same way, never as a guessed answer.
 - **Mode tiles** arrive with the workflows they start: `HEALTH` Which workloads are unhealthy (S2), `INVESTIGATE` Investigate a workload (S4), `EXPLAIN` Explain service cost (S4). No `DRAFT` or `REPORT` tile: Vyom does not draft fixes or compliance reports in this roadmap.
-- **Suggested chips**: the supported questions for the current scope; from S4, generated from open findings (pill buttons).
-- Right column: **last answer** with its question, a short answer with citations, source chips (`k8s-mcp pods_list`, `runbook/image-pull`) and, once history exists in S3, *CONTINUE THREAD →*.
+- **Suggested chips**: the supported questions for the current scope; when supported, derived from open issues/findings (pill buttons).
+- Right column: **last answer** with its question, a short answer with citations, source chips (`k8s-mcp pods_list`, `runbook/image-pull`) and, once scoped investigation history exists, *CONTINUE THREAD →*.
 
 ---
 
@@ -248,7 +236,7 @@ Top to bottom:
    - **Right rail:** `03 / SPEND · MTD` (dot-matrix + `OPEN SPEND →`), `04 / COMPLIANCE` matrix, and `05 / FOUND OVERNIGHT` (agent items with mono type badges IDLE / DRIFT / EXPIRY + *Review N in chat →*).
 
 ### 6.2 Blast radius (`/findings/:id/blast-radius`)
-For Vyom this is the S4 related-resources view of a finding: the affected workload at the core,
+For Vyom this is the resource relationship view of a finding: the affected workload at the core,
 with categories Owners (Deployment, ReplicaSet), Pods, Services (by selector), Nodes and Events.
 The security-group, IAM and data-class categories in the mockup are outside the core.
 
@@ -260,27 +248,6 @@ The security-group, IAM and data-class categories in the mockup are outside the 
   - Clicking a category re-fans the leaves and updates the readout.
 - **Agent readout aside** (about 380px): `VYOM READOUT`, prose for the selected category, **shortest exposure path** as a stacked mono chain (first hop alert-bordered), an "If you restrict ingress" impact table, and actions (mockup: *Draft Terraform fix ↗* / *Show the 3 unknown IPs*; for Vyom: *Open runbook ↗* / *Ask Vyom about this path*).
 - Implementation: React Flow or d3-hierarchy for layout. Keep the visual (orb, arc fan, beziers) regardless of library.
-
-### 6.3 Spend (`/spend`)
-For Vyom this is the S4 daily Cost Explorer view: totals and the "by service" list for one account
-over a bounded date range, with source, date and freshness. Billing is never described as
-real-time. Forecast, savings, per-org share and the account leaderboard are outside the core.
-
-- Top bar: back, logo, `03 / SPEND`; org filter chips (pill, coloured dot, the active one inverted); date range; export.
-- Headline row:
-  - Big MTD number (64px; decimals in `--vy-quiet`) with a caution `▲ %` pill and a filled `+$ vs fcst` pill, plus a mono source line ("CUR line items · refreshed 6m ago").
-  - Top account card.
-  - **Inverted "Biggest mover" card.**
-  - Three small centred metrics: Forecast, **Savings found** (agent-highlighted) and Untagged %.
-- **Share strip** by org.
-- Left column:
-  - "By service" list: rows with a mono service code chip, name, amount and % pill. The anomalous service's chip is caution-filled.
-  - "By environment" hatched bars, with prod solid.
-  - **Run-rate panel**: a royal-blue gradient left block (cost/day, resources, cost/resource) and a right block with 3-month grouped hatched bars, a Cost/Usage/Waste toggle and an agent-colour value flag on each month.
-- Right column: **account leaderboard** with columns Account, MTD, Findings (critical count pill in alert + other count), Score, Δ forecast (coloured by effect) and a chevron.
-  - Clicking a row **expands it in place**: agent-gradient background, a 2px agent left border, context chips (the last one an agent chip such as "Vyom: 3 savings ›"), a breakdown of three cards, and an **annotated daily-cost line**.
-
----
 
 ## 7. Copy & voice
 - Plain, specific, confident; borrow mission-control words lightly (NOMINAL, CAUTION, ALERT, telemetry, flight kit). Don't overdo the space theme in body text.

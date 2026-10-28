@@ -1,19 +1,20 @@
-# Observability from S1
+# Observability
 
-Owner requirement, 2026-10-04: Loki, Prometheus, Grafana and OpenTelemetry-based tracing belong in the first working project. The stack and the backend telemetry baseline were installed and checked on Kind in S1.9 ([what is installed](#installed-on-kind-in-s19)); a correlated trace of a real chat is still undelivered and closes in S1.8. Sections below the installed summary remain the design. The [constitution](../vyom-12-week-sprint-plan.md) governs scope; [implementation tasks](IMPLEMENTATION_PLAN.md) carry budgets and gates.
+Vyom observes infrastructure through existing providers; it does not implement a telemetry storage platform. Prometheus supplies useful health data. Loki, Tempo, Alloy and Grafana are optional operator tooling. Native inventory and deterministic issue state must work without a model or telemetry stores.
 
-## Initial stack
+## Profiles
 
-| Component | Responsibility | Initial deployment |
-|---|---|---|
-| Prometheus | Cluster/app metrics, request/tool/provider rates, errors and latency | Single instance with PVC; pinned kube-prometheus-stack includes operator, kube-state-metrics and node exporter |
-| Loki | Sanitized application and allowlisted container logs | Single-binary mode, PVC, short retention |
-| Tempo | Store/query OpenTelemetry traces | Monolithic mode, PVC, short retention; verify pinned chart/image compatibility |
-| Grafana | Cluster and Vyom dashboards; metric/log/trace exploration | One instance from kube-prometheus-stack; provision data sources/dashboards as code |
-| Grafana Alloy | Node-local logs and OTLP trace reception/processing/export | DaemonSet, internal OTLP Service, bounded buffers and read-only log mounts |
-| OTel SDK | Request, graph-step, model-client, MCP-client and collector spans | Inside the existing backend |
+See [local development](LOCAL_DEVELOPMENT.md): application defaults to `none`; `metrics` enables ServiceMonitor with a Prometheus installation excluding Grafana; `full` enables the existing log/trace/Grafana stack and OTLP export. Full-stack gates remain optional regression tests. Switching profiles does not erase existing storage or automatically uninstall independent releases.
 
-Alloy supports native OpenTelemetry pipelines and OTLP reception, so it fills the collector role. Prometheus owns metric scraping; Alloy owns logs and trace forwarding. Do not collect the same stdout stream through a second OTLP log pipeline. Use `vyom` and `observability` namespaces, one application chart and pinned vendor releases in a single reproducible Kind/EKS workflow. Disable unused chart components; avoid a second Grafana or a distributed stack in S1.
+## Required behavior
+
+Keep logs, metrics and spans payload-free and bounded. No questions, answers, raw tool bodies, literal environment values, sensitive headers/URLs or unsafe exception text. Use fixed metric dimensions, not per-resource/issue IDs. Collection freshness, queue age/depth, lease retries and outcome metrics are added with their owning R task. Unknown usage/loss is not zero. Telemetry outages must not block inventory, investigations or API responses.
+
+Observer credentials do not authorize agent queries. Stores remain private; current grants and two-workspace tests are required before any user-facing telemetry proxy. Retention/PVC capacity is not a backup. [Verification](VERIFICATION.md) governs current acceptance.
+
+## Historical full-stack implementation reference
+
+The S1 labels below refer to previous tests, not mandatory current architecture. Versions are recorded pins, not claims about current upstream releases.
 
 ## Installed on Kind in S1.9
 
@@ -39,7 +40,19 @@ Alloy supports native OpenTelemetry pipelines and OTLP reception, so it fills th
 - **Direct collector (S1.6)**: `vyom_collector_runs_total{collector,outcome}`, `vyom_collector_duration_seconds{collector}` and `vyom_collector_last_success_timestamp_seconds{collector}` (freshness; absent until a run succeeds); span `collector.kubernetes.pods`; log field `collector`. Independent of the MCP and model signals. Dashboard panels are not added yet.
 - **Upstream MCP pod logs (S1.3)**: collected because the pod runs in `vyom`. At `log_level = 0` they hold session lines, permission-denied notices naming the tool, and proxy authentication failures; checked live for tokens, arguments, pod names and env values ([MCPK05](DECISIONS.md#s13-upstream-kubernetes-mcp-on-kind--2026-10-12)). The server's own metrics and tracing are not enabled or scraped.
 
-Known gaps: Prometheus does not scrape the backend until the Vyom chart deploys it with a ServiceMonitor (S1.7), so the API panels of the second dashboard are empty; graph, model and MCP-client panels arrive with those metrics (S1.2–S1.5); the pinned Tempo chart cannot render without its Jaeger receivers, which stay open on the internal Service; no chat trace or log-to-trace navigation in the Grafana UI has been demonstrated.
+Known gaps: since S1.7 the Vyom chart deploys the backend with a ServiceMonitor and Prometheus scrapes it (`up{service="vyom-api"} = 1`, checked by `scripts/vyom-check.sh`); the second dashboard's panels were not looked at in the Grafana UI (the S1.8 gate used the APIs); graph, model and MCP-client panels arrive with those metrics (S1.2–S1.5); the pinned Tempo chart cannot render without its Jaeger receivers, which stay open on the internal Service; no chat trace or log-to-trace navigation in the Grafana UI has been demonstrated.
+
+## S1 live gate results (S1.8)
+
+`scripts/s18-gate.sh` ran against the Kind install on 2026-10-18 and passed; its output is [sessions/evidence/s1-gate-2026-10-18.txt](sessions/evidence/s1-gate-2026-10-18.txt). Versions: the pins in [charts.lock](../deploy/observability/charts.lock) and the images in `vyom-check.sh`'s release.
+
+- A real question through the model, the graph and the upstream MCP server produced Prometheus series (chat, model, MCP, graph-step, HTTP, tokens, collector), exactly five log lines (one `vyom.http`, one `vyom.chat`, two `vyom.model`, one `vyom.mcp`) and one connected 12-span trace in Tempo, with no orphan or duplicate spans.
+- Log to trace: the Loki derived field extracts the trace ID and Grafana's Tempo data source returns the trace. Trace to log: Tempo's link target (Loki by trace ID and service) returns the five lines. Both were run through Grafana's API; clicking them in the UI is not recorded.
+- A rejected provider key gives `model_unavailable` (HTTP 200, no answer) and an MCP outage gives `no_evidence`; each appears as a chat counter, a model or MCP error counter, a log line and a span outcome, and the direct pods table stays complete during the MCP outage.
+- With Alloy stopped the chat is not slowed, the outage shows in `kube_daemonset_status_number_ready`, log lines written meanwhile arrive after recovery, and the spans from the outage are dropped. With Tempo stopped the chat is not slowed, dropped spans are counted in `otelcol_exporter_send_failed_spans_total`, and a new trace is queryable 16 s after Tempo is ready.
+- Stored signals (every Loki line in `vyom`, ten traces, every `vyom_` series) hold no question text, key, token, literal environment value, pod name or resource ID, and no duplicates.
+
+Operating notes from the gate: a `kubectl port-forward` to a pod behind a Service dies when that pod is replaced (Tempo, Alloy); Grafana's SQLite can stall for minutes when the host disk is busy, and restarting its pod clears it; the gate takes about 20 minutes.
 
 ## Collection topology
 
@@ -69,40 +82,9 @@ Use sanitized JSON logs with service, operation, outcome, `trace_id` and `span_i
 
 Provision two dashboards: cluster CPU/memory/readiness/restarts/availability/scrape health, and Vyom request/graph/model/tool latency/errors plus collector freshness/export health. Provider-reported token usage is useful when available; unavailable is not zero. Provision Loki-to-Tempo and Tempo-to-Loki links by trace ID/service/time. Metrics are aggregate; metric exemplars are optional, not a claim that every sample identifies a request.
 
-The S2 Metrics Server/CloudWatch product views remain separate source paths. CloudWatch-to-Prometheus export and agent queries of the telemetry stores are later scope.
+Product metrics and authorized investigation queries are separate from internal application telemetry. Add them only with a consuming inventory or skill increment.
 
-## Progressive delivery
-
-| Sprint | Required increment |
-|---|---|
-| S1 | Entire stack on Kind; start with 48-hour retention, bounded PVC/resources/buffers and 100% tracing for small demo traffic with volume limits; two dashboards and real correlated chat/failure proof |
-| S2 | Same pins on EKS with validated storage/resources; repeat S1 gates, instrument AWS SDK/MCP clients; label inaccessible managed control-plane targets |
-| S3 | Instrument Bedrock/embeddings, retrieval, database/vector clients and jobs as added; no raw query/vector/document capture |
-| S4 | Investigation/cost-path timings and outcomes; Jev spans if implemented/enabled |
-| S5 | Measure sizing, tune sampling/retention, select durable object storage where needed; tested alerts and telemetry recovery |
-| S6 | Decide operator-only versus tenant-visible telemetry; enforce current grants on exposed queries/proxies and Grafana access before shared login/exposure |
-
-These are initial sizing choices, not measured results. Pin versions and verify retention/compaction/storage/upgrade support. Current Tempo mode documentation distinguishes Kafka-free monolithic operation from Kafka-dependent microservices operation; verify the selected release instead of adding Kafka from generic deployment examples. PVCs are not backup or HA.
-
-Grafana uses private authenticated localhost port-forward access and privately injected credentials before Keycloak. Stores and OTLP endpoints stay internal; internal Services alone do not provide authentication or tenant isolation. S6 must not equate a tenant label/filter with authorization over shared operator telemetry.
-
-Use bounded asynchronous export/queues/retries so telemetry outage neither blocks chat nor grows memory indefinitely. Record drops and recovery; complete span delivery during outages is not promised. Verify collector failure independently through Prometheus scrape health and Kubernetes status.
 
 ## S1 live gate
 
-1. Clean Kind install with recorded pins, private credentials and real cluster metrics/logs; synthetic OTLP smoke spans prove setup only.
-2. Real browser question through compatible model, LangGraph and upstream Kubernetes MCP; retain existing evidence/RBAC gates.
-3. Inspect applicable request metrics, sanitized logs and the actual owned-component trace in Grafana; record trace ID and demonstrate both log/trace navigation directions.
-4. Induce a provider or MCP failure; verify explicit product outcome plus applicable error metrics/logs/span status.
-5. Interrupt telemetry separately; prove bounded application behavior, independently observable loss and recovery. Inspect stored signals for prohibited fields and duplicate ingestion.
-6. Record exact commands/queries, versions, environment, time window and limits. Repeat on EKS in S2.
-
-## Primary sources checked 2026-10-04
-
-- [Alloy overview](https://grafana.com/docs/alloy/latest/) and [OTel collection](https://grafana.com/docs/alloy/latest/collect/opentelemetry-data/).
-- [Alloy Kubernetes logs](https://grafana.com/docs/alloy/latest/collect/logs-in-kubernetes/).
-- [Loki monolithic Helm deployment](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/) and [filesystem limitations](https://grafana.com/docs/loki/latest/operations/storage/filesystem/).
-- [Tempo deployment modes](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/plan/deployment-modes/) — recheck chart/image mode at implementation.
-S1.9 must inspect the selected [kube-prometheus-stack release](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack), chart defaults and values directly. GitHub source retrieval was unavailable during this source check; exact release and installed components remain implementation inputs.
-
-Source review is not deployed acceptance. The [interactive overview](diagrams/application.html), [dedicated collection view](diagrams/observability.html) and Mermaid architecture sources reflect this revision; see [diagram verification limits](diagrams/README.md).
+Historical full-stack regression: `scripts/observability-check.sh` and `scripts/s18-gate.sh` verify metrics, sanitized logs, correlated owned spans, provider/MCP failures and bounded telemetry outages. They require the full profile and model access. Results are recorded in [2026-10-18-02](sessions/2026-10-18-02.md). They do not close the new inventory or issue lifecycle gates.

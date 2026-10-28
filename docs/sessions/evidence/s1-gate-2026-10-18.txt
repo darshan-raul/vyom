@@ -1,0 +1,36 @@
+window start: 2026-10-18T15:06:03Z  cluster: kind-vyom
+pins: quay.io/containers/kubernetes_mcp_server@sha256:e47f6ccc5347e1ea6be495d8d9ab55ac8a995fe87800fb984fa770cebe14ad44 quay.io/brancz/kube-rbac-proxy@sha256:a6075902738eaf1780390561ea998a53a056ef1d2b312bcbf0e2e81fec084b3c vyom/api:deb859281be4 vyom/ui:d41234927d0a 
+PASS  q1 answered in 3.662373s, names the unhealthy pod, every citation resolves to evidence (trace 7215b3551525718a453d7c83d583c4e1)
+PASS  the direct pods table equals kubectl (2 pods)
+PASS  after scaling web to 2, the agent's evidence and the table both show 3 pods, from a later collection
+PASS  Prometheus holds the chat, model, MCP, graph-step, HTTP, token and collector series for the real requests
+PASS  Loki holds exactly one http, one chat, two model and one MCP line for trace 7215b3551525718a453d7c83d583c4e1, no duplicates
+PASS  Loki indexes only [container,namespace,service_name,stream]; trace and span IDs are in the line, not labels
+PASS  Tempo holds one connected trace: request, graph (propose, collect, answer), two model calls, MCP call, evidence (12 spans, no orphans or duplicates)
+PASS  log to trace: the Loki derived field extracts 7215b3551525718a453d7c83d583c4e1 from a log line and Grafana's Tempo data source returns that trace
+PASS  trace to log: Tempo's link target (Loki, by trace ID and service) returns the request's 5 log lines through Grafana
+NOTE  these two links were exercised through Grafana's APIs; clicking them in the Grafana UI is for the owner (Explore > Loki, then the TraceID link; Explore > Tempo, then Logs for this span)
+PASS  with a rejected provider key the product says model_unavailable with a fixed limitation and no answer, in 0.095526s (trace 892eba1d3480fe8be12ba19e2264951b)
+PASS  the provider failure is visible as a chat counter, a model error counter, a log line and a span outcome
+PASS  with the key restored the same question is answered
+PASS  with the MCP server down chat says no_evidence in 1.698605s (trace 8ef207069536f176b9ec9d8baa46212c) while the direct pods table stays complete
+PASS  the MCP failure is visible as a chat counter, an MCP error counter, a log line and a trace
+PASS  with the MCP server back the question is answered
+PASS  with Alloy stopped the question is still answered in 3.552659s (baseline 3.662373s)
+PASS  the collector outage is independently visible: kube_daemonset_status_number_ready{daemonset="alloy"} = 0, DaemonSet not ready
+PASS  after recovery Loki has the 5 log lines written while Alloy was down (log files were read from the saved position: no log loss)
+NOTE  the trace from the outage (e1a511c772ded7325806eddff8282971) is not in Tempo: its spans were dropped, as designed (bounded queue, no replay)
+PASS  after Alloy recovered, a new question's trace a32d623d5fe73521d099ec81ac2abb04 reached Tempo
+PASS  with Tempo stopped the question is still answered in 3.009914s
+PASS  the lost spans are counted: otelcol_exporter_send_failed_spans_total rose by 4
+PASS  after Tempo recovered, a new trace (46d047d8a370a36ba6f5460cbde244cb) became queryable by ID 16 s after Tempo was ready (1 question(s) asked meanwhile; the app was never slowed)
+NOTE  the trace from the Tempo outage (f3bd0e316ac9529e964d4818b6acd4aa) is lost, as designed
+PASS  Loki, namespace vyom, {"lines": 250, "exact_duplicate_lines": 0, "repeated_records": 0, "traces": 13}: no exact duplicate lines, no repeated (trace, span, logger) record, including across an Alloy restart when the fault sections ran
+PASS  Tempo: 10 vyom-api traces in the window, no duplicate span IDs inside any
+PASS  Prometheus: 246 vyom_ series, labels limited to the bounded set
+PASS  no question text, credential, key, token, literal env value, pod name or resource ID in 12 stored artifacts (all Loki lines in vyom, 10 traces, all vyom_ series)
+capacity: peak memory working set (last hour) vyom 0.21 GiB, observability 2.6 GiB; node memory 15.39 GiB total, 6.23 GiB available
+capacity: requested cpu 1.4000000000000001 cores of 6
+capacity: stored data on the node: 92M prometheus-kps-prometheus-db-prometheus-kps-prometheus-0 2.1M storage-loki-0 33M storage-tempo-0 
+window end: 2026-10-18T15:13:06Z
+S1.8 gate checks passed

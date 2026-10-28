@@ -378,7 +378,10 @@ class McpHost:
             async with httpx2.AsyncClient(
                 transport=transport,
                 # The only credential ever sent: the host's own, from its reference.
-                headers={"Authorization": f"Bearer {token}"},
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    **({"Host": "localhost"} if server.loopback_host_header else {}),
+                },
                 timeout=httpx2.Timeout(
                     limits.call_timeout_seconds, connect=limits.connect_timeout_seconds
                 ),

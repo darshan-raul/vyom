@@ -1,0 +1,34 @@
+# The operator file the API loads (VYOM_CONFIG): references to credentials, never credentials.
+{{- $mcpUrl := "https://kubernetes-mcp.vyom.svc:8443/mcp" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vyom-operator
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+data:
+  operator.json: |
+{{- dict
+      "context" (dict
+        "workspace_id" .Values.context.workspaceId
+        "connection_id" .Values.context.connectionId
+        "cluster_uid" .Values.context.clusterUid
+        "namespace" .Values.context.namespace)
+      "mcp_servers" (list (dict
+        "id" "kubernetes"
+        "connection_id" .Values.context.connectionId
+        "url" $mcpUrl
+        "ca_file" "/etc/vyom/mcp-ca/tls.crt"
+        "loopback_host_header" true
+        "credential_ref" "file:/var/run/vyom/mcp/token"
+        "enabled_tools" (list "pods_list_in_namespace")))
+      "model" (dict
+        "provider" .Values.model.provider
+        "base_url" .Values.model.baseUrl
+        "model" .Values.model.model
+        "credential_ref" "file:/var/run/vyom/model/key")
+      "kubernetes" (dict
+        "connection_id" .Values.context.connectionId
+        "url" "https://kubernetes.default.svc"
+        "ca_file" "/etc/vyom/kube-ca/ca.crt"
+        "credential_ref" "file:/var/run/vyom/collector/token")
+    | toPrettyJson | nindent 4 }}
