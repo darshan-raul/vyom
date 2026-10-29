@@ -6,7 +6,7 @@ Status authority for the active roadmap. States: pending, in_progress, partial, 
 
 | ID | Task | Depends on | Status | Session | Evidence / next action |
 |---|---|---|---|---|---|
-| R1 | Repository and local packaging cleanup | — | in_progress | 2026-10-29-05 | Docs/checker consolidation, profile validation and fresh Kind gates in progress |
+| R1 | Repository and local packaging cleanup | — | done | [2026-10-29-06](sessions/2026-10-29-06.md) | Docs/image regression checks, frontend, chart/profile/shell checks and fresh Kind none/metrics gates passed; metrics startup wait corrected; optional full live regression not run |
 | R2 | Scoped Postgres resource and evidence foundation | R1 | pending | — | See acceptance in implementation plan |
 | R3 | Scheduled Kubernetes inventory and workload detail | R2 | pending | — | See acceptance in implementation plan |
 | R4 | Manual workload investigation and diagnostic labs | R3 | pending | — | See acceptance in implementation plan |

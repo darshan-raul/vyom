@@ -1,9 +1,22 @@
 #!/usr/bin/env python3
 """Validate Markdown links and the active roadmap (stdlib only)."""
 from pathlib import Path
+from html.parser import HTMLParser
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class ImageSources(HTMLParser):
+    """Include HTML images (such as the README logo) in local link checks."""
+
+    def __init__(self):
+        super().__init__()
+        self.sources = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "img":
+            self.sources.extend(value for key, value in attrs if key == "src" and value)
 
 
 def check_roadmap(plan: str, tracker: str) -> list[str]:
@@ -61,8 +74,10 @@ def check(root: Path) -> tuple[list[str], int]:
         text = path.read_text()
         if text.count("```") % 2:
             errors.append(f"{path.relative_to(root)}: unclosed code fence")
-        for target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", text):
-            if "://" in target or target.startswith(("#", "mailto:")):
+        images = ImageSources()
+        images.feed(text)
+        for target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", text) + images.sources:
+            if "://" in target or target.startswith(("#", "mailto:", "data:")):
                 continue
             target = target.split("#", 1)[0]
             if target and not (path.parent / target).exists():

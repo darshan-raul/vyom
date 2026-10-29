@@ -32,7 +32,7 @@ VYOM_TELEMETRY=full ./scripts/vyom-up.sh
 ./scripts/s18-gate.sh
 ```
 
-`vyom-up.sh` defaults to `none`; `observability-up.sh` defaults to `metrics`. The application gate reads the installed ServiceMonitor setting: it checks Prometheus when enabled and explicitly reports SKIP when disabled. The full telemetry gates require the full profile and are not minimal-install gates. Missing ServiceMonitor CRDs cause a metrics/full application install to fail with installation instructions.
+`vyom-up.sh` defaults to `none`; `observability-up.sh` defaults to `metrics`. The application gate allows up to five minutes for a newly installed ServiceMonitor to reach Prometheus and produce its first scrape (the pinned config reloader can take three minutes). It reads the installed ServiceMonitor setting: it checks Prometheus when enabled and explicitly reports SKIP when disabled. The full telemetry gates require the full profile and are not minimal-install gates. Missing ServiceMonitor CRDs cause a metrics/full application install to fail with installation instructions.
 
 Changing profiles does not uninstall existing Loki/Tempo/Alloy releases or erase their data. Installing the metrics profile disables Grafana in the Prometheus release. Use a fresh local cluster to verify absence of optional stores. Chart defaults disable ServiceMonitor and trace export; `/metrics` and sanitized application logs remain available.
 

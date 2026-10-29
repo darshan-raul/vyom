@@ -203,7 +203,10 @@ pass "[image] production mode, and no mode at all, refuse to start with the deve
 monitor="$(helm --kube-context "$context" -n vyom get values vyom -a -o json | json "d['serviceMonitor']['enabled']")"
 if [[ "$monitor" == True ]]; then
 forward observability kps-prometheus 19090 9090
-for _ in $(seq 40); do
+# A fresh ServiceMonitor may arrive after Prometheus starts. Allow its projected
+# configuration and the reloader's watch interval to settle before the first scrape.
+# The pinned reloader took three minutes to reload during the fresh metrics gate.
+for _ in $(seq 100); do
   up="$(curl -s --get http://127.0.0.1:19090/api/v1/query --data-urlencode 'query=up{namespace="vyom",service="vyom-api"}' |
     json "[r['value'][1] for r in d['data']['result']]")"
   [[ "$up" == "['1']" ]] && break

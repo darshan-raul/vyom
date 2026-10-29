@@ -49,6 +49,15 @@ Conversation stays focused on inventory, investigation and security.
 
 ## How it works
 
+<details>
+<summary>Continuous-operations workflow</summary>
+
+![Vyom workflow: native collection, evidence, deterministic rules and bounded investigations](docs/diagrams/readme-architecture.png)
+
+[Scalable workflow diagram](docs/diagrams/readme-architecture.svg).
+
+</details>
+
 A React interface connects to FastAPI and three shared product domains:
 
 - **Inventory collectors** use native Kubernetes and AWS APIs to maintain normalized resources and relationships in Postgres.

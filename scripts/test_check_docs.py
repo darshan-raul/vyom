@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from tempfile import TemporaryDirectory
 
 spec = importlib.util.spec_from_file_location("check_docs", Path(__file__).with_name("check-docs.py"))
 module = importlib.util.module_from_spec(spec)
@@ -23,6 +24,24 @@ TRACKER = """## Active implementation
 
 
 class RoadmapTests(unittest.TestCase):
+    def test_local_markdown_and_html_images_must_exist(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docs").mkdir()
+            (root / "docs/IMPLEMENTATION_PLAN.md").write_text(PLAN)
+            (root / "docs/TRACKER.md").write_text(TRACKER.replace(
+                "sessions/example.md", "../README.md"))
+            for name in ("AGENTS.md", "vyom-12-week-sprint-plan.md"):
+                (root / name).write_text("")
+            (root / "README.md").write_text(
+                '<img src="logo.png" />\n![Architecture](architecture.png)\n'
+                '<img src="https://example.com/remote.png" />')
+            errors, _ = module.check(root)
+            self.assertEqual(len(errors), 2)
+            for name in ("logo.png", "architecture.png"):
+                (root / name).touch()
+            self.assertEqual(module.check(root)[0], [])
+
     def test_valid_active_roadmap_ignores_history(self):
         self.assertEqual(module.check_roadmap(PLAN, TRACKER), [])
 

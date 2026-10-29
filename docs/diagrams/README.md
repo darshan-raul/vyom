@@ -1,11 +1,21 @@
+# Architecture assets
+
+The README embeds the [continuous-operations workflow PNG](readme-architecture.png), rendered from [the editable SVG](readme-architecture.svg), in a collapsible section. It follows [the active architecture](../ARCHITECTURE.md): native collectors, scoped Postgres evidence, deterministic rules, leased investigation jobs, reviewed MCP tools and optional telemetry. It describes the final product, not deployment status.
+
+Regenerate after editing the SVG:
+
+```sh
+rsvg-convert docs/diagrams/readme-architecture.svg -o docs/diagrams/readme-architecture.png
+```
+
+## Historical drafts
+
 > Review marking (2026-10-29): these diagrams are historical references, not the current continuous-operations architecture. See [active architecture](../ARCHITECTURE.md) and [required changes](../OVERHAUL_CHANGE_MAP.md). Do not infer RAG, cost or mandatory telemetry scope from these assets.
 
 # Planned architecture diagrams
 
 Updated for the owner-required S1 observability revision on 2026-10-04. These are **planned personal-alpha architecture**, with sprint additions labelled; none proves deployed capability.
 
-- [README deployment architecture — standalone SVG](readme-architecture.svg): cluster/external boundaries, service icons, explicit backend RAG/retrieval labels and five primary connections. Edited directly as SVG, with the canonical logo embedded for portability; separate from the Archify drafts below.
-- [Architecture and eight Mermaid views](../ARCHITECTURE.md).
 - [Interactive application overview — rendered draft](application.html) and [editable source](application.json).
 - [Interactive S1 observability topology — rendered draft](observability.html) and [editable source](observability.json).
 - [Observability design and live gates](../OBSERVABILITY.md).
@@ -36,6 +46,7 @@ node <archify-skill>/bin/archify.mjs visual-check docs/diagrams/<name>.html --js
 
 Inspect both themes and desktop viewport screenshots before recording visual acceptance. Refresh receipts/fingerprints after verification. This optional diagram verification follow-up does not block implementation. Edit JSON and regenerate; do not hand-edit generated HTML.
 
-## README SVG verification
+## README image verification
 
-The standalone SVG was parsed as XML and rasterized with installed `rsvg-convert` at its native 1200px width and at 760px README viewing width. Both raster previews were inspected; a label correction removed cramped Kubernetes MCP metadata and gave AWS API metadata more space. This is static SVG visual review, not browser/Archify acceptance or runtime verification. Preview PNGs are temporary files under `/tmp`; README embeds the editable SVG directly.
+Current rendering and checks are recorded in [session 2026-10-29-06](../sessions/2026-10-29-06.md). The PNG avoids dependence on Markdown SVG support; the SVG retains selectable text and embeds the canonical logo. Neither image proves runtime delivery.
+

@@ -45,4 +45,4 @@ One application chart on Kind packages the API/UI and pinned upstream MCP with p
 
 Inventory remains usable when model/MCP services fail. Stale observations are explicit when collection fails. Durable jobs use bounded retries/leases; lost telemetry must never block requests. Credential values, provider payloads, questions and answers never enter routine logs or metrics. [Verification](VERIFICATION.md) defines evidence requirements.
 
-Historical diagrams in [diagrams](diagrams/README.md) are implementation references only; old RAG/cost/sprint layouts do not govern this design.
+The [diagram index](diagrams/README.md) links the current README architecture image and historical interactive references. Old RAG/cost/sprint layouts do not govern this design.

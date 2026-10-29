@@ -1,0 +1,70 @@
+Fresh none gate
+PASS  release vyom is deployed
+PASS  vyom-api, vyom-ui and kubernetes-mcp are available
+PASS  collector token refresher is scheduled every 30 minutes
+PASS  every container is non-root, read-only, no privilege escalation, all capabilities dropped
+PASS  every Vyom Service is ClusterIP and there is no Ingress
+PASS  vyom-api may use the MCP endpoint and has no Kubernetes read access
+PASS  vyom-collector may list pods in demo and is denied get, other namespaces, Secrets, exec and nodes
+PASS  kubernetes-mcp may list pods in demo and nothing more
+PASS  token refresher may mint collector tokens and patch a Secret, and read, list or delete nothing
+PASS  the refresher may patch only its one Secret
+PASS  the release and the operator file hold credential references only: no key, token or certificate
+PASS  the API pod has no credential in its environment
+PASS  the collector token is for vyom-collector and lives 3600 s
+PASS  the refresher job replaces the token
+PASS  the UI serves its routes and forwards /api to the API
+PASS  GET /api/agent reports scope demo and the one MCP tool
+PASS  the direct pod view in the cluster equals kubectl -n demo get pods (2 pods)
+PASS  from inside the API pod: projected token accepted, endpoint certificate trusted, tool discovered and called, pods equal kubectl
+PASS  an unauthenticated call to the MCP endpoint from the API pod is refused (401)
+PASS  [image] production mode, and no mode at all, refuse to start with the development identity
+SKIP  Prometheus scrape (ServiceMonitor disabled in installed release)
+Application checks passed (optional telemetry reported separately)
+
+First metrics gate (failed scrape wait)
+PASS  release vyom is deployed
+PASS  vyom-api, vyom-ui and kubernetes-mcp are available
+PASS  collector token refresher is scheduled every 30 minutes
+PASS  every container is non-root, read-only, no privilege escalation, all capabilities dropped
+PASS  every Vyom Service is ClusterIP and there is no Ingress
+PASS  vyom-api may use the MCP endpoint and has no Kubernetes read access
+PASS  vyom-collector may list pods in demo and is denied get, other namespaces, Secrets, exec and nodes
+PASS  kubernetes-mcp may list pods in demo and nothing more
+PASS  token refresher may mint collector tokens and patch a Secret, and read, list or delete nothing
+PASS  the refresher may patch only its one Secret
+PASS  the release and the operator file hold credential references only: no key, token or certificate
+PASS  the API pod has no credential in its environment
+PASS  the collector token is for vyom-collector and lives 3600 s
+PASS  the refresher job replaces the token
+PASS  the UI serves its routes and forwards /api to the API
+PASS  GET /api/agent reports scope demo and the one MCP tool
+PASS  the direct pod view in the cluster equals kubectl -n demo get pods (2 pods)
+PASS  from inside the API pod: projected token accepted, endpoint certificate trusted, tool discovered and called, pods equal kubectl
+PASS  an unauthenticated call to the MCP endpoint from the API pod is refused (401)
+PASS  [image] production mode, and no mode at all, refuse to start with the development identity
+FAIL  Prometheus does not scrape vyom-api (up=[])
+
+Metrics retry after bounded-wait correction
+PASS  release vyom is deployed
+PASS  vyom-api, vyom-ui and kubernetes-mcp are available
+PASS  collector token refresher is scheduled every 30 minutes
+PASS  every container is non-root, read-only, no privilege escalation, all capabilities dropped
+PASS  every Vyom Service is ClusterIP and there is no Ingress
+PASS  vyom-api may use the MCP endpoint and has no Kubernetes read access
+PASS  vyom-collector may list pods in demo and is denied get, other namespaces, Secrets, exec and nodes
+PASS  kubernetes-mcp may list pods in demo and nothing more
+PASS  token refresher may mint collector tokens and patch a Secret, and read, list or delete nothing
+PASS  the refresher may patch only its one Secret
+PASS  the release and the operator file hold credential references only: no key, token or certificate
+PASS  the API pod has no credential in its environment
+PASS  the collector token is for vyom-collector and lives 3600 s
+PASS  the refresher job replaces the token
+PASS  the UI serves its routes and forwards /api to the API
+PASS  GET /api/agent reports scope demo and the one MCP tool
+PASS  the direct pod view in the cluster equals kubectl -n demo get pods (2 pods)
+PASS  from inside the API pod: projected token accepted, endpoint certificate trusted, tool discovered and called, pods equal kubectl
+PASS  an unauthenticated call to the MCP endpoint from the API pod is refused (401)
+PASS  [image] production mode, and no mode at all, refuse to start with the development identity
+PASS  Prometheus scrapes the API (up{service="vyom-api"} = 1)
+Application checks passed (optional telemetry reported separately)
