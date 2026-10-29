@@ -9,6 +9,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 obs="$root/deploy/observability"
 cache="$root/.local/charts"
 context="${KUBE_CONTEXT:-kind-vyom}"
+[[ "$context" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 namespace=observability
 password_file="$root/.local/grafana-admin-password"
 

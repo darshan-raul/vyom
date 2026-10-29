@@ -1,6 +1,6 @@
 # Implementation plan
 
-The [constitution](../vyom-12-week-sprint-plan.md) governs scope. [TRACKER](TRACKER.md) alone owns status. This plan replaces the old six-sprint schedule; historical results remain in session records. There is no current calendar estimate.
+The [constitution](../CONSTITUTION.md) governs scope. [TRACKER](TRACKER.md) alone owns status. This plan replaces the old six-sprint schedule; historical results remain in session records. There is no current calendar estimate.
 
 ## Active rescope sequence
 

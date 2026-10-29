@@ -68,7 +68,7 @@ def check_roadmap(plan: str, tracker: str) -> list[str]:
 
 def check(root: Path) -> tuple[list[str], int]:
     errors = []
-    files = [root / name for name in ("README.md", "AGENTS.md", "vyom-12-week-sprint-plan.md")]
+    files = [root / name for name in ("README.md", "AGENTS.md", "CONSTITUTION.md")]
     files += sorted((root / "docs").rglob("*.md"))
     for path in files:
         text = path.read_text()

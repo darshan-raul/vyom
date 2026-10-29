@@ -1,5 +1,7 @@
 # Repository rescope audit — 29 October 2026
 
+> **Snapshot, not maintained.** This records the repository as it was on 29 October 2026, before R1. The [constitution](../CONSTITUTION.md) owns scope, the [implementation plan](IMPLEMENTATION_PLAN.md) owns order and the [change map](OVERHAUL_CHANGE_MAP.md) owns file-level actions. Where they differ from §10 below, they win.
+
 Scope: tracked and untracked source in the current working tree, excluding ignored environments and Git history. Existing modified files and staged deletions were preserved. This is a repository audit, not a new live verification of the prior S1 results.
 
 ## 1. Current architecture

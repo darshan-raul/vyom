@@ -1,10 +1,12 @@
 # Current handoff
 
-Updated 2026-10-29; latest session [2026-10-29-07](sessions/2026-10-29-07.md).
+Updated 2026-10-29; latest session [2026-10-29-08](sessions/2026-10-29-08.md).
 
 R1 is complete. The README now leads with the Kubernetes deployment topology (cluster/namespaces, workloads, dependencies and mappings), with PNG/SVG/interactive HTML. The continuous-operations workflow is a separate collapsible section. Diagram artifact/browser checks and light/dark visual review passed in session 07; no runtime changes were made. The documentation checker validates HTML image targets too. README remains final-product language; current runtime still has transient pod inventory and MCP questions, without Postgres.
 
 Required checks passed: seven docs regression tests, docs links/fences/roadmap, frontend typecheck/lint/build, all shell syntax, Helm lint and none/metrics/full rendering, invalid profile rejection, SVG XML and visual raster review, fresh Kind none and metrics application gates. The first metrics scrape timed out; observed config reload took three minutes, so the gate now waits up to five. Retry passed including Prometheus API scrape. [Evidence](sessions/evidence/r1-profiles-2026-10-29.txt) retains the failed attempt. Full telemetry live regression and live model calls were not run. No hosted README/browser render claim.
+
+Session 08 reviewed the overhaul and fixed its consistency gaps: the constitution is now [CONSTITUTION.md](../CONSTITUTION.md) (renamed from `vyom-12-week-sprint-plan.md`), DESIGN.md no longer carries sprint/cost/runbook instructions, the change map's finished R1 rows are ticked and RESCOPE_AUDIT is a frozen snapshot. Every cluster script now refuses a non-`kind-*` context. Docs checks, checker tests and shell syntax passed; no runtime checks were needed.
 
 Next task: R2 scoped Postgres resource/evidence foundation. Read its [implementation section](IMPLEMENTATION_PLAN.md#r2--scoped-postgres-resource-and-evidence-foundation), [architecture](ARCHITECTURE.md) and relevant [file change map](OVERHAUL_CHANGE_MAP.md) entries. First scope the migrations and consumed resource/relationship/collection/evidence repository increment, including workspace isolation, native UID recreation and transient citation compatibility. Record the next session and verification before edits. R2 requires real Postgres transaction/migration/restore checks and persisted citations after restart; fixtures alone cannot close it.
 

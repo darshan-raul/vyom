@@ -9,6 +9,8 @@
 
 Designed for DevOps engineers, SREs, cloud engineers and platform engineers, Vyom brings infrastructure inventory, operational investigation and configuration security into one read-only operations station. Vyom continuously watches authorized environments for meaningful changes, failures and security signals, then brings the evidence into focused investigations.
 
+To run Vyom on a local Kind cluster, see [local development and deployment](docs/LOCAL_DEVELOPMENT.md).
+
 ## Continuous operations
 
 Follow the operational loop from discovery to recovery: **observe → detect → triage → investigate → explain**.
@@ -101,7 +103,7 @@ Vyom focuses on AWS and Kubernetes operations. Cost optimization, general-purpos
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Continuous operations](docs/CONTINUOUS_OPERATIONS.md)
-- [Product scope](vyom-12-week-sprint-plan.md)
+- [Product scope](CONSTITUTION.md)
 - [Local development and deployment](docs/LOCAL_DEVELOPMENT.md)
 - [Design system](docs/design/DESIGN.md)
 - [Branding](docs/BRANDING.md)

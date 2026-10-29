@@ -31,7 +31,7 @@ class RoadmapTests(unittest.TestCase):
             (root / "docs/IMPLEMENTATION_PLAN.md").write_text(PLAN)
             (root / "docs/TRACKER.md").write_text(TRACKER.replace(
                 "sessions/example.md", "../README.md"))
-            for name in ("AGENTS.md", "vyom-12-week-sprint-plan.md"):
+            for name in ("AGENTS.md", "CONSTITUTION.md"):
                 (root / name).write_text("")
             (root / "README.md").write_text(
                 '<img src="logo.png" />\n![Architecture](architecture.png)\n'

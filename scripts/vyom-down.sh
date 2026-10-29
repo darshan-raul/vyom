@@ -6,6 +6,7 @@
 #   KUBE_CONTEXT  kubectl context (default: kind-vyom)
 set -euo pipefail
 context="${KUBE_CONTEXT:-kind-vyom}"
+[[ "$context" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 if [[ "${1:-}" == "--cluster" ]]; then
   kind delete cluster --name "${context#kind-}"
   exit 0

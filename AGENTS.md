@@ -2,7 +2,7 @@
 
 ## Authority and purpose
 
-Read [the constitution](vyom-12-week-sprint-plan.md) first. It governs scope, delivery order and acceptance; current user instructions take precedence. Never restore discarded implementation from Git or rerun the historical reset. Build the three-pillar continuous operations station one verified vertical slice at a time.
+Read [the constitution](CONSTITUTION.md) first. It governs scope, delivery order and acceptance; current user instructions take precedence. Never restore discarded implementation from Git or rerun the historical reset. Build the three-pillar continuous operations station one verified vertical slice at a time.
 
 README describes the final product only. Status belongs in tracker/handoff/sessions; setup belongs in docs/LOCAL_DEVELOPMENT.md.
 

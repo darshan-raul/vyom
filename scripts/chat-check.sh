@@ -14,6 +14,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export VYOM_MODE=development  # these checks build the API in process with the fixed development identity
 export KUBE_CONTEXT="${KUBE_CONTEXT:-kind-vyom}"
+[[ "$KUBE_CONTEXT" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 port="${MCP_PORT:-18443}"
 export VYOM_LOCAL="$root/.local"
 export VYOM_MCP_URL="https://127.0.0.1:$port/mcp"

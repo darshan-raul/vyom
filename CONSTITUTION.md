@@ -1,6 +1,6 @@
 # Vyom product constitution
 
-Updated 29 October 2026. This is the sole scope and delivery authority, subordinate to current owner instructions. The filename remains stable for existing links; there is no fixed twelve-week commitment. Prior S1 implementation evidence remains in session records. The historical reset and superseded sprint instructions must not be executed again.
+Updated 29 October 2026. This is the sole scope and delivery authority, subordinate to current owner instructions. It was renamed from `vyom-12-week-sprint-plan.md` on 29 October 2026; there is no fixed twelve-week commitment. Prior S1 implementation evidence remains in session records. The historical reset and superseded sprint instructions must not be executed again.
 
 ## Product
 
@@ -20,7 +20,7 @@ The [implementation plan](docs/IMPLEMENTATION_PLAN.md) defines dependency-ready 
 6. Deterministic Kubernetes posture, then AWS inventory and `investigate_connectivity`, then AWS posture and cross-platform relationships.
 7. Recovery and verified identity/grants before multi-user or remote exposure; scoped persistence and credential isolation apply from the first database change.
 
-No AWS expansion before the Kubernetes diagnostic and automatic-loop gates. No completed task without its acceptance evidence; fixture tests are not live gates. Split implementation into small reviewable increments and keep one active implementation task. Do not infer a fixed deadline from the legacy filename.
+No AWS expansion before the Kubernetes diagnostic and automatic-loop gates. No completed task without its acceptance evidence; fixture tests are not live gates. Split implementation into small reviewable increments and keep one active implementation task. There is no fixed deadline.
 
 ## Architecture
 

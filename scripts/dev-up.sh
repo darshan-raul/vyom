@@ -17,6 +17,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 context="${KUBE_CONTEXT:-kind-vyom}"
+[[ "$context" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 port="${MCP_PORT:-18443}"
 local_dir="$root/.local"
 ca="$local_dir/mcp-tls/tls.crt"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live gate for S1.7: the installed Vyom release on Kind. Read-only apart from triggering the
+# Application gate (R1): the installed Vyom release on Kind. Read-only apart from triggering the
 # collector-token refresher once. Needs scripts/vyom-up.sh to have run. Opens localhost-only
 # port-forwards for its duration. Every line is a PASS or the script stops with FAIL.
 #   KUBE_CONTEXT  kubectl context (default: kind-vyom)
@@ -8,6 +8,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 context="${KUBE_CONTEXT:-kind-vyom}"
+[[ "$context" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 k() { kubectl --context "$context" "$@"; }
 pass() { echo "PASS  $*"; }
 fail() { echo "FAIL  $*" >&2; exit 1; }

@@ -1,11 +1,11 @@
 > Continuous operations: Overview is an operations desk with active issues, changes, freshness and investigation progress; issue detail supports evidence, history and conversational follow-up. See [accepted design](../CONTINUOUS_OPERATIONS.md). Add surfaces only with working data; retain existing visual tokens.
 
-> The [2026-10-29 rescope](../RESCOPE_AUDIT.md) supersedes the old surface schedule and out-of-scope mockup content below. Retain visual tokens; do not implement Spend or mandatory RAG surfaces.
+> Aligned with the 2026-10-29 rescope ([snapshot](../RESCOPE_AUDIT.md)): §0 is the surface schedule. Mockups keep their original spend, compliance and runbook content as visual reference only; do not implement it.
 
 # Vyom — Frontend Design Spec
 
 > Source of truth for how Vyom's UI looks. Owner-supplied on 12 October 2026 and adapted here to
-> the [constitution](../../vyom-12-week-sprint-plan.md): what Vyom shows, and when, follows the
+> the [constitution](../../CONSTITUTION.md): what Vyom shows, and when, follows the
 > active roadmap (§0). Reference mockups live in [mockups/](mockups/) (`*.dc.html`). They are
 > design-tool source (HTML markup + inline styles + a small logic class), not runnable pages; read
 > them for exact layout, values and sample copy. When this spec and a mockup disagree, this spec
@@ -41,8 +41,8 @@ Evidence may be zero, partial, stale, denied or missing; these remain distinct. 
 2. **Colour = state, never decoration.** Status colours (alert / caution / nominal) appear only on things with that status. Healthy resources are quiet blue, not green.
 3. **The agent is a first-class surface.** Sky blue (`--vy-agent`) belongs to Vyom's agent: the Ask panel, investigation steps and citations. Don't use it for anything else.
 4. **Show change, not just state.** Prefer "what changed since X" (diffs, before/after, deltas) over static totals. A finding should say *what changed and when it was observed*; show an actor only when evidence supports it.
-5. **Every claim is traceable.** Agent answers and evidence carry citations to the API call / CloudTrail event / runbook they came from (`ec2:DescribeSecurityGroups`, `runbook/db-network-access`).
-6. **Read-only is visible.** Primary actions are *ask* / *open the runbook* / *acknowledge*, never *remediate*. Vyom reads; it does not change a cluster or an account, and it does not draft changes in this roadmap.
+5. **Every claim is traceable.** Agent answers and evidence carry citations to the API call or stored evidence they came from (`ec2:DescribeSecurityGroups`, `k8s pods_list`).
+6. **Read-only is visible.** Primary actions are *ask* / *open evidence* / *acknowledge*, never *remediate*. Vyom reads; it does not change a cluster or an account, and it does not draft changes in this roadmap.
 7. **No fake data in production UI.** Missing values render as an explicit empty state, not a placeholder number.
 
 ---
@@ -179,7 +179,7 @@ Build these as shared components in `frontend/src/components/vyom/`, each one wh
 | `SegmentedTabs` | Pill container (`--vy-line` border, 3px padding). The active tab is a `--vy-text` fill with `--vy-bg` text; others are transparent, `--vy-text-3`. Counts sit in mono after the label. |
 | `MetricCard` | `--vy-surface-2`, `--vy-line` border, radius 10–12. Title 14px, value 26–34px/600, optional delta, impact pill and ↗ link. Inverted variant (light `--vy-text` fill, navy text) for **one** hero card per screen, such as "Biggest mover". |
 | `FindingRow` | Score (22px/600, coloured by type), title, mono resource path, `StatusBadge`, metric + mono relative time (`T−6h`). |
-| `FindingCard` (expanded) | Tinted alert border/bg. Header: score + `RISK` label, title, mono path, badge, "T−3h · via terraform apply". Then three columns (each separated by a hairline): **Evidence** (claim + mono API source), **Agent read** (prose + confidence meters), **Why this needs you** (tinted). Footer actions: primary *Open runbook ↗*, agent-ghost *Ask Vyom about this*, secondary *Related resources · N linked*, ghost *Acknowledge*. (The mockup's *Draft Terraform fix* is outside the core.) |
+| `FindingCard` (expanded) | Tinted alert border/bg. Header: score + `RISK` label, title, mono path, badge, "T−3h · via terraform apply". Then three columns (each separated by a hairline): **Evidence** (claim + mono API source), **Agent read** (prose + confidence meters), **Why this needs you** (tinted). Footer actions: primary *Open evidence ↗*, agent-ghost *Ask Vyom about this*, secondary *Related resources · N linked*, ghost *Acknowledge*. (The mockup's *Draft Terraform fix* is outside the core.) |
 | `EvidenceItem` | 14px claim with an 11px mono source underneath (`rds:DescribeDBInstances`). |
 | `ConfidenceMeter` | 64×3px track, fill in `--vy-text` (high) or `--vy-caution` (low), mono label `HIGH`/`LOW`. |
 | `Citation` | Superscript mono `[1]` in `--vy-agent`, plus a source chip row (mono 10px, `--vy-line` border). |
@@ -188,11 +188,11 @@ Build these as shared components in `frontend/src/components/vyom/`, each one wh
 ### 4.1 Agent panel (`AskVyom`), the most prominent element on Today
 - Sits directly under the greeting, full width. Agent gradient bg (`--vy-agent-bg` → `#081633`), `--vy-agent-line` border, radius 10, soft blue outer glow.
 - Header: pulsing `● ASK VYOM · AGENT ONLINE` in mono agent colour, and `read-only · cites every answer` on the right.
-- Large textarea (17px) in a `--vy-surface-1` well. Footer row: scope (set by the server, shown, not chosen in the browser), the tools the host has really enabled in mono (`k8s-mcp` in S1, `aws-mcp` in S2, `runbooks` in S3; coloured `--vy-ok` when connected), agent button *Ask ↵*.
-- **Not-connected state**: hollow dot, `ASK VYOM · AGENT NOT CONNECTED`, the form disabled, and one sentence saying why. Model or tool failure after S1.5 is shown the same way, never as a guessed answer.
-- **Mode tiles** arrive with the workflows they start: `HEALTH` Which workloads are unhealthy (S2), `INVESTIGATE` Investigate a workload (S4), `EXPLAIN` Explain service cost (S4). No `DRAFT` or `REPORT` tile: Vyom does not draft fixes or compliance reports in this roadmap.
+- Large textarea (17px) in a `--vy-surface-1` well. Footer row: scope (set by the server, shown, not chosen in the browser), the tools the host has really enabled in mono (for example `k8s-mcp`; an AWS integration appears only once R7 enables one; coloured `--vy-ok` when connected), agent button *Ask ↵*.
+- **Not-connected state**: hollow dot, `ASK VYOM · AGENT NOT CONNECTED`, the form disabled, and one sentence saying why. Model or tool failure is shown the same way, never as a guessed answer.
+- **Mode tiles** arrive with the workflows they start: `HEALTH` Which workloads are unhealthy (R3), `INVESTIGATE` Investigate a workload (R4), `POSTURE` Explain a finding (R5). No `DRAFT` or `REPORT` tile: Vyom does not draft fixes or compliance reports.
 - **Suggested chips**: the supported questions for the current scope; when supported, derived from open issues/findings (pill buttons).
-- Right column: **last answer** with its question, a short answer with citations, source chips (`k8s-mcp pods_list`, `runbook/image-pull`) and, once scoped investigation history exists, *CONTINUE THREAD →*.
+- Right column: **last answer** with its question, a short answer with citations, source chips (`k8s-mcp pods_list`, `k8s events`) and, once scoped investigation history exists, *CONTINUE THREAD →*.
 
 ---
 
@@ -206,23 +206,21 @@ General: no chart junk, no gridlines beyond a baseline, mono axis labels at 9–
 | **Split-diff strips** | Inventory by state, before vs now | Two strips of about 160 marks (1 mark ≈ N resources). `− MON` on top (28–30px, red-tinted gutter frame), `+ NOW` below (40–42px, green-tinted frame), with a 16px **link row** between. Unchanged marks are dimmed (opacity 0.28 / 0.4). **Changed marks are full opacity with a 1px ring and a 10px glow**: `--vy-ok` if safer, `--vy-alert` if riskier. The link row draws a gradient line (old colour → new colour) only under changed marks. Footer: legend + "7 safer · 5 riskier". |
 | **Score drivers** | What moves the score | 3×2 grid of `MetricCard`s with value, delta and `ImpactPill`. |
 | **Change history calendar** | 30-day per-org activity | One row per org, 30 dots (8px, 3px gap). States: no change `--vy-line`, clean change `--vy-quiet`, drift `--vy-caution`, introduced finding `--vy-alert` with a `×` and a glow. |
-| **Compliance matrix** | Controls per framework | One 11px rounded square per control, grouped by family. Pass `--vy-quiet-2`, warn `--vy-caution`, fail `--vy-alert`. Header shows `N FAIL  passed/total`. |
-| **Dot-matrix spend** | Daily spend + projection | A column of 8px dots per day. Actual `--vy-quiet`, anomaly dots `--vy-caution`, today `--vy-agent`, **agent projection = hollow agent-colour dots** at 70% opacity. |
-| **Share strip** | Spend by org | Pill per org, its width proportional to share (`flex-grow` = %), with a coloured initial badge, amount and mono %. |
+| **Rule matrix** | Findings per rule family (R5/R8) | One 11px rounded square per rule, grouped by category. Pass `--vy-quiet-2`, warn `--vy-caution`, fail `--vy-alert`, unknown hollow. Header shows `N FAIL  passed/total`. Framework labels are metadata, never a certification score. |
 | **Hatched bars** | Secondary bars | Non-highlighted bars use a diagonal hatch (`repeating-linear-gradient(135deg, rgba(108,180,255,.22) 0 2px, transparent 2px 7px)`) on `--vy-surface-3` with a `--vy-line-strong` border. Only the highlighted bar is solid (agent colour, or a gradient to `--vy-royal`). |
-| **Annotated line** | Daily cost per account | Agent-colour line + gradient area fill. A vertical dashed **caution** marker + dot at the change event, with a caption naming the change (`Oct 9 · terraform apply moved …`). |
+| **Annotated line** | A health metric over an issue's timeline (restarts, ready replicas) | Agent-colour line + gradient area fill. A vertical dashed **caution** marker + dot at the change event, with a caption naming the change (`Oct 9 · image tag changed …`). Temporal evidence, not proof of cause. |
 | **Blast-radius graph** | Finding → linked resources | See §6.2. |
 
-Use **visx** or plain SVG/flex for the custom patterns (diff strips, dot matrix, matrix, history). Use Recharts only for standard line/area charts, and theme it with the tokens.
+Use **visx** or plain SVG/flex for the custom patterns (diff strips, matrix, history). Use Recharts only for standard line/area charts, and theme it with the tokens.
 
 ---
 
 ## 6. Screens
 
-### 6.1 Today (`/`)
-The end state below is the mockup's. Built so far: items 1–4, with real API, agent and evidence state only. Items 5–7
-arrive per §0, with posture and findings narrowed to what Vyom collects (workload health, restarts,
-unavailable replicas, EC2 state, daily cost).
+### 6.1 Overview (`/`)
+The layout below adapts the mockup's Today page into the operations overview. Built so far: items 1–4, with real API, agent and evidence state only. Items 5–7
+arrive per §0, narrowed to what Vyom collects (workload health, restarts, unavailable replicas,
+changes, issues, findings and freshness).
 
 Top to bottom:
 1. Header ticker.
@@ -233,7 +231,7 @@ Top to bottom:
 6. `01.1 / WHAT MOVES THE SCORE` (driver cards) next to `01.2 / CHANGE HISTORY · 30 DAYS`.
 7. Two columns:
    - **Left:** `02 / FINDINGS` with `SegmentedTabs` (Needs a human / Acknowledged / Resolved), one expanded `FindingCard`, then `FindingRow`s, and a footer `5 OF 23 OPEN` and `ALL FINDINGS →`.
-   - **Right rail:** `03 / SPEND · MTD` (dot-matrix + `OPEN SPEND →`), `04 / COMPLIANCE` matrix, and `05 / FOUND OVERNIGHT` (agent items with mono type badges IDLE / DRIFT / EXPIRY + *Review N in chat →*).
+   - **Right rail:** `03 / ISSUES` (open episodes with investigation progress + `ALL ISSUES →`), `04 / FRESHNESS` (collection coverage per connection: complete, partial, stale, denied), and `05 / FOUND OVERNIGHT` (detected changes and automatic investigation results + *Continue in chat →*).
 
 ### 6.2 Blast radius (`/findings/:id/blast-radius`)
 For Vyom this is the resource relationship view of a finding: the affected workload at the core,
@@ -246,7 +244,7 @@ The security-group, IAM and data-class categories in the mockup are outside the 
   - **Five category cards** stacked in the middle: Security groups, Network paths, Workloads, IAM principals, Data classes. Each card has an icon square, a count and a label. They connect to the core with hairline bezier curves; the selected one turns agent-colour with a glow.
   - **Leaves fanned on an arc** (radius about 400) from the selected card. Each leaf is a glowing dot coloured by state, a mono name, a state tag and an account tag. Bezier links are coloured by leaf state at 75% opacity.
   - Clicking a category re-fans the leaves and updates the readout.
-- **Agent readout aside** (about 380px): `VYOM READOUT`, prose for the selected category, **shortest exposure path** as a stacked mono chain (first hop alert-bordered), an "If you restrict ingress" impact table, and actions (mockup: *Draft Terraform fix ↗* / *Show the 3 unknown IPs*; for Vyom: *Open runbook ↗* / *Ask Vyom about this path*).
+- **Agent readout aside** (about 380px): `VYOM READOUT`, prose for the selected category, **shortest exposure path** as a stacked mono chain (first hop alert-bordered), an "If you restrict ingress" impact table, and actions (mockup: *Draft Terraform fix ↗* / *Show the 3 unknown IPs*; for Vyom: *Open evidence ↗* / *Ask Vyom about this path*).
 - Implementation: React Flow or d3-hierarchy for layout. Keep the visual (orb, arc fan, beziers) regardless of library.
 
 ## 7. Copy & voice

@@ -190,3 +190,7 @@ Accepted by owner: extend Vyom into a continuous operations station while preser
 ## Roadmap consolidation — 2026-10-29
 
 Implementation of the accepted overhaul: the legacy constitution filename is retained for links, but its content is the active product constitution without reset commands or fixed sprint dates. R1–R10 replace superseded pending S tasks; completed evidence stays linked. Documentation validation checks active dependencies, status and evidence. History is never execution authority. Kind setup rejects non-Kind contexts and honors custom cluster names. Local verification explicitly omits model credentials and targets the new vyom cluster; the user's apollo11 context is restored.
+
+## Overhaul review — 2026-10-29
+
+Accepted by owner (session 08): the constitution file is renamed `CONSTITUTION.md`; the twelve-week filename was kept only for links and misled readers. RESCOPE_AUDIT is frozen as a snapshot; the plan alone owns delivery order and the change map no longer repeats it. All cluster scripts share `vyom-up.sh`'s rule that only `kind-*` contexts are accepted. No scope change.

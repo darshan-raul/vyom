@@ -11,6 +11,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 context="${KUBE_CONTEXT:-kind-vyom}"
+[[ "$context" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 work="$root/.local/s18"
 key_file="$root/.local/model-api-key"
 password_file="$root/.local/grafana-admin-password"
