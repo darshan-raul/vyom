@@ -1,6 +1,8 @@
 # Architecture assets
 
-The README embeds the [continuous-operations workflow PNG](readme-architecture.png), rendered from [the editable SVG](readme-architecture.svg), in a collapsible section. It follows [the active architecture](../ARCHITECTURE.md): native collectors, scoped Postgres evidence, deterministic rules, leased investigation jobs, reviewed MCP tools and optional telemetry. It describes the final product, not deployment status.
+The README leads with the [Kubernetes deployment PNG](deployment/deployment.png), with a [scalable SVG](deployment/deployment.svg), [interactive HTML](deployment/deployment.html) and [editable Archify source](deployment/candidate.json). This view shows hosting and namespace boundaries, workloads, storage and dependency mappings. Its [latest verification receipt](deployment/review-3/deployment.finalize-summary.json) records passing automated artifact and browser gates.
+
+The separate [continuous-operations workflow PNG](readme-architecture.png), rendered from [the editable SVG](readme-architecture.svg), remains in a collapsible README section. It follows [the active architecture](../ARCHITECTURE.md): native collectors, scoped Postgres evidence, deterministic rules, leased investigation jobs, reviewed MCP tools and optional telemetry. It describes the final product, not deployment status.
 
 Regenerate after editing the SVG:
 
@@ -50,3 +52,8 @@ Inspect both themes and desktop viewport screenshots before recording visual acc
 
 Current rendering and checks are recorded in [session 2026-10-29-06](../sessions/2026-10-29-06.md). The PNG avoids dependence on Markdown SVG support; the SVG retains selectable text and embeds the canonical logo. Neither image proves runtime delivery.
 
+## Deployment view regeneration
+
+Edit `deployment/candidate.json`, then run the installed Archify CLI with `finalize architecture`, both candidate and HTML paths, `--repo-root` set to this repository and `--quality showcase`. Set `ARCHIFY_CHROME=/usr/bin/brave` in this environment. Use a fresh `--out-dir` for subsequent browser receipts. Export the canonical light SVG and PNG from the HTML viewer's Export menu after verification; the README embeds that PNG. Do not hand-edit generated HTML.
+
+The current PNG and SVG are canonical viewer exports, not screenshots of the toolbar. Cards in the interactive view explain scope and authority; the README and architecture mapping table preserve those qualifications alongside the static image. Diagram mappings and visual checks are recorded in [session 2026-10-29-07](../sessions/2026-10-29-07.md).

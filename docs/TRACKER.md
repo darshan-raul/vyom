@@ -24,6 +24,7 @@ File-level checklists: [OVERHAUL_CHANGE_MAP](OVERHAUL_CHANGE_MAP.md). They do no
 
 | Task | Evidence |
 |---|---|
+| Kubernetes deployment architecture and README mappings (P14) | [2026-10-29-07](sessions/2026-10-29-07.md) |
 | Continuous operations scope | [2026-10-29-03](sessions/2026-10-29-03.md) |
 | Repository overhaul review | [2026-10-29-04](sessions/2026-10-29-04.md) |
 

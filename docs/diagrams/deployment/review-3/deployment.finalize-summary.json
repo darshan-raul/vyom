@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+    "sha256": "4137706cb3e1b577b97578423e187c19935d644bb9b66911ff1670639a458769",
+    "bytes": 11307
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+    "sha256": "9f38cc67b79ff0afae1a77f2c52ca6bf00696f5b3ecc6fad72ff3e67455f9612",
+    "bytes": 846088
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/review-3/deployment.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/review-3/deployment.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/review-3/deployment.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-29T06:08:56.698Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-29T06:08:56.698Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6712,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 5,
+      "routesOverSuggestedBends": 4,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "from": "worker",
+            "to": "postgres",
+            "label": "SQL + leases",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "from": "mcp",
+            "to": "kube",
+            "label": "Read-only HTTPS",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "point": [
+            768.8,
+            426
+          ]
+        },
+        {
+          "left": {
+            "from": "worker",
+            "to": "postgres",
+            "label": "SQL + leases",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "from": "prom",
+            "to": "api",
+            "label": "Scrape /metrics",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            674,
+            426
+          ]
+        },
+        {
+          "left": {
+            "from": "worker",
+            "to": "aws",
+            "label": "Native HTTPS",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "right": {
+            "from": "mcp",
+            "to": "kube",
+            "label": "Read-only HTTPS",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "point": [
+            768.8,
+            440
+          ]
+        },
+        {
+          "left": {
+            "from": "worker",
+            "to": "aws",
+            "label": "Native HTTPS",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "right": {
+            "from": "alloy",
+            "to": "stores",
+            "label": "Logs + traces",
+            "collectionIndex": 14,
+            "artifactIndex": 15
+          },
+          "point": [
+            730,
+            865
+          ]
+        },
+        {
+          "left": {
+            "from": "mcp",
+            "to": "kube",
+            "label": "Read-only HTTPS",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "right": {
+            "from": "alloy",
+            "to": "stores",
+            "label": "Logs + traces",
+            "collectionIndex": 14,
+            "artifactIndex": 15
+          },
+          "point": [
+            768.8,
+            865
+          ]
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "from": "mcp",
+            "to": "kube",
+            "label": "Read-only HTTPS",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "bends": 4,
+          "stretch": 1.366,
+          "directCorridorBlockers": [
+            {
+              "id": "worker",
+              "label": "Worker · app image",
+              "box": [
+                810,
+                390,
+                220,
+                72
+              ]
+            },
+            {
+              "id": "stores",
+              "label": "Loki + Tempo · PVCs",
+              "box": [
+                810,
+                790,
+                220,
+                72
+              ]
+            }
+          ]
+        },
+        {
+          "relationship": {
+            "from": "api",
+            "to": "alloy",
+            "label": "Optional OTLP",
+            "collectionIndex": 13,
+            "artifactIndex": 14
+          },
+          "bends": 4,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "from": "alloy",
+            "to": "stores",
+            "label": "Logs + traces",
+            "collectionIndex": 14,
+            "artifactIndex": 15
+          },
+          "bends": 4,
+          "stretch": 1.144,
+          "directCorridorBlockers": [
+            {
+              "id": "prom",
+              "label": "Prometheus + PVC",
+              "box": [
+                430,
+                790,
+                220,
+                72
+              ]
+            }
+          ]
+        },
+        {
+          "relationship": {
+            "from": "worker",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 15,
+            "artifactIndex": 16
+          },
+          "bends": 3,
+          "stretch": 1.058
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "worker → postgres crosses mcp → kube: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "worker → postgres crosses prom → api: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "worker → aws crosses mcp → kube: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "worker → aws crosses alloy → stores: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "mcp → kube crosses alloy → stores: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "api → alloy needs 4 bends: move node api or alloy so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "worker → model needs 3 bends: move node worker or model so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

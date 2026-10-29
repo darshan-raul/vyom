@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f62a13b0-a77c-49f6-9554-117669ddeea9",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+  "output": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+  "specification": {
+    "sha256": "4137706cb3e1b577b97578423e187c19935d644bb9b66911ff1670639a458769",
+    "bytes": 11307
+  },
+  "artifact": {
+    "sha256": "9f38cc67b79ff0afae1a77f2c52ca6bf00696f5b3ecc6fad72ff3e67455f9612",
+    "bytes": 846088
+  }
+}

@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+    "sha256": "9023032bf789ea8772f124b3d8a7ec67e281ba102951ac2e2af49d746d0172f1",
+    "bytes": 11309
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+    "sha256": "b9c9da120df2450924b1cb00afab3b37802c45f6cc9fc186c0b84649b50ddf68",
+    "bytes": 846262
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/review-2/deployment.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/review-2/deployment.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/review-2/deployment.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-29T06:08:56.698Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-29T06:08:56.698Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 7372,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 11,
+      "routesOverSuggestedBends": 6,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "from": "ui",
+            "to": "api",
+            "label": "/api · HTTP :8000",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "right": {
+            "from": "api",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            400.8,
+            199
+          ],
+          "sharedNode": "api"
+        },
+        {
+          "left": {
+            "from": "ui",
+            "to": "api",
+            "label": "/api · HTTP :8000",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "right": {
+            "from": "prom",
+            "to": "api",
+            "label": "Scrape /metrics",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            419,
+            199
+          ],
+          "sharedNode": "api"
+        },
+        {
+          "left": {
+            "from": "worker",
+            "to": "postgres",
+            "label": "SQL + leases",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "from": "mcp",
+            "to": "kube",
+            "label": "Read-only HTTPS",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "point": [
+            671.2,
+            426
+          ]
+        },
+        {
+          "left": {
+            "from": "mounts",
+            "to": "api",
+            "label": "Read-only mounts",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "right": {
+            "from": "api",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            400.79999999999995,
+            213
+          ],
+          "sharedNode": "api"
+        },
+        {
+          "left": {
+            "from": "mounts",
+            "to": "api",
+            "label": "Read-only mounts",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "right": {
+            "from": "prom",
+            "to": "api",
+            "label": "Scrape /metrics",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            419,
+            213
+          ],
+          "sharedNode": "api"
+        },
+        {
+          "left": {
+            "from": "api",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "right": {
+            "from": "prom",
+            "to": "api",
+            "label": "Scrape /metrics",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            526,
+            128
+          ],
+          "sharedNode": "api"
+        },
+        {
+          "left": {
+            "from": "api",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "right": {
+            "from": "worker",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 15,
+            "artifactIndex": 16
+          },
+          "point": [
+            400.8,
+            724
+          ],
+          "sharedNode": "model"
+        },
+        {
+          "left": {
+            "from": "worker",
+            "to": "kube",
+            "label": "Native HTTPS",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "right": {
+            "from": "alloy",
+            "to": "stores",
+            "label": "Logs + traces",
+            "collectionIndex": 14,
+            "artifactIndex": 15
+          },
+          "point": [
+            679.2000000000003,
+            826
+          ]
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "from": "api",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "bends": 4,
+          "stretch": 1.099
+        },
+        {
+          "relationship": {
+            "from": "worker",
+            "to": "kube",
+            "label": "Native HTTPS",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "bends": 4,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "from": "mcp",
+            "to": "kube",
+            "label": "Read-only HTTPS",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "bends": 4,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "from": "prom",
+            "to": "api",
+            "label": "Scrape /metrics",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "bends": 4,
+          "stretch": 1.084
+        },
+        {
+          "relationship": {
+            "from": "api",
+            "to": "alloy",
+            "label": "Optional OTLP",
+            "collectionIndex": 13,
+            "artifactIndex": 14
+          },
+          "bends": 4,
+          "stretch": 1.407,
+          "directCorridorBlockers": [
+            {
+              "id": "postgres",
+              "label": "PostgreSQL + volume",
+              "box": [
+                430,
+                390,
+                220,
+                72
+              ]
+            }
+          ]
+        },
+        {
+          "relationship": {
+            "from": "worker",
+            "to": "model",
+            "label": "HTTPS",
+            "collectionIndex": 15,
+            "artifactIndex": 16
+          },
+          "bends": 4,
+          "stretch": 1
+        }
+      ],
+      "truncated": true
+    },
+    "hints": [
+      "ui → api and api → model cross next to api: move node ui or model so the two reach api from different sides (for example one level with it, one directly above or below it).",
+      "ui → api and prom → api cross next to api: move node ui or prom so the two reach api from different sides (for example one level with it, one directly above or below it).",
+      "worker → postgres crosses mcp → kube: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "mounts → api and api → model cross next to api: move node mounts or model so the two reach api from different sides (for example one level with it, one directly above or below it).",
+      "mounts → api and prom → api cross next to api: move node mounts or prom so the two reach api from different sides (for example one level with it, one directly above or below it).",
+      "api → model and prom → api cross next to api: move node model or prom so the two reach api from different sides (for example one level with it, one directly above or below it).",
+      "api → model and worker → model cross next to model: move node api or worker so the two reach model from different sides (for example one level with it, one directly above or below it).",
+      "worker → kube crosses alloy → stores: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

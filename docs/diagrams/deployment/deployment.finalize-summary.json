@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+    "sha256": "9023032bf789ea8772f124b3d8a7ec67e281ba102951ac2e2af49d746d0172f1",
+    "bytes": 11309
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+    "sha256": "b9c9da120df2450924b1cb00afab3b37802c45f6cc9fc186c0b84649b50ddf68",
+    "bytes": 846262
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "skipped"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-29T06:08:56.698Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-29T06:08:56.698Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2227
+}

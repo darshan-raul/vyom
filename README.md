@@ -47,6 +47,31 @@ Framework mappings provide context from Kubernetes Pod Security Standards, CIS b
 
 Conversation stays focused on inventory, investigation and security.
 
+## Deployment architecture
+
+Vyom runs in a Kubernetes hosting cluster. One application chart groups the UI, API, background worker, Postgres and authenticated Kubernetes MCP integration in the `vyom` namespace. Optional observability charts run in `observability`. Inventory, Investigation and Security share application code and scoped state.
+
+![Vyom Kubernetes deployment architecture showing namespaces, workloads, storage and dependencies](docs/diagrams/deployment/deployment.png)
+
+[Scalable diagram](docs/diagrams/deployment/deployment.svg) · [Interactive architecture](docs/diagrams/deployment/deployment.html) · [Detailed service and identity mappings](docs/ARCHITECTURE.md#deployment-mappings)
+
+| Workload / dependency | Placement and connections |
+|---|---|
+| **UI — NGINX + React** | `vyom-ui` Deployment; internal Service `:8080`; forwards `/api/` to `vyom-api:8000`. |
+| **API — FastAPI + LangGraph** | `vyom-api` Deployment; enforces workspace/grants, serves stored inventory, and runs interactive investigations through Postgres, reviewed MCP tools and the configured model adapter. |
+| **Background worker** | Application image in a separate workload; runs scheduled native collection, deterministic rules and leased investigation jobs; shares Postgres with the API. |
+| **Postgres** | Persistent database for resources, relationships, evidence, issues, conversation and job leases; API and worker use scoped SQL access. |
+| **Kubernetes MCP** | `kubernetes-mcp` Deployment with two containers: `kube-rbac-proxy` terminates authenticated TLS on `:8443` and forwards to the upstream MCP server on localhost `:8080`. |
+| **Collector token refresher** | `vyom-collector-token-refresh` CronJob; renews the collector credential using its own restricted ServiceAccount. |
+| **Private configuration** | Secrets, ConfigMaps and projected tokens are mounted server-side. Collector, agent and observer identities remain separate. |
+| **Prometheus stack — optional** | Operator manages scrape configuration; Prometheus scrapes the API, kube-state-metrics and node exporter. Prometheus has its own persistent volume. |
+| **Alloy — optional** | DaemonSet reads allowlisted node-local logs and accepts OTLP; exports logs to Loki and traces to Tempo. |
+| **Loki / Tempo — optional** | Separate log and trace stores with independent persistent volumes. |
+| **Grafana — optional** | Queries Prometheus, Loki and Tempo; independent of the product request path. |
+| **External dependencies** | Authorized Kubernetes and AWS APIs provide read-only infrastructure evidence. The explicitly configured model endpoint supplies reasoning over HTTPS. |
+
+Access uses localhost-bound port-forwarding until the identity and recovery gate permits remote exposure. Kubernetes API targets may be the hosting cluster or another authorized cluster; the diagram separates their provider role from application hosting. Telemetry outages do not block collection or requests.
+
 ## How it works
 
 <details>

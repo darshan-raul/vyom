@@ -1,0 +1,529 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Vyom \u2014 target Kubernetes deployment",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/deployment/deployment.html",
+    "repository": {
+      "url": "git@github.com:darshan-raul/vyom.git",
+      "revision": "7a1c8a4873ba78d0b46a969a2c95cf035d25bda4",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "Operator browser",
+      "sublabel": "localhost port-forward",
+      "pos": [
+        50,
+        0
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "scripts/vyom-forward.sh",
+          "line": 1,
+          "end_line": 7
+        }
+      ]
+    },
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "vyom-ui \u00b7 Deployment",
+      "sublabel": "NGINX + React \u00b7 ClusterIP :8080",
+      "pos": [
+        50,
+        170
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "deploy/chart/vyom/templates/ui.yaml",
+          "line": 1,
+          "end_line": 38
+        },
+        {
+          "path": "frontend/nginx.conf",
+          "line": 1,
+          "end_line": 13
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "vyom-api \u00b7 Deployment",
+      "sublabel": "FastAPI / LangGraph \u00b7 :8000",
+      "pos": [
+        430,
+        170
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "deploy/chart/vyom/templates/api.yaml",
+          "line": 1,
+          "end_line": 50
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 36,
+          "end_line": 46
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "type": "security",
+      "label": "kubernetes-mcp \u00b7 Deployment",
+      "sublabel": "TLS proxy :8443 + MCP :8080",
+      "pos": [
+        810,
+        170
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+          "line": 1,
+          "end_line": 5
+        },
+        {
+          "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+          "line": 30,
+          "end_line": 96
+        }
+      ]
+    },
+    {
+      "id": "mounts",
+      "type": "security",
+      "label": "Private configuration",
+      "sublabel": "Secrets / ConfigMaps / SA tokens",
+      "pos": [
+        50,
+        390
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "deploy/chart/vyom/templates/api.yaml",
+          "line": 59,
+          "end_line": 85
+        }
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL + volume",
+      "sublabel": "Scoped state / evidence / job leases",
+      "pos": [
+        430,
+        390
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 7,
+          "end_line": 9
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 36,
+          "end_line": 46
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker \u00b7 app image",
+      "sublabel": "Collectors / rules / leased triage",
+      "pos": [
+        810,
+        390
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 7,
+          "end_line": 9
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 36,
+          "end_line": 46
+        }
+      ]
+    },
+    {
+      "id": "refresh",
+      "type": "security",
+      "label": "Token refresh \u00b7 CronJob",
+      "sublabel": "Collector identity \u00b7 every 30 min",
+      "pos": [
+        50,
+        570
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "deploy/chart/vyom/templates/collector-token.yaml",
+          "line": 1,
+          "end_line": 35
+        },
+        {
+          "path": "deploy/chart/vyom/values.yaml",
+          "line": 47,
+          "end_line": 51
+        }
+      ]
+    },
+    {
+      "id": "prom",
+      "type": "database",
+      "label": "Prometheus + PVC",
+      "sublabel": "Operator / KSM / node exporter",
+      "pos": [
+        430,
+        790
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/OBSERVABILITY.md",
+          "line": 19,
+          "end_line": 34
+        },
+        {
+          "path": "docs/OBSERVABILITY.md",
+          "line": 63,
+          "end_line": 72
+        }
+      ]
+    },
+    {
+      "id": "alloy",
+      "type": "backend",
+      "label": "Alloy \u00b7 DaemonSet",
+      "sublabel": "Logs + OTLP :4317 / :4318",
+      "pos": [
+        50,
+        790
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/OBSERVABILITY.md",
+          "line": 19,
+          "end_line": 34
+        },
+        {
+          "path": "docs/OBSERVABILITY.md",
+          "line": 63,
+          "end_line": 72
+        }
+      ]
+    },
+    {
+      "id": "stores",
+      "type": "database",
+      "label": "Loki + Tempo \u00b7 PVCs",
+      "sublabel": "Log / trace stores \u00b7 Grafana queries",
+      "pos": [
+        810,
+        790
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/OBSERVABILITY.md",
+          "line": 19,
+          "end_line": 34
+        },
+        {
+          "path": "docs/OBSERVABILITY.md",
+          "line": 63,
+          "end_line": 72
+        }
+      ]
+    },
+    {
+      "id": "model",
+      "type": "external",
+      "label": "Configured model provider",
+      "sublabel": "HTTPS \u00b7 private credentials",
+      "pos": [
+        430,
+        0
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "deploy/chart/vyom/values.yaml",
+          "line": 33,
+          "end_line": 39
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 36,
+          "end_line": 46
+        }
+      ]
+    },
+    {
+      "id": "kube",
+      "type": "external",
+      "label": "Authorized Kubernetes APIs",
+      "sublabel": "Hosting / connected clusters \u00b7 RBAC",
+      "pos": [
+        810,
+        1030
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 36,
+          "end_line": 46
+        },
+        {
+          "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+          "line": 1,
+          "end_line": 5
+        }
+      ]
+    },
+    {
+      "id": "aws",
+      "type": "external",
+      "label": "Authorized AWS APIs",
+      "sublabel": "Scoped IAM / native collection",
+      "pos": [
+        430,
+        1030
+      ],
+      "size": [
+        220,
+        72
+      ],
+      "sources": [
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 7,
+          "end_line": 9
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "line": 36,
+          "end_line": 46
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "operator",
+      "to": "ui",
+      "label": "HTTP :8080"
+    },
+    {
+      "from": "ui",
+      "to": "api",
+      "label": "/api \u00b7 HTTP :8000"
+    },
+    {
+      "from": "api",
+      "to": "mcp",
+      "label": "MCP \u00b7 HTTPS :8443"
+    },
+    {
+      "from": "api",
+      "to": "postgres",
+      "label": "SQL"
+    },
+    {
+      "from": "worker",
+      "to": "postgres",
+      "label": "SQL + leases"
+    },
+    {
+      "from": "worker",
+      "to": "mcp",
+      "label": "Scoped MCP"
+    },
+    {
+      "from": "refresh",
+      "to": "mounts",
+      "label": "Refresh token"
+    },
+    {
+      "from": "mounts",
+      "to": "api",
+      "label": "Read-only mounts"
+    },
+    {
+      "from": "api",
+      "to": "model",
+      "label": "HTTPS"
+    },
+    {
+      "from": "worker",
+      "to": "aws",
+      "label": "Native HTTPS"
+    },
+    {
+      "from": "worker",
+      "to": "kube",
+      "label": "Native HTTPS"
+    },
+    {
+      "from": "mcp",
+      "to": "kube",
+      "label": "Read-only HTTPS"
+    },
+    {
+      "from": "prom",
+      "to": "api",
+      "label": "Scrape /metrics"
+    },
+    {
+      "from": "api",
+      "to": "alloy",
+      "label": "Optional OTLP",
+      "variant": "dashed"
+    },
+    {
+      "from": "alloy",
+      "to": "stores",
+      "label": "Logs + traces",
+      "variant": "dashed"
+    },
+    {
+      "from": "worker",
+      "to": "model",
+      "label": "HTTPS"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "HOSTING KUBERNETES CLUSTER \u00b7 Kind first \u00b7 internal Services",
+      "wraps": [
+        "ui",
+        "api",
+        "mcp",
+        "mounts",
+        "postgres",
+        "worker",
+        "refresh",
+        "prom",
+        "alloy",
+        "stores"
+      ],
+      "pad": 50
+    },
+    {
+      "kind": "security-group",
+      "label": "namespace: vyom \u00b7 one application chart",
+      "wraps": [
+        "ui",
+        "api",
+        "mcp",
+        "mounts",
+        "postgres",
+        "worker",
+        "refresh"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "namespace: observability \u00b7 optional separate charts",
+      "wraps": [
+        "prom",
+        "alloy",
+        "stores"
+      ],
+      "pad": 22
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Deployment target, not a runtime inventory",
+      "items": [
+        "API and worker share application code: Inventory, Investigation and Security are modules, not independent services.",
+        "Postgres and worker placement are target design; their manifests arrive with consuming increments.",
+        "Postgres stores relationships and leased jobs; no broker, vector store or graph database."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Identity and connections",
+      "items": [
+        "Collector, agent, token refresher and observer identities are separate. Credentials remain mounted server-side.",
+        "MCP proxy forwards over localhost HTTP to the upstream MCP container; its server identity performs scoped reads.",
+        "API and worker use the configured model adapter for investigation. AWS MCP integration deployment is selected per skill.",
+        "Remote exposure requires verified identity and recovery gates; no public ingress is implied."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Optional observability mappings",
+      "items": [
+        "Prometheus operator reconciles monitors; Prometheus scrapes API, kube-state-metrics and node exporter.",
+        "Alloy reads allowlisted node-local logs and receives bounded OTLP; it exports to Loki and Tempo.",
+        "Grafana queries Prometheus, Loki and Tempo. Each telemetry store has independent persistent storage.",
+        "Observer log access does not authorize agent queries. Telemetry failures never block application requests."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,686 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-29T06:09:30.296Z",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+    "sha256": "9023032bf789ea8772f124b3d8a7ec67e281ba102951ac2e2af49d746d0172f1",
+    "bytes": 11309
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+    "sha256": "b9c9da120df2450924b1cb00afab3b37802c45f6cc9fc186c0b84649b50ddf68",
+    "bytes": 846262
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+        "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "9023032bf789ea8772f124b3d8a7ec67e281ba102951ac2e2af49d746d0172f1",
+          "bytes": 11309
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1549,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+        "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "16eb9deb-b8dc-4827-a371-c8d1e83b3e2b",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "/home/darshan/projects/vyom/docs/diagrams/deployment/candidate.json",
+        "output": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+        "specification": {
+          "sha256": "9023032bf789ea8772f124b3d8a7ec67e281ba102951ac2e2af49d746d0172f1",
+          "bytes": 11309
+        },
+        "artifact": {
+          "sha256": "b9c9da120df2450924b1cb00afab3b37802c45f6cc9fc186c0b84649b50ddf68",
+          "bytes": 846262
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:darshan-raul/vyom",
+          "revision": "7a1c8a4873ba78d0b46a969a2c95cf035d25bda4",
+          "references": 26,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 313,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+        "artifact": {
+          "sha256": "b9c9da120df2450924b1cb00afab3b37802c45f6cc9fc186c0b84649b50ddf68",
+          "bytes": 846262
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 11,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 5,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.595744680851064,
+            "maxBends": 4,
+            "routesOverSuggestedBends": 6,
+            "maxStretch": 1.407,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 24,
+            "minInteriorSegmentPx": 106,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [
+              {
+                "left": {
+                  "from": "ui",
+                  "to": "api",
+                  "label": "/api · HTTP :8000",
+                  "collectionIndex": 1,
+                  "artifactIndex": 2
+                },
+                "right": {
+                  "from": "api",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "point": [
+                  400.8,
+                  199
+                ],
+                "sharedNode": "api"
+              },
+              {
+                "left": {
+                  "from": "ui",
+                  "to": "api",
+                  "label": "/api · HTTP :8000",
+                  "collectionIndex": 1,
+                  "artifactIndex": 2
+                },
+                "right": {
+                  "from": "prom",
+                  "to": "api",
+                  "label": "Scrape /metrics",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "point": [
+                  419,
+                  199
+                ],
+                "sharedNode": "api"
+              },
+              {
+                "left": {
+                  "from": "worker",
+                  "to": "postgres",
+                  "label": "SQL + leases",
+                  "collectionIndex": 4,
+                  "artifactIndex": 5
+                },
+                "right": {
+                  "from": "mcp",
+                  "to": "kube",
+                  "label": "Read-only HTTPS",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "point": [
+                  671.2,
+                  426
+                ]
+              },
+              {
+                "left": {
+                  "from": "mounts",
+                  "to": "api",
+                  "label": "Read-only mounts",
+                  "collectionIndex": 7,
+                  "artifactIndex": 8
+                },
+                "right": {
+                  "from": "api",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "point": [
+                  400.79999999999995,
+                  213
+                ],
+                "sharedNode": "api"
+              },
+              {
+                "left": {
+                  "from": "mounts",
+                  "to": "api",
+                  "label": "Read-only mounts",
+                  "collectionIndex": 7,
+                  "artifactIndex": 8
+                },
+                "right": {
+                  "from": "prom",
+                  "to": "api",
+                  "label": "Scrape /metrics",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "point": [
+                  419,
+                  213
+                ],
+                "sharedNode": "api"
+              },
+              {
+                "left": {
+                  "from": "api",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "right": {
+                  "from": "prom",
+                  "to": "api",
+                  "label": "Scrape /metrics",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "point": [
+                  526,
+                  128
+                ],
+                "sharedNode": "api"
+              },
+              {
+                "left": {
+                  "from": "api",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "right": {
+                  "from": "worker",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 15,
+                  "artifactIndex": 16
+                },
+                "point": [
+                  400.8,
+                  724
+                ],
+                "sharedNode": "model"
+              },
+              {
+                "left": {
+                  "from": "worker",
+                  "to": "kube",
+                  "label": "Native HTTPS",
+                  "collectionIndex": 10,
+                  "artifactIndex": 11
+                },
+                "right": {
+                  "from": "alloy",
+                  "to": "stores",
+                  "label": "Logs + traces",
+                  "collectionIndex": 14,
+                  "artifactIndex": 15
+                },
+                "point": [
+                  679.2000000000003,
+                  826
+                ]
+              },
+              {
+                "left": {
+                  "from": "mcp",
+                  "to": "kube",
+                  "label": "Read-only HTTPS",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "right": {
+                  "from": "alloy",
+                  "to": "stores",
+                  "label": "Logs + traces",
+                  "collectionIndex": 14,
+                  "artifactIndex": 15
+                },
+                "point": [
+                  671.2,
+                  826
+                ]
+              },
+              {
+                "left": {
+                  "from": "mcp",
+                  "to": "kube",
+                  "label": "Read-only HTTPS",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "right": {
+                  "from": "worker",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 15,
+                  "artifactIndex": 16
+                },
+                "point": [
+                  671.1999999999999,
+                  724
+                ]
+              },
+              {
+                "left": {
+                  "from": "api",
+                  "to": "alloy",
+                  "label": "Optional OTLP",
+                  "collectionIndex": 13,
+                  "artifactIndex": 14
+                },
+                "right": {
+                  "from": "worker",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 15,
+                  "artifactIndex": 16
+                },
+                "point": [
+                  427,
+                  724
+                ]
+              }
+            ],
+            "detours": [
+              {
+                "relationship": {
+                  "from": "api",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "bends": 4,
+                "stretch": 1.099
+              },
+              {
+                "relationship": {
+                  "from": "worker",
+                  "to": "kube",
+                  "label": "Native HTTPS",
+                  "collectionIndex": 10,
+                  "artifactIndex": 11
+                },
+                "bends": 4,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "from": "mcp",
+                  "to": "kube",
+                  "label": "Read-only HTTPS",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "bends": 4,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "from": "prom",
+                  "to": "api",
+                  "label": "Scrape /metrics",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "bends": 4,
+                "stretch": 1.084
+              },
+              {
+                "relationship": {
+                  "from": "api",
+                  "to": "alloy",
+                  "label": "Optional OTLP",
+                  "collectionIndex": 13,
+                  "artifactIndex": 14
+                },
+                "bends": 4,
+                "stretch": 1.407,
+                "directCorridorBlockers": [
+                  {
+                    "id": "postgres",
+                    "label": "PostgreSQL + volume",
+                    "box": [
+                      430,
+                      390,
+                      220,
+                      72
+                    ]
+                  }
+                ]
+              },
+              {
+                "relationship": {
+                  "from": "worker",
+                  "to": "model",
+                  "label": "HTTPS",
+                  "collectionIndex": 15,
+                  "artifactIndex": 16
+                },
+                "bends": 4,
+                "stretch": 1
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 0,
+            "emptyTopRatio": 0,
+            "occupiedTop": 0,
+            "viewBoxTop": 0,
+            "canvasHeight": 1170,
+            "typicalNodeHeight": 72,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": null,
+              "from": "operator",
+              "to": "ui"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 6.595744680851064,
+            "semanticTextCount": 47
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "16eb9deb-b8dc-4827-a371-c8d1e83b3e2b"
+      }
+    },
+    "browser-check": {
+      "status": "skipped",
+      "exitCode": 2,
+      "durationMs": 67,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "skipped",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "16eb9deb-b8dc-4827-a371-c8d1e83b3e2b",
+        "artifact": {
+          "path": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html",
+          "sha256": "b9c9da120df2450924b1cb00afab3b37802c45f6cc9fc186c0b84649b50ddf68",
+          "bytes": 846262
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "unavailable",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/chrome-unavailable",
+            "severity": "warning",
+            "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+            "subject": {
+              "artifact": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html"
+            },
+            "evidence": {
+              "executable": null
+            },
+            "supportedFixes": [
+              "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "skipped",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "readability": {
+          "status": "skipped",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "deployment.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/docs/diagrams/deployment/deployment.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-29T06:09:32.523Z",
+  "durationMs": 2227,
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-29T06:08:56.698Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-29T06:08:56.698Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  }
+}

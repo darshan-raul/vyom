@@ -1,8 +1,8 @@
 # Current handoff
 
-Updated 2026-10-29; latest session [2026-10-29-06](sessions/2026-10-29-06.md).
+Updated 2026-10-29; latest session [2026-10-29-07](sessions/2026-10-29-07.md).
 
-R1 is complete. The README embeds the continuous-operations workflow as a PNG with an editable SVG. The documentation checker validates HTML image targets too. README remains final-product language; current runtime still has transient pod inventory and MCP questions, without Postgres.
+R1 is complete. The README now leads with the Kubernetes deployment topology (cluster/namespaces, workloads, dependencies and mappings), with PNG/SVG/interactive HTML. The continuous-operations workflow is a separate collapsible section. Diagram artifact/browser checks and light/dark visual review passed in session 07; no runtime changes were made. The documentation checker validates HTML image targets too. README remains final-product language; current runtime still has transient pod inventory and MCP questions, without Postgres.
 
 Required checks passed: seven docs regression tests, docs links/fences/roadmap, frontend typecheck/lint/build, all shell syntax, Helm lint and none/metrics/full rendering, invalid profile rejection, SVG XML and visual raster review, fresh Kind none and metrics application gates. The first metrics scrape timed out; observed config reload took three minutes, so the gate now waits up to five. Retry passed including Prometheus API scrape. [Evidence](sessions/evidence/r1-profiles-2026-10-29.txt) retains the failed attempt. Full telemetry live regression and live model calls were not run. No hosted README/browser render claim.
 
