@@ -7,7 +7,7 @@ Status authority for the active roadmap. States: pending, in_progress, partial, 
 | ID | Task | Depends on | Status | Session | Evidence / next action |
 |---|---|---|---|---|---|
 | R1 | Repository and local packaging cleanup | — | done | [2026-10-29-06](sessions/2026-10-29-06.md) | Docs/image regression checks, frontend, chart/profile/shell checks and fresh Kind none/metrics gates passed; metrics startup wait corrected; optional full live regression not run |
-| R2 | Scoped Postgres resource and evidence foundation | R1 | pending | — | See acceptance in implementation plan |
+| R2 | Scoped Postgres resource and evidence foundation | R1 | done | [2026-10-30-02](sessions/2026-10-30-02.md) | R2.1 ([2026-10-29-09](sessions/2026-10-29-09.md)), R2.2 ([2026-10-30-01](sessions/2026-10-30-01.md)) and R2.3 ([2026-10-30-02](sessions/2026-10-30-02.md)) passed: 29 real-Postgres tests, offline suite (136 passed), chart Postgres packaging, controlled migration Job, retention bounds, and live Kind dump/restore gate |
 | R3 | Scheduled Kubernetes inventory and workload detail | R2 | pending | — | See acceptance in implementation plan |
 | R4 | Manual workload investigation and diagnostic labs | R3 | pending | — | See acceptance in implementation plan |
 | R4a | Continuous workload issue and automatic triage loop | R4 | pending | — | See acceptance in implementation plan |

@@ -4,7 +4,11 @@ import type { Evidence, EvidenceItem } from '@/lib/agent'
 import type { Tone } from '@/lib/status'
 
 // Shape of GET /api/kubernetes/pods: the direct collector's read, independent of the agent.
-export type PodsView = { configured: boolean; evidence: Evidence | null }
+export type PodsView = {
+  configured: boolean
+  evidence: Evidence | null
+  persisted?: boolean | null
+}
 
 export type Pods = {
   view?: PodsView // the last successful response, kept while a later fetch fails

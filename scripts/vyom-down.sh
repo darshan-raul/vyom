@@ -14,7 +14,8 @@ fi
 k() { kubectl --context "$context" "$@"; }
 helm --kube-context "$context" -n vyom uninstall vyom 2>/dev/null || true
 k -n vyom delete job --all --ignore-not-found
-k -n vyom delete secret kubernetes-mcp-tls vyom-model-key vyom-collector-token --ignore-not-found
+k -n vyom delete pvc -l app.kubernetes.io/part-of=vyom --ignore-not-found
+k -n vyom delete secret kubernetes-mcp-tls vyom-model-key vyom-collector-token vyom-postgres --ignore-not-found
 k delete namespace demo --ignore-not-found
 k delete clusterrole,clusterrolebinding vyom-kubernetes-mcp-caller-review --ignore-not-found
 echo "Vyom removed (namespace vyom is kept for the observability stack). Local files under .local/ (certificate, keys) are kept."

@@ -298,4 +298,4 @@ def test_pods_route_does_not_depend_on_mcp_or_the_model(config):
 
     # With no config at all the route says so explicitly.
     unconfigured = get_pods(create_app(None)).json()
-    assert unconfigured == {"configured": False, "evidence": None}
+    assert unconfigured == {"configured": False, "evidence": None, "persisted": None}

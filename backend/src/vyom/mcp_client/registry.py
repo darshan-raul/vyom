@@ -18,6 +18,7 @@ from vyom.agent.model import ModelConfig
 from vyom.collectors.kubernetes import KubernetesApiConfig
 from vyom.context import TrustedContext
 from vyom.credentials import check_reference, read_credential
+from vyom.inventory.config import DatabaseConfig
 
 SERVER_ID = r"^[a-z][a-z0-9]{0,30}$"  # no underscore: "__" separates server from tool
 _TOOL_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
@@ -106,6 +107,8 @@ class OperatorConfig(BaseModel):
     model: ModelConfig | None = None  # absent: chat is unavailable, never a silent fallback
     # The direct collector's API server and identity; absent: no deterministic resource view.
     kubernetes: KubernetesApiConfig | None = None
+    # Workspace-scoped Postgres persistence; absent: inventory is transient.
+    database: DatabaseConfig | None = None
 
     @model_validator(mode="after")
     def _unique_server_ids(self) -> "OperatorConfig":

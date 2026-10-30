@@ -1,0 +1,133 @@
+# Private in-cluster Postgres for workspace-scoped inventory and evidence (R2.3).
+# Credentials live in Secret `database.secretName`, created beside the release and mounted
+# as files so nothing appears in Helm values, release manifests or container environments.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vyom-postgres
+  labels:
+    app.kubernetes.io/name: vyom-postgres
+    {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: vyom-postgres
+  ports:
+    - {name: postgres, port: 5432, targetPort: postgres}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vyom-postgres
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  serviceName: vyom-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vyom-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vyom-postgres
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: {{ .Values.images.postgres }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          env:
+            - {name: POSTGRES_USER, value: vyom}
+            - {name: POSTGRES_DB, value: vyom}
+            - {name: POSTGRES_PASSWORD_FILE, value: /var/run/vyom/postgres/password}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+          ports:
+            - {name: postgres, containerPort: 5432}
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "vyom", "-d", "vyom", "-h", "127.0.0.1"]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "vyom", "-d", "vyom", "-h", "127.0.0.1"]
+            periodSeconds: 20
+          resources: {{- toYaml .Values.database.resources | nindent 12 }}
+          securityContext: {{- include "vyom.containerSecurity" . | nindent 12 }}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: secret, mountPath: /var/run/vyom/postgres, readOnly: true}
+            - {name: run, mountPath: /var/run/postgresql}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: secret
+          secret:
+            secretName: {{ .Values.database.secretName }}
+            items: [{key: password, path: password}]
+        - name: run
+          emptyDir: {sizeLimit: 16Mi}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.database.storage }}
+---
+# Controlled schema migration template (suspend: true). scripts/vyom-up.sh creates a
+# runnable Job from this template after vyom-postgres is ready, so migrations never run on
+# every API startup.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vyom-migrate
+  labels: {{- include "vyom.labels" . | nindent 4 }}
+spec:
+  schedule: "0 0 31 2 *"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext: {{- include "vyom.podSecurity" . | nindent 12 }}
+          containers:
+            - name: migrate
+              image: {{ .Values.images.api.repository }}:{{ .Values.images.api.tag }}
+              imagePullPolicy: {{ .Values.images.pullPolicy }}
+              command: ["python", "-m", "vyom.inventory.migrate"]
+              env:
+                - {name: VYOM_CONFIG, value: /etc/vyom/operator.json}
+              resources:
+                requests: {cpu: 10m, memory: 64Mi}
+                limits: {memory: 192Mi}
+              securityContext: {{- include "vyom.containerSecurity" . | nindent 16 }}
+              volumeMounts:
+                - {name: operator, mountPath: /etc/vyom, readOnly: true}
+                - {name: database, mountPath: /var/run/vyom/database, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: operator
+              configMap: {name: vyom-operator}
+            - name: database
+              secret:
+                secretName: {{ .Values.database.secretName }}
+                items: [{key: url, path: url}]
+            - name: tmp
+              emptyDir: {sizeLimit: 16Mi}

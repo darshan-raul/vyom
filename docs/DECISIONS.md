@@ -194,3 +194,25 @@ Implementation of the accepted overhaul: the legacy constitution filename is ret
 ## Overhaul review — 2026-10-29
 
 Accepted by owner (session 08): the constitution file is renamed `CONSTITUTION.md`; the twelve-week filename was kept only for links and misled readers. RESCOPE_AUDIT is frozen as a snapshot; the plan alone owns delivery order and the change map no longer repeats it. All cluster scripts share `vyom-up.sh`'s rule that only `kind-*` contexts are accepted. No scope change.
+
+## R2.1 inventory store — 2026-10-29
+
+| ID | State | Choice | Consequence |
+|---|---|---|---|
+| DB01 | Proposed (implementation) | `psycopg` 3 with hand-written SQL, and plain numbered `.sql` migrations applied by a small runner in `vyom/inventory/migrate.py`: one transaction per file, a Postgres advisory lock against concurrent runs, SHA-256 checks that refuse an edited or unknown migration. No ORM and no Alembic | One dependency; every query is visible SQL. Migrations never run on API startup; R2.3 adds a controlled Job. Down-migrations are not supported: recovery is restore from backup |
+| DB02 | Proposed (implementation) | Every table keys on `workspace_id` and every foreign key includes it. Resource identity is (workspace, connection, kind, native UID); the old name-based item ID is kept as `legacy_ref` and as the observation's `item_id`, so existing citations resolve unchanged | Cross-workspace references are refused by the database itself. A same-name recreation is a new row with no inherited edges. Items without a UID (current MCP text tables) are stored as unresolved observations and never prove absence |
+| DB03 | Proposed (implementation) | Only a complete, untruncated, error-free scan whose items all have UIDs marks absent resources, within its own kind and namespace. Updates apply only when the run is at least as new as stored state and newer than a recorded removal | Failed and partial scans are recorded but cannot delete or refresh what they did not see; a late older run cannot roll state back or revive a removed resource |
+
+## R2.2 collector and API persistence — 2026-10-30
+
+| ID | State | Choice | Consequence |
+|---|---|---|---|
+| DB04 | Proposed (implementation) | Database configuration via server-side credential reference (`DatabaseConfig` with `credential_ref: str`), resolved to libpq URL/conninfo. Connections per request/operation with explicit connect timeout; no connection pool library needed | Re-resolves credential references so rotation is automatic; avoids async connection concurrency conflicts or stale connections across restarts. Fails closed with `CredentialUnavailable` if secret reference is invalid |
+| DB05 | Proposed (implementation) | Direct pod collection persists each run through `InventoryStore`; Postgres outage is explicit in `PodsView.persisted` (`False`) without failing the pod read; citations resolve via `GET /api/citations/{evidence_id}/{item_id:path}` from stored runs, including old name-based item IDs, and survive API restart | Pod dashboard remains available even if Postgres is down. Citations are durable and resolve across process restarts and container redeployments. Cross-workspace citation lookups return 404 (absent and other-workspace are indistinguishable) |
+
+## R2.3 packaging, retention and restore — 2026-10-30
+
+| ID | State | Choice | Consequence |
+|---|---|---|---|
+| DB06 | Proposed (implementation) | Package `vyom-postgres` (`postgres:18-alpine` pinned by digest) as a single-replica StatefulSet with a 1 GiB PVC and non-root security context (`uid/gid 70`, read-only root filesystem, all capabilities dropped). Credentials (`password` and `url`) live in Secret `vyom-postgres` created beside the release by `vyom-up.sh` from `.local/postgres-password` and mounted as files into `vyom-postgres`, `vyom-api` and `vyom-migrate` | No credential in Helm values, release manifests or container environment variables. Controlled schema migrations run via `python -m vyom.inventory.migrate` in a Job created from suspended CronJob template `vyom-migrate` during `vyom-up.sh`, never on every API startup |
+| DB07 | Proposed (implementation) | Retain up to 500 historical unreferenced `collection_runs` (and their `observations`) per `(workspace_id, connection_id, scope_kind, scope_namespace)`; any run still referenced by a `resources` or `relationships` provenance column (`first_seen_run_id`, `last_seen_run_id`, `last_verified_run_id`, `removed_run_id`) is retained regardless of age | Bounds observation history growth during frequent polling while guaranteeing composite foreign-key integrity and keeping recent runs citable |

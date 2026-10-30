@@ -185,9 +185,16 @@ def _next(following: str):
 # Runs the question -> tool -> answer workflow as a graph of three steps.
 class ChatAgent:
     def __init__(
-        self, model: ModelClient, host: McpHost, *, deadline_seconds: float = DEADLINE_SECONDS
+        self,
+        model: ModelClient,
+        host: McpHost,
+        *,
+        deadline_seconds: float = DEADLINE_SECONDS,
+        store: Any = None,
+        database: Any = None,
     ) -> None:
         self._model, self._host, self._deadline = model, host, deadline_seconds
+        self._store, self._database = store, database
         # Build the workflow: three nodes (steps) joined by edges (arrows). Conditional edges
         # let a step finish the whole run early.
         graph = StateGraph(_State)
@@ -271,6 +278,7 @@ class ChatAgent:
                     # The host decides whether this tool and these arguments are allowed.
                     evidence = await self._host.call(call["name"], call["args"], state["context"])
                     collected.append(evidence)
+                    await self._persist_collection(state["context"], evidence)
                     content = _for_model(evidence, refs)
                 messages.append(ToolMessage(content, tool_call_id=call["id"]))
             span.set_attribute("vyom.chat.tool_calls", len(collected))
@@ -285,6 +293,32 @@ class ChatAgent:
                     ),
                 )
             return {"messages": messages, "evidence": collected, "refs": refs}
+
+    async def _persist_collection(self, context: TrustedContext, evidence: Evidence) -> None:
+        if self._store is None and self._database is None:
+            return
+        kind = "Pod"
+        if evidence.items and any(item.kind != kind for item in evidence.items):
+            return
+        started = time.perf_counter()
+        try:
+            if self._store is not None:
+                await self._store.record_collection(context, evidence, kind=kind)
+            elif self._database is not None:
+                async with self._database.store() as inv_store:
+                    await inv_store.record_collection(context, evidence, kind=kind)
+            telemetry.record_inventory_operation(
+                "record_collection",
+                outcome="ok",
+                duration=time.perf_counter() - started,
+            )
+        except Exception as error:
+            telemetry.record_inventory_operation(
+                "record_collection",
+                outcome="database_unavailable",
+                duration=time.perf_counter() - started,
+                error_type=type(error).__name__,
+            )
 
     # Step 3: ask the model to answer from the evidence, then check the answer.
     async def _answer(self, state: _State) -> _State:

@@ -22,6 +22,12 @@ Implement migrations, scoped Resource/Relationship/CollectionRun/Evidence contra
 
 **Acceptance:** Real Postgres transaction/migration/restore checks, cross-workspace denial and FK tests, UID recreation, failed/partial scan behavior and resolving persisted citations after restart.
 
+Sub-increments, in order; R2 stays partial until all three pass:
+
+1. **R2.1 schema and store:** versioned SQL migrations with a checksum-verified runner; workspace-scoped workspaces, connections, collection runs, resources, observations and relationships with composite foreign keys; a store that records one collection in one transaction. Real-Postgres tests: migration transaction/idempotency, cross-workspace denial and FK refusal, UID recreation, failed/partial/namespace-scoped/out-of-order scans and citation resolution from a new connection.
+2. **R2.2 collector and API wiring:** each direct pod collection is persisted; API citations resolve from stored runs, including old name-based item IDs; persisted citations resolve after an API restart; Postgres outage behaviour is explicit.
+3. **R2.3 packaging and restore:** private Postgres, credentials and a controlled migration Job in the chart; Kind dump/restore keeps runs, resources and citations.
+
 ### R3 — Scheduled Kubernetes inventory and workload detail
 
 **Depends on:** R2

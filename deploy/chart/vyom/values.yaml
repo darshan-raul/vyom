@@ -19,6 +19,7 @@ images:
   # Upstream releases, pinned by digest. Vyom builds nothing for these.
   kubernetesMcp: quay.io/containers/kubernetes_mcp_server@sha256:e47f6ccc5347e1ea6be495d8d9ab55ac8a995fe87800fb984fa770cebe14ad44  # v0.0.67
   kubeRbacProxy: quay.io/brancz/kube-rbac-proxy@sha256:a6075902738eaf1780390561ea998a53a056ef1d2b312bcbf0e2e81fec084b3c  # v0.23.0
+  postgres: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
   pullPolicy: IfNotPresent
 
 api:
@@ -49,6 +50,14 @@ collector:
   tokenSecret: vyom-collector-token
   tokenDuration: 1h
   schedule: "*/30 * * * *"
+
+database:
+  # Secret created beside the release holding `password` and `url`.
+  secretName: vyom-postgres
+  storage: 1Gi
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 384Mi}
 
 telemetry:
   # Alloy's OTLP/HTTP receiver. Empty turns trace export off.

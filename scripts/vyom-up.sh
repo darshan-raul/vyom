@@ -21,6 +21,7 @@ context="${KUBE_CONTEXT:-kind-vyom}"
 cluster="${context#kind-}"
 tls="$root/.local/mcp-tls"
 key_file="${VYOM_MODEL_KEY_FILE:-$root/.local/model-api-key}"
+pg_password_file="$root/.local/postgres-password"
 k() { kubectl --context "$context" "$@"; }
 
 # Explicit profile: never export to an absent trace collector by default.
@@ -108,6 +109,18 @@ fi
 k -n vyom get secret vyom-collector-token >/dev/null 2>&1 ||
   k -n vyom create secret generic vyom-collector-token --from-literal=token= >/dev/null
 
+# Postgres credentials live in a Secret created beside the release, never in values.
+if [[ ! -s "$pg_password_file" ]]; then
+  mkdir -p "$(dirname "$pg_password_file")"
+  (umask 077 && openssl rand -hex 24 | tr -d '\n' >"$pg_password_file")
+  echo "generated Postgres password in ${pg_password_file#"$root"/}"
+fi
+pg_password="$(cat "$pg_password_file")"
+k -n vyom create secret generic vyom-postgres \
+  --from-file=password="$pg_password_file" \
+  --from-literal=url="postgresql://vyom:$pg_password@vyom-postgres.vyom.svc:5432/vyom" \
+  --dry-run=client -o yaml | k apply -f - >/dev/null
+
 # Alloy collects Vyom's logs through a Role in this namespace that the observability install
 # created. If the namespace was deleted and recreated, the Role is gone and logs stop silently.
 if [[ "$telemetry" == full ]] && k get namespace observability >/dev/null 2>&1 && ! k -n vyom get role alloy >/dev/null 2>&1; then
@@ -124,6 +137,12 @@ helm --kube-context "$context" upgrade --install vyom "$root/deploy/chart/vyom" 
   --set "images.api.tag=$api_tag" --set "images.ui.tag=$ui_tag" \
   --set "mcp.checksum=$checksum" --set "serviceMonitor.enabled=$monitor" \
   --set-string "telemetry.otlpEndpoint=$otlp" >/dev/null
+
+# Run the controlled schema migration Job now that vyom-postgres is ready.
+k -n vyom rollout status statefulset/vyom-postgres --timeout=120s >/dev/null
+k -n vyom delete job vyom-migrate-run --ignore-not-found >/dev/null
+k -n vyom create job vyom-migrate-run --from=cronjob/vyom-migrate >/dev/null
+k -n vyom wait --for=condition=complete job/vyom-migrate-run --timeout=120s >/dev/null
 
 # Fill the collector's token now rather than at the next half hour.
 k -n vyom delete job vyom-collector-token-initial --ignore-not-found >/dev/null

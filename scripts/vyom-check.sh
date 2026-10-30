@@ -43,10 +43,14 @@ for deployment in vyom-api vyom-ui kubernetes-mcp; do
   k -n vyom rollout status "deployment/$deployment" --timeout=60s >/dev/null ||
     fail "$deployment is not available"
 done
-pass "vyom-api, vyom-ui and kubernetes-mcp are available"
+k -n vyom rollout status statefulset/vyom-postgres --timeout=60s >/dev/null ||
+  fail "vyom-postgres is not available"
+pass "vyom-api, vyom-ui, kubernetes-mcp and vyom-postgres are available"
 [[ "$(k -n vyom get cronjob vyom-collector-token-refresh -o jsonpath='{.spec.schedule}')" == "*/30 * * * *" ]] ||
   fail "token refresher schedule"
-pass "collector token refresher is scheduled every 30 minutes"
+[[ "$(k -n vyom get cronjob vyom-migrate -o jsonpath='{.spec.suspend}')" == "true" ]] ||
+  fail "vyom-migrate template is not suspended"
+pass "collector token refresher is scheduled every 30 minutes and migration template is present"
 
 # -- Pod hardening and exposure -------------------------------------------------------------
 bad="$(k -n vyom get pods,cronjobs -o json | json "
@@ -112,12 +116,12 @@ pass "the refresher may patch only its one Secret"
 
 # -- Credentials stay private ---------------------------------------------------------------
 release="$(helm --kube-context "$context" -n vyom get all vyom)"
-for needle in "BEGIN PRIVATE KEY" "sk-or-" "eyJhbGci"; do
+for needle in "BEGIN PRIVATE KEY" "sk-or-" "eyJhbGci" "postgresql://"; do
   grep -q "$needle" <<<"$release" && fail "release contents contain $needle"
 done
-[[ "$(k -n vyom get configmap vyom-operator -o json | json "d['data']['operator.json'].count('\"credential_ref\": \"file:/var/run/vyom/')")" == 3 ]] ||
+[[ "$(k -n vyom get configmap vyom-operator -o json | json "d['data']['operator.json'].count('\"credential_ref\": \"file:/var/run/vyom/')")" == 4 ]] ||
   fail "operator file does not reference mounted files"
-pass "the release and the operator file hold credential references only: no key, token or certificate"
+pass "the release and the operator file hold credential references only: no key, token, database URL or certificate"
 env_dump="$(k -n vyom get deployment vyom-api -o json | json "[e['name'] for e in d['spec']['template']['spec']['containers'][0]['env']]")"
 [[ "$env_dump" != *KEY* && "$env_dump" != *TOKEN* ]] || fail "credential-like environment variable: $env_dump"
 pass "the API pod has no credential in its environment"
@@ -160,11 +164,45 @@ pass "GET /api/agent reports scope demo and the one MCP tool"
 
 view="$(curl -s http://127.0.0.1:18000/api/kubernetes/pods)"
 [[ "$(json "d['evidence']['state']" <<<"$view")" == complete ]] || fail "pods view: $(json "d['evidence']['state'], d['evidence']['errors']" <<<"$view")"
+[[ "$(json "d['persisted']" <<<"$view")" == True ]] || fail "pods view was not persisted: $(json "d['persisted']" <<<"$view")"
 mine="$(json "'\n'.join(sorted(i['name'] + ' ' + i['attributes']['status'] for i in d['evidence']['items']))" <<<"$view")"
 theirs="$(k -n demo get pods --no-headers | awk '{print $1, $3}' | sort)"
 [[ "$mine" == "$theirs" ]] || fail "pods view differs from kubectl:\n$mine\n--\n$theirs"
 [[ "$(json "d['evidence']['source']['path']" <<<"$view")" == direct ]] || fail "pods view path"
-pass "the direct pod view in the cluster equals kubectl -n demo get pods ($(wc -l <<<"$theirs") pods)"
+pass "the direct pod view in the cluster equals kubectl -n demo get pods ($(wc -l <<<"$theirs") pods) and persists to Postgres"
+
+# -- Controlled migration Job and Postgres dump/restore (R2.3) ------------------------------
+ev_id="$(json "d['evidence']['id']" <<<"$view")"
+item_id="$(json "d['evidence']['items'][0]['id']" <<<"$view")"
+item_name="$(json "d['evidence']['items'][0]['name']" <<<"$view")"
+item_uid="$(json "d['evidence']['items'][0]['uid']" <<<"$view")"
+cit1="$(curl -s "http://127.0.0.1:18000/api/citations/$ev_id/$item_id")"
+[[ "$(json "(d['name'], d['native_uid'], d['run_id'])" <<<"$cit1")" == "('$item_name', '$item_uid', '$ev_id')" ]] ||
+  fail "citation did not resolve before dump/restore: $cit1"
+pass "citation $ev_id/$item_id resolves from Postgres via GET /api/citations"
+
+k -n vyom delete job vyom-migrate-check --ignore-not-found >/dev/null
+k -n vyom create job vyom-migrate-check --from=cronjob/vyom-migrate >/dev/null
+k -n vyom wait --for=condition=complete job/vyom-migrate-check --timeout=120s >/dev/null ||
+  fail "controlled migration job did not complete"
+k -n vyom delete job vyom-migrate-check >/dev/null
+pass "controlled migration Job completes cleanly (idempotent schema check)"
+
+dump="$(k -n vyom exec statefulset/vyom-postgres -- pg_dump -U vyom -d vyom --clean --if-exists)"
+[[ -n "$dump" ]] || fail "pg_dump produced empty output"
+k -n vyom exec statefulset/vyom-postgres -- psql -qtA -U vyom -d vyom \
+  -c "SET client_min_messages TO WARNING; DROP SCHEMA public CASCADE; CREATE SCHEMA public;" >/dev/null
+[[ "$(code "http://127.0.0.1:18000/api/citations/$ev_id/$item_id")" == 503 ]] ||
+  fail "citation did not fail when schema was dropped"
+k -n vyom exec -i statefulset/vyom-postgres -- psql -v ON_ERROR_STOP=1 -qtA -U vyom -d vyom >/dev/null 2>&1 <<<"$dump"
+cit2="$(curl -s "http://127.0.0.1:18000/api/citations/$ev_id/$item_id")"
+[[ "$(json "(d['name'], d['native_uid'], d['run_id'])" <<<"$cit2")" == "('$item_name', '$item_uid', '$ev_id')" ]] ||
+  fail "citation did not resolve after Postgres restore: $cit2"
+runs_count="$(k -n vyom exec statefulset/vyom-postgres -- psql -qtA -U vyom -d vyom -c "SELECT count(*) FROM collection_runs WHERE id = '$ev_id'")"
+res_count="$(k -n vyom exec statefulset/vyom-postgres -- psql -qtA -U vyom -d vyom -c "SELECT count(*) FROM resources WHERE native_uid = '$item_uid'")"
+[[ "$runs_count" == 1 && "$res_count" == 1 ]] ||
+  fail "restored run or resource count mismatch ($runs_count, $res_count)"
+pass "Kind Postgres dump/restore preserves collection runs, resources and resolving citations"
 
 # -- The in-cluster MCP path (first exercised here) -----------------------------------------
 probe="$(k -n vyom exec -i deploy/vyom-api -- python - <"$root/scripts/incluster_probe.py")" ||

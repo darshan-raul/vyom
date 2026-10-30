@@ -1,6 +1,6 @@
 # Local development and deployment
 
-Current implementation: live pod table and bounded MCP-backed questions, with no Postgres inventory yet. See [tracker](TRACKER.md) for delivery status and [handoff](HANDOFF.md) for next work.
+Current implementation: live pod table persisted to workspace-scoped Postgres, durable citation resolution (`GET /api/citations/{evidence_id}/{item_id}`), and bounded MCP-backed questions. See [tracker](TRACKER.md) for delivery status and [handoff](HANDOFF.md) for next work.
 
 ## Kind profiles
 
@@ -37,5 +37,9 @@ VYOM_TELEMETRY=full ./scripts/vyom-up.sh
 Changing profiles does not uninstall existing Loki/Tempo/Alloy releases or erase their data. Installing the metrics profile disables Grafana in the Prometheus release. Use a fresh local cluster to verify absence of optional stores. Chart defaults disable ServiceMonitor and trace export; `/metrics` and sanitized application logs remain available.
 
 Set the model key through a private `VYOM_MODEL_KEY_FILE` (default `.local/model-api-key`) or `OPENROUTER_API_KEY`. Never commit it. Without a key, the direct pod view still works and questions report an unavailable model. The UI is accessible only through localhost port-forwarding. The scripts build and load local images and deploy read-only collection identities; lab/bootstrap commands themselves create local resources.
+
+## Postgres tests
+
+The inventory store and API persistence (R2) are tested against a real Postgres server, never a mock. `./scripts/postgres-test.sh` starts a disposable container from the image pinned in `deploy/images.lock`, bound to 127.0.0.1 with a generated password and no volume, runs the `postgres`-marked tests and removes the container. Extra arguments go to pytest. A plain `uv run pytest` skips those tests with a reason; CI runs them against a service container and fails if any were skipped. In Kind, `scripts/vyom-up.sh` deploys `vyom-postgres` with credentials from `.local/postgres-password` (`Secret/vyom-postgres`), runs the controlled `vyom-migrate` Job, and `scripts/vyom-check.sh` exercises live persistence, citation resolution, and `pg_dump`/`psql` restore.
 
 For development without building images, see `scripts/dev-up.sh` and the [frontend study guide](../learning/frontend-console.md). The existing live scripts and [MCP integration guide](MCP_INTEGRATIONS.md) document the current bounded pod capability. [Observability](OBSERVABILITY.md) describes full-stack instrumentation and historical gates.

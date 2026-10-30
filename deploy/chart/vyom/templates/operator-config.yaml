@@ -31,4 +31,6 @@ data:
         "url" "https://kubernetes.default.svc"
         "ca_file" "/etc/vyom/kube-ca/ca.crt"
         "credential_ref" "file:/var/run/vyom/collector/token")
+      "database" (dict
+        "credential_ref" "file:/var/run/vyom/database/url")
     | toPrettyJson | nindent 4 }}

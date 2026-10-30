@@ -389,6 +389,49 @@ def record_collector_run(
     )
 
 
+INVENTORY_OPERATIONS = Counter(
+    "vyom_inventory_operations_total",
+    "Inventory store operations.",
+    ["operation", "outcome"],
+)
+INVENTORY_DURATION = Histogram(
+    "vyom_inventory_duration_seconds",
+    "Inventory store operation duration.",
+    ["operation"],
+)
+
+_inventory_log = logging.getLogger("vyom.inventory")
+
+
+def record_inventory_operation(
+    operation: str,
+    *,
+    outcome: str,
+    duration: float,
+    error_type: str | None = None,
+) -> None:
+    """Count, time and log one inventory store operation.
+
+    ``operation`` is a fixed name ('record_collection', 'resolve_citation') and ``outcome``
+    is 'ok', 'not_found' or an error name like 'database_unavailable'. Resource data and
+    queries are never passed here.
+    """
+    INVENTORY_OPERATIONS.labels(operation, outcome).inc()
+    INVENTORY_DURATION.labels(operation).observe(duration)
+    fields: dict[str, object] = {
+        "operation": f"inventory.{operation}",
+        "outcome": outcome,
+        "duration_ms": round(duration * 1000, 1),
+    }
+    if error_type is not None:
+        fields["error_type"] = error_type
+    _inventory_log.log(
+        logging.INFO if outcome == "ok" else logging.WARNING,
+        "inventory operation finished",
+        extra=fields,
+    )
+
+
 # The handler for GET /metrics, in the text format Prometheus reads.
 def _metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

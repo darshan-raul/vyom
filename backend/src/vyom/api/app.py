@@ -1,8 +1,14 @@
 # os gives access to environment variables.
 import os
+import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Any
 
 # FastAPI is the web framework; pydantic models describe the JSON the API returns.
-from fastapi import FastAPI
+import psycopg
+from fastapi import FastAPI, HTTPException
 from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -11,7 +17,9 @@ from vyom.agent.graph import MAX_QUESTION_CHARS, ChatAgent, ChatResult, not_conf
 from vyom.agent.model import ModelClient
 from vyom.collectors.kubernetes import PodCollector
 from vyom.context import FixedContextResolver
+from vyom.credentials import CredentialUnavailable
 from vyom.evidence import Evidence
+from vyom.inventory import Database, DatabaseConfig, InventoryStore
 from vyom.mcp_client.host import McpHost
 from vyom.mcp_client.kubernetes import SPECS
 from vyom.mcp_client.registry import OperatorConfig, load_operator_config
@@ -86,6 +94,27 @@ class PodsView(BaseModel):
 
     configured: bool
     evidence: Evidence | None = None
+    persisted: bool | None = None
+
+
+# Used by GET /api/citations/{evidence_id}/{item_id}.
+class CitationView(BaseModel):
+    """The cited observation, resolved from stored collection runs and observations."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    run_id: str
+    item_id: str
+    collected_at: datetime
+    run_state: str
+    kind: str
+    namespace: str | None = None
+    name: str
+    native_uid: str | None = None
+    observed_at: datetime | None = None
+    attributes: dict[str, Any] = Field(default_factory=dict)
+    resource_id: str | None = None
+    resource_removed_at: datetime | None = None
 
 
 # A factory function: builds the app from settings. Tests call it with fakes (host,
@@ -97,13 +126,15 @@ def create_app(
     host: McpHost | None = None,
     model: ModelClient | None = None,
     pods: PodCollector | None = None,
+    database: DatabaseConfig | None = None,
+    store: InventoryStore | None = None,
 ) -> FastAPI:
     """Build the API. Without ``operator`` there is no agent and chat reports that.
 
     ``mode`` is "development" or "production". Until S6 supplies a resolver that derives the
     context from a verified token, the only resolver is the fixed development one, so
-    production mode refuses to build the app. ``host``, ``model`` and ``pods`` replace the
-    ones built from ``operator`` (tests only).
+    production mode refuses to build the app. ``host``, ``model``, ``pods``, ``database`` and
+    ``store`` replace the ones built from ``operator`` (tests only).
     """
     if mode not in (DEVELOPMENT, PRODUCTION):
         raise ValueError(f"{MODE_ENV} must be '{DEVELOPMENT}' or '{PRODUCTION}'")
@@ -119,12 +150,32 @@ def create_app(
 
     # ``X if condition else Y``: build only what the config provides, otherwise None.
     resolver = FixedContextResolver(operator.context) if operator else None
+
+    # Persistent inventory store connection manager.
+    db_config = database or (operator.database if operator else None)
+    db = Database(db_config) if db_config else None
+
+    @asynccontextmanager
+    async def _resolve_store() -> AsyncIterator[InventoryStore]:
+        if store is not None:
+            yield store
+        elif db is not None:
+            async with db.store() as s:
+                yield s
+        else:
+            raise RuntimeError("no store configured")
+
     # ``a or b`` uses ``a`` if it was passed in (tests), otherwise builds the real one.
     host = host or (McpHost(operator, SPECS) if operator else None)
     tools = host.tools() if host else []
     # The agent exists only if a model, a host and at least one tool are all configured.
     agent = (
-        ChatAgent(model or ModelClient(operator.model), host)
+        ChatAgent(
+            model or ModelClient(operator.model),
+            host,
+            store=store,
+            database=db,
+        )
         if operator and operator.model and host and tools
         else None
     )
@@ -162,7 +213,77 @@ def create_app(
         collector's own identity. Independent of the agent, the model and MCP."""
         if pods is None or resolver is None:
             return PodsView(configured=False)
-        return PodsView(configured=True, evidence=await pods.collect(resolver.resolve()))
+        context = resolver.resolve()
+        evidence = await pods.collect(context)
+
+        persisted: bool | None = None
+        if store is not None or db is not None:
+            started = time.perf_counter()
+            try:
+                async with _resolve_store() as inv_store:
+                    await inv_store.record_collection(context, evidence, kind="Pod")
+                persisted = True
+                telemetry.record_inventory_operation(
+                    "record_collection",
+                    outcome="ok",
+                    duration=time.perf_counter() - started,
+                )
+            except (psycopg.Error, CredentialUnavailable, OSError, TimeoutError) as error:
+                persisted = False
+                telemetry.record_inventory_operation(
+                    "record_collection",
+                    outcome="database_unavailable",
+                    duration=time.perf_counter() - started,
+                    error_type=type(error).__name__,
+                )
+
+        return PodsView(configured=True, evidence=evidence, persisted=persisted)
+
+    @app.get("/api/citations/{evidence_id}/{item_id:path}")
+    async def get_citation(evidence_id: str, item_id: str) -> CitationView:
+        """Resolve one cited item from stored collection runs and observations."""
+        if resolver is None:
+            raise HTTPException(status_code=503, detail="service not configured")
+        if store is None and db is None:
+            raise HTTPException(status_code=503, detail="database not configured")
+
+        context = resolver.resolve()
+        started = time.perf_counter()
+        try:
+            async with _resolve_store() as inv_store:
+                citation = await inv_store.resolve_citation(context, evidence_id, item_id)
+        except (psycopg.Error, CredentialUnavailable, OSError, TimeoutError) as error:
+            telemetry.record_inventory_operation(
+                "resolve_citation",
+                outcome="database_unavailable",
+                duration=time.perf_counter() - started,
+                error_type=type(error).__name__,
+            )
+            raise HTTPException(status_code=503, detail="database unavailable") from None
+
+        telemetry.record_inventory_operation(
+            "resolve_citation",
+            outcome="ok" if citation is not None else "not_found",
+            duration=time.perf_counter() - started,
+        )
+
+        if citation is None:
+            raise HTTPException(status_code=404, detail="citation not found")
+
+        return CitationView(
+            run_id=citation.run_id,
+            item_id=citation.item_id,
+            collected_at=citation.collected_at,
+            run_state=citation.run_state,
+            kind=citation.kind,
+            namespace=citation.namespace,
+            name=citation.name,
+            native_uid=citation.native_uid,
+            observed_at=citation.observed_at,
+            attributes=citation.attributes,
+            resource_id=str(citation.resource_id) if citation.resource_id else None,
+            resource_removed_at=citation.resource_removed_at,
+        )
 
     # POST: the browser sends a JSON body, which FastAPI turns into a ChatRequest.
     @app.post("/api/chat")
@@ -188,7 +309,16 @@ def create_app(
 # Read the config file path from the environment; no variable means no config.
 def _operator_from_environment() -> OperatorConfig | None:
     path = os.environ.get(CONFIG_ENV)
-    return load_operator_config(path) if path else None
+    operator = load_operator_config(path) if path else None
+    if operator and operator.database is None:
+        db_ref = os.environ.get("VYOM_DATABASE_CREDENTIAL_REF")
+        if not db_ref and os.environ.get("VYOM_DATABASE_URL"):
+            db_ref = "env:VYOM_DATABASE_URL"
+        if db_ref:
+            operator = operator.model_copy(
+                update={"database": DatabaseConfig(credential_ref=db_ref)}
+            )
+    return operator
 
 
 # These two lines run when the module is imported. ``app`` is what the server (uvicorn)

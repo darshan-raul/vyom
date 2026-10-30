@@ -62,6 +62,7 @@ spec:
             - {name: kube-ca, mountPath: /etc/vyom/kube-ca, readOnly: true}
             - {name: mcp-token, mountPath: /var/run/vyom/mcp, readOnly: true}
             - {name: collector-token, mountPath: /var/run/vyom/collector, readOnly: true}
+            - {name: database, mountPath: /var/run/vyom/database, readOnly: true}
             - {name: model-key, mountPath: /var/run/vyom/model, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
@@ -81,6 +82,10 @@ spec:
               - serviceAccountToken: {audience: vyom-mcp, expirationSeconds: 3600, path: token}
         - name: collector-token
           secret: {secretName: {{ .Values.collector.tokenSecret }}}
+        - name: database
+          secret:
+            secretName: {{ .Values.database.secretName }}
+            items: [{key: url, path: url}]
         - name: model-key
           secret: {secretName: {{ .Values.model.keySecret }}, optional: true}
         - name: tmp

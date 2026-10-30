@@ -19,10 +19,13 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 context="${KUBE_CONTEXT:-kind-vyom}"
 [[ "$context" == kind-* ]] || { echo "KUBE_CONTEXT must name a local kind-* context" >&2; exit 1; }
 port="${MCP_PORT:-18443}"
+pg_port="${POSTGRES_PORT:-15432}"
 local_dir="$root/.local"
 ca="$local_dir/mcp-tls/tls.crt"
 token="$local_dir/dev-mcp-token"
 collector_token="$local_dir/dev-collector-token"
+db_url_file="$local_dir/dev-database-url"
+pg_password_file="$local_dir/postgres-password"
 api_ca="$local_dir/dev-kubernetes-ca.crt"
 key_file="${VYOM_MODEL_KEY_FILE:-$local_dir/model-api-key}"
 k() { kubectl --context "$context" "$@"; }
@@ -30,11 +33,12 @@ k() { kubectl --context "$context" "$@"; }
 for tool in kubectl curl uv; do
   command -v "$tool" >/dev/null || { echo "missing required tool: $tool" >&2; exit 1; }
 done
-[[ -s "$ca" ]] || { echo "no endpoint certificate; run scripts/vyom-up.sh first" >&2; exit 1; }
+[[ -s "$ca" && -s "$pg_password_file" ]] || { echo "no endpoint certificate or database password; run scripts/vyom-up.sh first" >&2; exit 1; }
 
 cleanup() {
   [[ -n "${forward:-}" ]] && kill "$forward" 2>/dev/null || true
-  rm -f "$token" "$collector_token"
+  [[ -n "${pg_forward:-}" ]] && kill "$pg_forward" 2>/dev/null || true
+  rm -f "$token" "$collector_token" "$db_url_file"
 }
 trap cleanup EXIT
 
@@ -42,6 +46,9 @@ trap cleanup EXIT
 kubectl --context "$context" -n vyom port-forward --address 127.0.0.1 \
   service/kubernetes-mcp "$port:8443" >/dev/null 2>&1 &
 forward=$!
+kubectl --context "$context" -n vyom port-forward --address 127.0.0.1 \
+  service/vyom-postgres "$pg_port:5432" >/dev/null 2>&1 &
+pg_forward=$!
 for _ in $(seq 1 40); do
   curl --silent --cacert "$ca" --max-time 2 -o /dev/null "https://127.0.0.1:$port/healthz" && break
   sleep 0.5
@@ -51,6 +58,7 @@ done
   k -n vyom create token vyom-api --audience vyom-mcp --duration 1h >"$token"
   # The collector reads the Kubernetes API as its own ServiceAccount, not through MCP.
   k -n vyom create token vyom-collector --duration 1h >"$collector_token"
+  printf 'postgresql://vyom:%s@127.0.0.1:%s/vyom' "$(cat "$pg_password_file")" "$pg_port" >"$db_url_file"
 )
 k config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' |
   base64 -d >"$api_ca"
@@ -92,6 +100,9 @@ cat >"$local_dir/operator.json" <<JSON
     "url": "$api_server",
     "ca_file": "$api_ca",
     "credential_ref": "file:$collector_token"
+  },
+  "database": {
+    "credential_ref": "file:$db_url_file"
   }
 }
 JSON

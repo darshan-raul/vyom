@@ -39,6 +39,17 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # Real Postgres for the inventory tests; same pinned image as deploy/images.lock.
+    services:
+      postgres:
+        image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+        env:
+          POSTGRES_PASSWORD: ci-only-throwaway
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 2s --health-retries 30
+    env:
+      VYOM_TEST_DATABASE_URL: postgresql://postgres:ci-only-throwaway@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -46,3 +57,5 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest -q
+      # Fails if the Postgres tests were skipped instead of run.
+      - run: set -o pipefail; uv run pytest -q -m postgres -rs | tee pg.txt; ! grep -q SKIPPED pg.txt

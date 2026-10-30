@@ -23,6 +23,7 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.66b1",
     "opentelemetry-sdk>=1.45.1",
     "prometheus-client>=0.26.0",
+    "psycopg[binary]>=3.3.6",
     "uvicorn>=0.54.0",
 ]
 
@@ -42,6 +43,8 @@ dev = [
 # pytest settings: look for tests in the tests/ folder.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Tests marked "postgres" need a real server: run them with scripts/postgres-test.sh.
+markers = ["postgres: needs VYOM_TEST_DATABASE_URL (a real Postgres server)"]
 
 # ruff is the code linter/formatter. Lines may be up to 100 characters.
 [tool.ruff]
