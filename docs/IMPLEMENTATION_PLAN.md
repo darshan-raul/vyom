@@ -36,6 +36,15 @@ Collect Deployment/ReplicaSet/Pod ownership first, then cluster/nodes/namespaces
 
 **Acceptance:** Kind inventory equals authorized API data, workload detail resolves relationships, browser closed collection continues, duplicate workers cannot overlap unsafe reconciliation, complete scans detect absence and failed scans cannot; freshness and denial visible. MCP/model failure leaves inventory working.
 
+Sub-increments, in order; R3 stays partial until R3.6 passes:
+
+1. **R3.1 workload ownership:** one metadata-only Table collector parameterized per kind (Deployment, ReplicaSet, Pod) with reviewed column projections and the controller owner reference as a typed item field; observation owner columns; `owns` edges recorded in the same transaction as the owned item, linked only to a present owner and superseded when a newer observation shows a different owner; collector Role extended to list Deployments and ReplicaSets. Real-Postgres tests: ownership chain, owner change, owner absent or not collected, out-of-order runs, a failed later page and UID recreation.
+2. **R3.2 scheduled collection:** a sweep of the R3.1 kinds on a configurable interval, independent of HTTP requests; a Postgres lease so concurrent API workers never sweep the same connection at once; per-kind backoff; collection health (last attempt, last success, consecutive failures) stored separately from resource health. Tests: two workers, worker loss and lease expiry, failure backoff, no browser.
+3. **R3.3 stored inventory API:** list (kind/namespace/name/health filters, cursor pagination) and resource detail (latest attributes, owner chain and owned resources, last observing run, freshness per kind) read only from Postgres and scoped by the trusted context; the pods route reads stored state instead of collecting per request. Explicit stale, denied, never-collected and truly empty states.
+4. **R3.4 inventory UI:** Inventory list with filters and pagination and a workload detail page with relationships and freshness, on the existing design system, polling the stored API only.
+5. **R3.5 remaining kinds:** cluster-scoped resources without fake namespaces (trusted context gains cluster scope), then Node and Namespace; StatefulSet/DaemonSet; Service/EndpointSlice/Ingress/NetworkPolicy; PV/PVC with their edges, each with a reviewed projection and its own Role or ClusterRole grant.
+6. **R3.6 Kind live gate:** stored inventory equals kubectl for every collected kind; a deleted and recreated workload, a revoked grant and a closed browser behave as specified; MCP and model outages leave inventory working.
+
 ### R4 — Manual workload investigation and diagnostic labs
 
 **Depends on:** R3

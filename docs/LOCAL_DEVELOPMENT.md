@@ -1,6 +1,6 @@
 # Local development and deployment
 
-Current implementation: live pod table persisted to workspace-scoped Postgres, durable citation resolution (`GET /api/citations/{evidence_id}/{item_id}`), and bounded MCP-backed questions. See [tracker](TRACKER.md) for delivery status and [handoff](HANDOFF.md) for next work.
+Current implementation: a scheduled sweep (every 60 s by default, `collector.sweep` in the chart values) that stores Deployments, ReplicaSets and Pods and their ownership in workspace-scoped Postgres whether or not the UI is open; the live pod table, also persisted, durable citation resolution (`GET /api/citations/{evidence_id}/{item_id}`), and bounded MCP-backed questions. See [tracker](TRACKER.md) for delivery status and [handoff](HANDOFF.md) for next work.
 
 ## Kind profiles
 

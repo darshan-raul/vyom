@@ -50,6 +50,13 @@ collector:
   tokenSecret: vyom-collector-token
   tokenDuration: 1h
   schedule: "*/30 * * * *"
+  # The inventory sweep (R3.2) inside the API: Deployments, ReplicaSets and Pods are collected
+  # on this interval whether or not anyone has the UI open. Failing kinds back off up to
+  # maxBackoffSeconds; a lease keeps API replicas from sweeping at the same time.
+  sweep:
+    intervalSeconds: 60
+    maxBackoffSeconds: 900
+    leaseSeconds: 120
 
 database:
   # Secret created beside the release holding `password` and `url`.

@@ -18,7 +18,7 @@ from vyom.agent.model import ModelConfig
 from vyom.collectors.kubernetes import KubernetesApiConfig
 from vyom.context import TrustedContext
 from vyom.credentials import check_reference, read_credential
-from vyom.inventory.config import DatabaseConfig
+from vyom.inventory.config import DatabaseConfig, SweepConfig
 
 SERVER_ID = r"^[a-z][a-z0-9]{0,30}$"  # no underscore: "__" separates server from tool
 _TOOL_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
@@ -109,6 +109,9 @@ class OperatorConfig(BaseModel):
     kubernetes: KubernetesApiConfig | None = None
     # Workspace-scoped Postgres persistence; absent: inventory is transient.
     database: DatabaseConfig | None = None
+    # The scheduled inventory sweep; absent: inventory is collected only when a view asks.
+    # Needs ``kubernetes`` and ``database``.
+    inventory: SweepConfig | None = None
 
     @model_validator(mode="after")
     def _unique_server_ids(self) -> "OperatorConfig":

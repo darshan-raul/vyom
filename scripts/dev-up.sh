@@ -103,7 +103,8 @@ cat >"$local_dir/operator.json" <<JSON
   },
   "database": {
     "credential_ref": "file:$db_url_file"
-  }
+  },
+  "inventory": {}
 }
 JSON
 

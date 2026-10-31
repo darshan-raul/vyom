@@ -126,6 +126,14 @@ class Source(_Frozen):
     collector: str | None = None  # set on the direct path only
 
 
+class OwnerRef(_Frozen):
+    """The object's controller, from its owner references. Same namespace by Kubernetes rule."""
+
+    kind: str
+    name: str
+    uid: str
+
+
 class ItemDraft(_Frozen):
     """One projected resource as a path produced it, before the host assigns identity."""
 
@@ -134,6 +142,8 @@ class ItemDraft(_Frozen):
     name: str
     uid: str | None = None
     observed_at: datetime | None = None  # the source's own timestamp; never invented
+    # Set by the direct path only; None means no controller or a path that cannot tell.
+    owner: OwnerRef | None = None
     # A dict of text keys to plain values, e.g. {"status": "Running", "restarts": 0}.
     # ``= {}`` is the default (pydantic copies it for each object, unlike a plain function).
     attributes: dict[str, Scalar] = {}

@@ -17,6 +17,8 @@ TABLES = {
     "resources",
     "observations",
     "relationships",
+    "collection_leases",
+    "collection_health",
     "schema_migrations",
 }
 
@@ -40,12 +42,12 @@ def test_applies_once_then_is_a_no_op(database_url):
             return first, second, await tables(conn)
 
     first, second, found = asyncio.run(main())
-    assert first == [1] and second == [] and found == TABLES
+    assert first == [1, 2, 3] and second == [] and found == TABLES
 
 
 def test_failing_migration_leaves_no_schema_and_no_version(database_url, monkeypatch):
     shipped = migrations.available()
-    broken = Migration(2, "0002_broken.sql", "CREATE TABLE half_built (id int); SELECT 1/0;")
+    broken = Migration(4, "0004_broken.sql", "CREATE TABLE half_built (id int); SELECT 1/0;")
     monkeypatch.setattr(migrations, "available", lambda: [*shipped, broken])
 
     async def main():
@@ -58,7 +60,7 @@ def test_failing_migration_leaves_no_schema_and_no_version(database_url, monkeyp
             return [row[0] for row in versions], await tables(conn)
 
     versions, found = asyncio.run(main())
-    assert versions == [1]  # the good migration stays applied
+    assert versions == [1, 2, 3]  # the good migrations stay applied
     assert "half_built" not in found
 
 
@@ -98,7 +100,7 @@ def test_requires_autocommit(database_url):
 
 def test_shipped_migrations_are_found():
     # Guards packaging: the SQL files must ship inside the wheel/image, not only the repo.
-    assert [m.version for m in migrations.available()] == [1]
+    assert [m.version for m in migrations.available()] == [1, 2, 3]
 
 
 def test_concurrent_runs_apply_each_migration_once(database_url):
@@ -110,14 +112,14 @@ def test_concurrent_runs_apply_each_migration_once(database_url):
     async def main():
         return sorted(await asyncio.gather(one(), one()))
 
-    assert asyncio.run(main()) == [[], [1]]
+    assert asyncio.run(main()) == [[], [1, 2, 3]]
 
 
 def test_cli_runner_applies_migrations_via_credential_ref(database_url, monkeypatch, capsys):
     monkeypatch.delenv("VYOM_CONFIG", raising=False)
     monkeypatch.setenv("VYOM_DATABASE_URL", database_url)
     assert migrations.main() == 0
-    assert "migrations applied: [1]" in capsys.readouterr().out
+    assert "migrations applied: [1, 2, 3]" in capsys.readouterr().out
     assert migrations.main() == 0
     assert "migrations applied: []" in capsys.readouterr().out
 

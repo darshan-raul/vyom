@@ -348,7 +348,7 @@ kubectl --context kind-vyom -n demo scale deployment/web --replicas=1
 #   the removed pod shows as Terminating for about 30 seconds before it disappears
 
 # See "denied" for yourself, then repair it
-kubectl --context kind-vyom -n demo delete rolebinding vyom-collector-pod-reader
+kubectl --context kind-vyom -n demo delete rolebinding vyom-collector-workload-reader
 curl -s 127.0.0.1:8000/api/kubernetes/pods | python3 -m json.tool      # state "denied", error "forbidden"
 ./scripts/vyom-up.sh     # re-applies the chart, including the RoleBinding
 

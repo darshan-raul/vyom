@@ -85,12 +85,16 @@ JSON
 [[ "$(sar vyom-api)" == true ]] || fail "vyom-api cannot use the MCP endpoint"
 [[ "$(sar vyom-collector)" != true ]] || fail "vyom-collector can use the MCP endpoint"
 pass "vyom-api may use the MCP endpoint and has no Kubernetes read access"
-[[ "$(can vyom-collector list pods demo)" == yes ]] || fail "vyom-collector cannot list demo pods"
-for denied in "get pods demo" "list pods vyom" "list secrets demo" "create pods/exec demo" "list nodes"; do
+for allowed in "list pods demo" "list deployments.apps demo" "list replicasets.apps demo"; do
+  # shellcheck disable=SC2086
+  [[ "$(can vyom-collector $allowed)" == yes ]] || fail "vyom-collector cannot: $allowed"
+done
+for denied in "get pods demo" "list pods vyom" "list deployments.apps vyom" "get deployments.apps demo" \
+  "list secrets demo" "create pods/exec demo" "list nodes"; do
   # shellcheck disable=SC2086
   [[ "$(can vyom-collector $denied)" == no ]] || fail "vyom-collector may: $denied"
 done
-pass "vyom-collector may list pods in demo and is denied get, other namespaces, Secrets, exec and nodes"
+pass "vyom-collector may list pods, Deployments and ReplicaSets in demo and is denied get, other namespaces, Secrets, exec and nodes"
 [[ "$(can kubernetes-mcp list pods demo)" == yes ]] || fail "kubernetes-mcp cannot list demo pods"
 [[ "$(can kubernetes-mcp delete pods demo)" == no && "$(can kubernetes-mcp list secrets demo)" == no ]] ||
   fail "kubernetes-mcp has more than a pod list"
@@ -147,6 +151,30 @@ k -n vyom wait --for=condition=complete job/vyom-collector-token-check --timeout
 k -n vyom delete job vyom-collector-token-check >/dev/null
 [[ "$(read_token)" != "$first" ]] || fail "the refresher did not replace the token"
 pass "the refresher job replaces the token"
+
+# -- Scheduled inventory (R3.2) -------------------------------------------------------------
+# Read straight from Postgres before any API request: only the sweep can have written this.
+sql() { k -n vyom exec statefulset/vyom-postgres -- psql -qtA -U vyom -d vyom -c "$1"; }
+for _ in $(seq 40); do
+  healthy="$(sql "SELECT count(*) FROM collection_health WHERE namespace = 'demo'
+    AND consecutive_failures = 0 AND last_success_at IS NOT NULL" 2>/dev/null || true)"
+  [[ "$healthy" == 3 ]] && break
+  sleep 3
+done
+[[ "$healthy" == 3 ]] || fail "the sweep did not collect Deployments, ReplicaSets and Pods: $(sql "SELECT kind, last_state, last_error_kinds, consecutive_failures FROM collection_health")"
+for kind in Deployment ReplicaSet; do
+  mine="$(sql "SELECT name || ' ' || native_uid FROM resources WHERE kind = '$kind'
+    AND namespace = 'demo' AND removed_at IS NULL ORDER BY 1")"
+  theirs="$(k -n demo get "${kind,,}s" --no-headers -o custom-columns=N:.metadata.name,U:.metadata.uid | awk '{print $1, $2}' | sort)"
+  [[ "$mine" == "$theirs" ]] || fail "stored ${kind}s differ from kubectl:\n$mine\n--\n$theirs"
+done
+mine="$(sql "SELECT t.name || ' ' || s.name FROM relationships e
+  JOIN resources s ON s.workspace_id = e.workspace_id AND s.id = e.source_id
+  JOIN resources t ON t.workspace_id = e.workspace_id AND t.id = e.target_id
+  WHERE e.type = 'owns' AND e.removed_at IS NULL AND t.kind = 'Pod' AND t.namespace = 'demo' ORDER BY 1")"
+theirs="$(k -n demo get pods --no-headers -o custom-columns=N:.metadata.name,O:.metadata.ownerReferences[0].name | awk '{print $1, $2}' | sort)"
+[[ "$mine" == "$theirs" ]] || fail "stored pod owners differ from kubectl:\n$mine\n--\n$theirs"
+pass "with no request, the sweep stored Deployments and ReplicaSets equal to kubectl and each pod's owning ReplicaSet"
 
 # -- The application ------------------------------------------------------------------------
 forward vyom vyom-ui 18080 8080

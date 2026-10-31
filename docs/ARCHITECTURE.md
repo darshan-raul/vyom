@@ -51,7 +51,7 @@ The [diagram index](diagrams/README.md) links the current README architecture im
 
 The [deployment diagram](diagrams/deployment/deployment.png) and [interactive view](diagrams/deployment/deployment.html) describe the target hosting topology. The README workflow is a separate view. Namespace boundaries denote placement, not proof of network isolation. This diagram introduces no ingress, cloud provisioning or extra microservice framework.
 
-The existing chart defines UI/API/MCP Deployments, Services and a token-refresher CronJob. Postgres and the background worker are architecture targets from R2–R4a, not existing manifests. Their exact workload names, database packaging/port, PVC sizing and backup destination are deliberately unspecified until implementation. The worker shares the application image; no HTTP Service is required for polling leased jobs. Worker credential mounts and provider sessions must be scoped independently when introduced.
+The existing chart defines UI/API/MCP Deployments, Services and a token-refresher CronJob. Postgres is packaged (R2.3). Until the R4a background worker exists, the scheduled inventory sweep runs inside the API process under a Postgres lease (R3.2); the worker remains an architecture target, not an existing manifest. Their exact workload names, database packaging/port, PVC sizing and backup destination are deliberately unspecified until implementation. The worker shares the application image; no HTTP Service is required for polling leased jobs. Worker credential mounts and provider sessions must be scoped independently when introduced.
 
 | Caller / owner | Destination | Protocol / mapping | Authority and purpose |
 |---|---|---|---|

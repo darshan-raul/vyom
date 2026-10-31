@@ -1,4 +1,5 @@
-# os gives access to environment variables.
+# asyncio runs the background sweep; os gives access to environment variables.
+import asyncio
 import os
 import time
 from collections.abc import AsyncIterator
@@ -15,11 +16,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from vyom import __version__, telemetry
 from vyom.agent.graph import MAX_QUESTION_CHARS, ChatAgent, ChatResult, not_configured
 from vyom.agent.model import ModelClient
-from vyom.collectors.kubernetes import PodCollector
+from vyom.collectors.kubernetes import SWEEP, PodCollector, TableCollector
 from vyom.context import FixedContextResolver
 from vyom.credentials import CredentialUnavailable
-from vyom.evidence import Evidence
+from vyom.evidence import Evidence, OwnerRef
 from vyom.inventory import Database, DatabaseConfig, InventoryStore
+from vyom.inventory.sweep import Sweeper
 from vyom.mcp_client.host import McpHost
 from vyom.mcp_client.kubernetes import SPECS
 from vyom.mcp_client.registry import OperatorConfig, load_operator_config
@@ -115,6 +117,7 @@ class CitationView(BaseModel):
     attributes: dict[str, Any] = Field(default_factory=dict)
     resource_id: str | None = None
     resource_removed_at: datetime | None = None
+    owner: OwnerRef | None = None  # the controller this observation reported
 
 
 # A factory function: builds the app from settings. Tests call it with fakes (host,
@@ -128,13 +131,17 @@ def create_app(
     pods: PodCollector | None = None,
     database: DatabaseConfig | None = None,
     store: InventoryStore | None = None,
+    sweeper: Sweeper | None = None,
 ) -> FastAPI:
     """Build the API. Without ``operator`` there is no agent and chat reports that.
 
     ``mode`` is "development" or "production". Until S6 supplies a resolver that derives the
     context from a verified token, the only resolver is the fixed development one, so
-    production mode refuses to build the app. ``host``, ``model``, ``pods``, ``database`` and
-    ``store`` replace the ones built from ``operator`` (tests only).
+    production mode refuses to build the app. ``host``, ``model``, ``pods``, ``database``,
+    ``store`` and ``sweeper`` replace the ones built from ``operator`` (tests only).
+
+    With ``operator.inventory`` set, the inventory sweep runs for the life of the app,
+    started and stopped by its lifespan, independently of any request.
     """
     if mode not in (DEVELOPMENT, PRODUCTION):
         raise ValueError(f"{MODE_ENV} must be '{DEVELOPMENT}' or '{PRODUCTION}'")
@@ -143,17 +150,40 @@ def create_app(
             "production mode needs an identity resolver that verifies the caller; "
             "only the fixed development identity exists until S6"
         )
-    # The web application object. Routes are attached to it below.
-    app = FastAPI(title="Vyom API", version=__version__)
-    # Adds request logging, /metrics and tracing.
-    telemetry.instrument(app)
-
     # ``X if condition else Y``: build only what the config provides, otherwise None.
     resolver = FixedContextResolver(operator.context) if operator else None
 
     # Persistent inventory store connection manager.
     db_config = database or (operator.database if operator else None)
     db = Database(db_config) if db_config else None
+
+    if sweeper is None and operator and operator.inventory:
+        # A configured sweep that cannot run is a configuration error, not a silent no-op.
+        if operator.kubernetes is None or db is None:
+            raise ValueError("the inventory sweep needs kubernetes and database configuration")
+        sweeper = Sweeper(
+            [TableCollector(operator.kubernetes, projection) for projection in SWEEP],
+            db,
+            operator.context,
+            operator.inventory,
+        )
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        task = asyncio.create_task(sweeper.run()) if sweeper else None
+        yield
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            await sweeper.release()
+
+    # The web application object. Routes are attached to it below.
+    app = FastAPI(title="Vyom API", version=__version__, lifespan=lifespan)
+    # Adds request logging, /metrics and tracing.
+    telemetry.instrument(app)
 
     @asynccontextmanager
     async def _resolve_store() -> AsyncIterator[InventoryStore]:
@@ -283,6 +313,7 @@ def create_app(
             attributes=citation.attributes,
             resource_id=str(citation.resource_id) if citation.resource_id else None,
             resource_removed_at=citation.resource_removed_at,
+            owner=citation.owner,
         )
 
     # POST: the browser sends a JSON body, which FastAPI turns into a ChatRequest.

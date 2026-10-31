@@ -14,11 +14,15 @@ Reconciliation rules (docs/CONTINUOUS_OPERATIONS.md, "Observation and detection"
   ``last_seen`` nor removes anything.
 - Runs can arrive out of order. An older run never overwrites newer state, never removes a
   resource seen later and never revives a resource removed later.
+- Ownership (``owns`` edges, owner to owned) follows the owned object's controller reference.
+  Only the newest observation of the owned object changes its edges: it links the controller
+  if that resource is stored and present, and supersedes any other current owner. A controller
+  not yet stored (or of a kind not collected) leaves no edge; a later sweep links it.
 """
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import psycopg
@@ -26,13 +30,15 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from vyom.context import TrustedContext
-from vyom.evidence import Evidence, State
+from vyom.evidence import ErrorKind, Evidence, EvidenceItem, OwnerRef, State
 
 # Bumped when the stored projection of evidence changes meaning.
 CONTRACT_VERSION = 1
 # Retain up to 500 historical collection runs per (workspace, connection, scope_kind,
 # scope_namespace) that are no longer referenced by any resource or relationship.
 DEFAULT_MAX_UNREFERENCED_RUNS = 500
+# The edge type for a controller and the object it controls.
+OWNS = "owns"
 
 
 class ScopeMismatch(Exception):
@@ -59,6 +65,7 @@ class Citation:
     attributes: dict[str, Any]
     resource_id: uuid.UUID | None  # None: the source gave no UID, so identity is unresolved
     resource_removed_at: datetime | None
+    owner: OwnerRef | None = None  # the controller this observation reported
 
 
 @dataclass(frozen=True)
@@ -73,6 +80,26 @@ class Resource:
     last_seen_at: datetime
     last_seen_run_id: str
     removed_at: datetime | None
+
+
+@dataclass(frozen=True)
+class CollectionHealth:
+    """The collector's own state for one kind: separate from the health of any resource."""
+
+    kind: str
+    namespace: str
+    last_attempt_at: datetime
+    last_state: str
+    last_error_kinds: list[str]
+    last_success_at: datetime | None
+    consecutive_failures: int
+    next_due_at: datetime
+
+
+def collector_failed(evidence: Evidence) -> bool:
+    """A collection whose collector did not work. A truncated read worked: it hit Vyom's own
+    item limit, and collecting again sooner or later would return the same cut."""
+    return any(error.kind is not ErrorKind.TRUNCATED for error in evidence.errors)
 
 
 @dataclass(frozen=True)
@@ -132,11 +159,15 @@ class InventoryStore:
             for item in evidence.items:
                 resource_id = None
                 if item.uid:
-                    resource_id = await self._upsert_resource(cur, context, run, at, item)
+                    resource_id, newest = await self._upsert_resource(cur, context, run, at, item)
+                    if newest:
+                        await self._reconcile_owner(cur, context, run, at, resource_id, item)
+                owner = item.owner
                 await cur.execute(
                     "INSERT INTO observations (workspace_id, run_id, item_id, resource_id, kind,"
-                    " namespace, name, native_uid, observed_at, attributes)"
-                    " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    " namespace, name, native_uid, observed_at, attributes, owner_kind,"
+                    " owner_name, owner_uid)"
+                    " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     # Pagination can repeat an item; the first observation stands.
                     " ON CONFLICT DO NOTHING",
                     (
@@ -150,6 +181,9 @@ class InventoryStore:
                         item.uid,
                         item.observed_at,
                         Jsonb(item.attributes),
+                        owner and owner.kind,
+                        owner and owner.name,
+                        owner and owner.uid,
                     ),
                 )
             if self._proves_absence(evidence):
@@ -185,7 +219,8 @@ class InventoryStore:
         if row is None or row["cluster_uid"] != context.cluster_uid:
             raise ConnectionConflict("connection is bound to a different cluster")
 
-    async def _upsert_resource(self, cur, context, run, at, item) -> uuid.UUID:
+    async def _upsert_resource(self, cur, context, run, at, item) -> tuple[uuid.UUID, bool]:
+        """The resource's ID, and whether this run is now its newest observation."""
         # The update applies only when this run is at least as new as the stored state and
         # not older than a recorded removal, so late runs cannot roll state back.
         await cur.execute(
@@ -215,11 +250,61 @@ class InventoryStore:
             },
         )
         await cur.execute(
-            "SELECT id FROM resources WHERE workspace_id = %s AND connection_id = %s"
-            " AND kind = %s AND native_uid = %s",
+            "SELECT id, last_seen_run_id FROM resources WHERE workspace_id = %s"
+            " AND connection_id = %s AND kind = %s AND native_uid = %s",
             (context.workspace_id, context.connection_id, item.kind, item.uid),
         )
-        return (await cur.fetchone())["id"]
+        row = await cur.fetchone()
+        return row["id"], row["last_seen_run_id"] == run
+
+    async def _reconcile_owner(
+        self, cur, context, run, at, resource_id: uuid.UUID, item: EvidenceItem
+    ) -> None:
+        owner_id = None
+        if item.owner:
+            # A controller removed before this run is gone: its reference awaits garbage
+            # collection and is not a current relationship.
+            await cur.execute(
+                "SELECT id FROM resources WHERE workspace_id = %s AND connection_id = %s"
+                " AND kind = %s AND native_uid = %s AND (removed_at IS NULL OR removed_at > %s)",
+                (context.workspace_id, context.connection_id, item.owner.kind, item.owner.uid, at),
+            )
+            row = await cur.fetchone()
+            if row:
+                owner_id = row["id"]
+                await self._upsert_edge(cur, context.workspace_id, owner_id, resource_id, run, at)
+        # This observation shows the object's only controller; any other is superseded.
+        await cur.execute(
+            "UPDATE relationships SET removed_at = %(at)s, removed_run_id = %(run)s"
+            " WHERE workspace_id = %(ws)s AND target_id = %(id)s AND type = %(type)s"
+            " AND removed_at IS NULL AND last_verified_at < %(at)s"
+            " AND source_id IS DISTINCT FROM %(owner)s",
+            {
+                "ws": context.workspace_id,
+                "id": resource_id,
+                "type": OWNS,
+                "owner": owner_id,
+                "at": at,
+                "run": run,
+            },
+        )
+
+    @staticmethod
+    async def _upsert_edge(cur, ws, source_id, target_id, run, at, type=OWNS) -> None:
+        # Like resources: a run only updates an edge it is at least as new as, and re-verifies
+        # a removed edge only when it is newer than the removal.
+        await cur.execute(
+            "INSERT INTO relationships AS e (workspace_id, source_id, target_id, type,"
+            " first_seen_run_id, last_verified_run_id, last_verified_at)"
+            " VALUES (%(ws)s, %(src)s, %(dst)s, %(type)s, %(run)s, %(run)s, %(at)s)"
+            " ON CONFLICT (workspace_id, source_id, target_id, type) DO UPDATE SET"
+            " last_verified_run_id = EXCLUDED.last_verified_run_id,"
+            " last_verified_at = EXCLUDED.last_verified_at,"
+            " removed_at = NULL, removed_run_id = NULL"
+            " WHERE e.last_verified_at <= EXCLUDED.last_verified_at"
+            " AND (e.removed_at IS NULL OR e.removed_at < EXCLUDED.last_verified_at)",
+            {"ws": ws, "src": source_id, "dst": target_id, "type": type, "run": run, "at": at},
+        )
 
     async def _mark_absent(self, cur, context, run, at, kind) -> None:
         # last_seen_at < at excludes everything this run saw (now last_seen_at = at) and
@@ -324,7 +409,8 @@ class InventoryStore:
             await cur.execute(
                 "SELECT o.run_id, o.item_id, c.collected_at, c.state AS run_state, o.kind,"
                 " o.namespace, o.name, o.native_uid, o.observed_at, o.attributes,"
-                " o.resource_id, r.removed_at AS resource_removed_at"
+                " o.resource_id, r.removed_at AS resource_removed_at,"
+                " o.owner_kind, o.owner_name, o.owner_uid"
                 " FROM observations o"
                 " JOIN collection_runs c ON c.workspace_id = o.workspace_id AND c.id = o.run_id"
                 " LEFT JOIN resources r"
@@ -334,7 +420,11 @@ class InventoryStore:
                 (context.workspace_id, context.connection_id, evidence_id, item_id),
             )
             row = await cur.fetchone()
-        return Citation(**row) if row else None
+        if row is None:
+            return None
+        kind, name, uid = row.pop("owner_kind"), row.pop("owner_name"), row.pop("owner_uid")
+        owner = OwnerRef(kind=kind, name=name, uid=uid) if kind else None
+        return Citation(**row, owner=owner)
 
     async def resources(
         self, context: TrustedContext, *, kind: str | None = None, include_removed: bool = False
@@ -383,22 +473,8 @@ class InventoryStore:
             )
             if run is None or (await cur.fetchone())["n"] != 2:
                 raise ScopeMismatch("run or resource is outside the request context")
-            await cur.execute(
-                "INSERT INTO relationships AS e (workspace_id, source_id, target_id, type,"
-                " first_seen_run_id, last_verified_run_id, last_verified_at)"
-                " VALUES (%(ws)s, %(src)s, %(dst)s, %(type)s, %(run)s, %(run)s, %(at)s)"
-                " ON CONFLICT (workspace_id, source_id, target_id, type) DO UPDATE SET"
-                " last_verified_run_id = EXCLUDED.last_verified_run_id,"
-                " last_verified_at = EXCLUDED.last_verified_at"
-                " WHERE e.last_verified_at <= EXCLUDED.last_verified_at",
-                {
-                    "ws": context.workspace_id,
-                    "src": source_id,
-                    "dst": target_id,
-                    "type": type,
-                    "run": run_id,
-                    "at": run["collected_at"],
-                },
+            await self._upsert_edge(
+                cur, context.workspace_id, source_id, target_id, run_id, run["collected_at"], type
             )
 
     async def relationships(
@@ -416,3 +492,100 @@ class InventoryStore:
                 {"ws": context.workspace_id, "conn": context.connection_id, "id": resource_id},
             )
             return [Relationship(**row) for row in await cur.fetchall()]
+
+    async def acquire_lease(self, context: TrustedContext, holder: str, seconds: float) -> bool:
+        """Take or renew the context's connection sweep lease. False while another holder's
+        lease is unexpired. Expiry uses the database clock."""
+        async with self._conn.transaction(), self._conn.cursor(row_factory=dict_row) as cur:
+            await self._ensure_connection(cur, context)
+            await cur.execute(
+                "INSERT INTO collection_leases AS l (workspace_id, connection_id, holder,"
+                " acquired_at, expires_at)"
+                " VALUES (%(ws)s, %(conn)s, %(holder)s, now(),"
+                " now() + make_interval(secs => %(secs)s))"
+                " ON CONFLICT (workspace_id, connection_id) DO UPDATE SET"
+                " holder = EXCLUDED.holder, acquired_at = EXCLUDED.acquired_at,"
+                " expires_at = EXCLUDED.expires_at"
+                " WHERE l.holder = EXCLUDED.holder OR l.expires_at < now()"
+                " RETURNING holder",
+                {
+                    "ws": context.workspace_id,
+                    "conn": context.connection_id,
+                    "holder": holder,
+                    "secs": seconds,
+                },
+            )
+            return await cur.fetchone() is not None
+
+    async def release_lease(self, context: TrustedContext, holder: str) -> None:
+        """Give up the lease if this holder still has it, so another worker need not wait."""
+        await self._conn.execute(
+            "DELETE FROM collection_leases WHERE workspace_id = %s AND connection_id = %s"
+            " AND holder = %s",
+            (context.workspace_id, context.connection_id, holder),
+        )
+
+    async def collection_health(self, context: TrustedContext) -> list[CollectionHealth]:
+        """Collection health for every kind collected in the context's namespace."""
+        async with self._conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                "SELECT kind, namespace, last_attempt_at, last_state, last_error_kinds,"
+                " last_success_at, consecutive_failures, next_due_at FROM collection_health"
+                " WHERE workspace_id = %s AND connection_id = %s AND namespace = %s"
+                " ORDER BY kind",
+                (context.workspace_id, context.connection_id, context.namespace),
+            )
+            return [CollectionHealth(**row) for row in await cur.fetchall()]
+
+    async def record_health(
+        self,
+        context: TrustedContext,
+        evidence: Evidence,
+        *,
+        kind: str,
+        interval: timedelta,
+        max_backoff: timedelta,
+    ) -> CollectionHealth:
+        """Record one attempt and schedule the next: one interval after a working collection,
+        ``interval * 2^failures`` (at most ``max_backoff``) after a failed one."""
+        failed = collector_failed(evidence)
+        at = evidence.collected_at
+        async with self._conn.transaction(), self._conn.cursor(row_factory=dict_row) as cur:
+            await self._ensure_connection(cur, context)
+            await cur.execute(
+                "SELECT consecutive_failures FROM collection_health WHERE workspace_id = %s"
+                " AND connection_id = %s AND kind = %s AND namespace = %s FOR UPDATE",
+                (context.workspace_id, context.connection_id, kind, context.namespace),
+            )
+            row = await cur.fetchone()
+            failures = (row["consecutive_failures"] + 1 if row else 1) if failed else 0
+            delay = min(interval * 2**failures, max_backoff) if failed else interval
+            await cur.execute(
+                "INSERT INTO collection_health AS h (workspace_id, connection_id, kind,"
+                " namespace, last_attempt_at, last_state, last_error_kinds, last_success_at,"
+                " consecutive_failures, next_due_at)"
+                " VALUES (%(ws)s, %(conn)s, %(kind)s, %(ns)s, %(at)s, %(state)s, %(errors)s,"
+                " %(success)s, %(failures)s, %(due)s)"
+                " ON CONFLICT (workspace_id, connection_id, kind, namespace) DO UPDATE SET"
+                " last_attempt_at = EXCLUDED.last_attempt_at,"
+                " last_state = EXCLUDED.last_state,"
+                " last_error_kinds = EXCLUDED.last_error_kinds,"
+                " last_success_at = COALESCE(EXCLUDED.last_success_at, h.last_success_at),"
+                " consecutive_failures = EXCLUDED.consecutive_failures,"
+                " next_due_at = EXCLUDED.next_due_at"
+                " RETURNING kind, namespace, last_attempt_at, last_state, last_error_kinds,"
+                " last_success_at, consecutive_failures, next_due_at",
+                {
+                    "ws": context.workspace_id,
+                    "conn": context.connection_id,
+                    "kind": kind,
+                    "ns": context.namespace,
+                    "at": at,
+                    "state": evidence.state.value,
+                    "errors": [error.kind.value for error in evidence.errors],
+                    "success": None if failed else at,
+                    "failures": failures,
+                    "due": at + delay,
+                },
+            )
+            return CollectionHealth(**await cur.fetchone())

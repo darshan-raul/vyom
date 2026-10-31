@@ -33,4 +33,8 @@ data:
         "credential_ref" "file:/var/run/vyom/collector/token")
       "database" (dict
         "credential_ref" "file:/var/run/vyom/database/url")
+      "inventory" (dict
+        "interval_seconds" .Values.collector.sweep.intervalSeconds
+        "max_backoff_seconds" .Values.collector.sweep.maxBackoffSeconds
+        "lease_seconds" .Values.collector.sweep.leaseSeconds)
     | toPrettyJson | nindent 4 }}
