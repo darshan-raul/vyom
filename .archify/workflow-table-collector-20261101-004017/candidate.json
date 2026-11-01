@@ -1,0 +1,296 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "TableCollector.collect: one kind, metadata-only Table read (R3.1)",
+  "output": ".archify/workflow-table-collector-20261101-004017/table-collector.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "lanes": [
+  {
+   "id": "spec",
+   "label": "Per-kind projection"
+  },
+  {
+   "id": "read",
+   "label": "Read"
+  },
+  {
+   "id": "err",
+   "label": "Failure becomes evidence",
+   "variant": "exception"
+  }
+ ],
+ "mainPath": [
+  "start",
+  "conn",
+  "client",
+  "page",
+  "project",
+  "evidence"
+ ],
+ "nodes": [
+  {
+   "id": "proj",
+   "lane": "spec",
+   "col": 4,
+   "type": "external",
+   "label": "Projection",
+   "sublabel": "POD \u00b7 DEPLOYMENT \u00b7 REPLICA_SET",
+   "tag": "reviewed",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 131,
+     "end_line": 181
+    }
+   ]
+  },
+  {
+   "id": "start",
+   "lane": "read",
+   "col": 0,
+   "type": "backend",
+   "label": "collect(context)",
+   "sublabel": "one kind, its own SA",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 236,
+     "end_line": 251
+    }
+   ]
+  },
+  {
+   "id": "conn",
+   "lane": "read",
+   "col": 1,
+   "type": "security",
+   "label": "Connection check",
+   "sublabel": "config = context?",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 252,
+     "end_line": 256
+    }
+   ]
+  },
+  {
+   "id": "client",
+   "lane": "read",
+   "col": 2,
+   "type": "security",
+   "label": "Token + client",
+   "sublabel": "fresh token, Accept Table",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 290,
+     "end_line": 309
+    }
+   ]
+  },
+  {
+   "id": "page",
+   "lane": "read",
+   "col": 3,
+   "type": "cloud",
+   "label": "GET one page",
+   "sublabel": "limit 100, includeObject=Metadata",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 311,
+     "end_line": 314
+    },
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 330,
+     "end_line": 344
+    }
+   ]
+  },
+  {
+   "id": "project",
+   "lane": "read",
+   "col": 4,
+   "type": "backend",
+   "label": "Project rows",
+   "sublabel": "named columns, controller, revision",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 187,
+     "end_line": 217
+    },
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 315,
+     "end_line": 320
+    }
+   ]
+  },
+  {
+   "id": "evidence",
+   "lane": "read",
+   "col": 5,
+   "type": "database",
+   "label": "build_evidence",
+   "sublabel": "Evidence, path direct",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 262,
+     "end_line": 286
+    }
+   ]
+  },
+  {
+   "id": "fail",
+   "lane": "err",
+   "col": 3,
+   "type": "security",
+   "label": "Classify failure",
+   "sublabel": "fixed ErrorKind, no text",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 257,
+     "end_line": 261
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "id": "e1",
+   "from": "start",
+   "to": "conn",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e2",
+   "from": "conn",
+   "to": "client",
+   "label": "same connection",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e3",
+   "from": "client",
+   "to": "page",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e4",
+   "from": "page",
+   "to": "project",
+   "label": "200, \u2264 1 MiB",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e5",
+   "from": "project",
+   "to": "evidence",
+   "label": "no continue token",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e5r",
+   "from": "project",
+   "to": "page",
+   "label": "continue (\u2264 20 pages)",
+   "role": "return"
+  },
+  {
+   "id": "e5t",
+   "from": "project",
+   "to": "evidence",
+   "label": "> 500 items: stop",
+   "role": "branch",
+   "variant": "dashed"
+  },
+  {
+   "id": "ep",
+   "from": "proj",
+   "to": "project",
+   "label": "columns + fields",
+   "role": "branch"
+  },
+  {
+   "id": "x1",
+   "from": "conn",
+   "to": "fail",
+   "label": "scope_violation",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x2",
+   "from": "page",
+   "to": "fail",
+   "label": "401 \u00b7 403 \u00b7 5xx \u00b7 oversized",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x3",
+   "from": "project",
+   "to": "fail",
+   "label": "bad shape",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x4",
+   "from": "fail",
+   "to": "evidence",
+   "label": "pages so far kept",
+   "role": "error",
+   "variant": "security"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "What is kept (KINV01)",
+   "items": [
+    "Pod: ready, status, restarts",
+    "Deployment: ready, up_to_date, available, revision",
+    "ReplicaSet: desired, current, ready, revision",
+    "Every kind: name, namespace, UID and the controller owner reference"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "What is dropped unread",
+   "items": [
+    "Labels, other annotations (incl. last-applied-configuration), wide columns, images",
+    "Specs never leave the API server: Table + metadata only"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Failures",
+   "items": [
+    "401 \u2192 auth, 403 \u2192 forbidden: denied",
+    "timeout, 5xx, oversized page, bad shape: missing, or partial if pages were read",
+    "Never raises: always returns Evidence and records a collector run metric"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Order",
+   "items": [
+    "SWEEP = Deployment, ReplicaSet, Pod, so owners are stored before what they own"
+   ]
+  }
+ ]
+}

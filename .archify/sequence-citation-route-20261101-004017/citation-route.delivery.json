@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ada8cd8d-3fde-4a7a-bd8d-566d3a93faa9",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/home/darshan/projects/vyom/.archify/sequence-citation-route-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/sequence-citation-route-20261101-004017/citation-route.html",
+  "specification": {
+    "sha256": "305a071436c63dabf81bbbd2668e639a59e46c10263999d5574b9ca435969b54",
+    "bytes": 3324
+  },
+  "artifact": {
+    "sha256": "c3c17c5a2f60dc6aeabffbec7c09821d04f9c799db5b8e9e16f94081b40f1706",
+    "bytes": 807460
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "55b3ca36-c4bb-4fa7-a4e4-2192bd04f94e",
+  "status": "current",
+  "command": "deliver",
+  "type": "erd",
+  "input": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+  "specification": {
+    "sha256": "dae7dc23ea4c298929adefe45752aae4c9ce22cb7e7e05e045db2a0b2247cc6d",
+    "bytes": 14669
+  },
+  "artifact": {
+    "sha256": "290b79facf359992506b5b7719bc79caa1bd7615ae0547711b515736e92330dd",
+    "bytes": 879406
+  }
+}

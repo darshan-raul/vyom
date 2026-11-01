@@ -1,0 +1,314 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "scripts/vyom-up.sh: install or update Vyom on Kind",
+  "output": ".archify/workflow-install-migrate-20261101-004017/install-migrate.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "lanes": [
+  {
+   "id": "host",
+   "label": "Operator's machine"
+  },
+  {
+   "id": "cluster",
+   "label": "Created in kind-vyom"
+  },
+  {
+   "id": "stop",
+   "label": "Stops",
+   "variant": "exception"
+  }
+ ],
+ "mainPath": [
+  "pre",
+  "build",
+  "secrets",
+  "helm",
+  "migrate",
+  "token"
+ ],
+ "nodes": [
+  {
+   "id": "pre",
+   "lane": "host",
+   "col": 0,
+   "type": "security",
+   "label": "Preflight",
+   "sublabel": "kind-* context, tools, CRDs",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 19,
+     "end_line": 52
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "lane": "host",
+   "col": 1,
+   "type": "backend",
+   "label": "Build + load images",
+   "sublabel": "content-hash tags",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 57,
+     "end_line": 79
+    }
+   ]
+  },
+  {
+   "id": "secrets",
+   "lane": "host",
+   "col": 2,
+   "type": "security",
+   "label": "Private Secrets",
+   "sublabel": "TLS, model key, token, Postgres",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 86,
+     "end_line": 122
+    }
+   ]
+  },
+  {
+   "id": "helm",
+   "lane": "host",
+   "col": 3,
+   "type": "cloud",
+   "label": "helm upgrade --install",
+   "sublabel": "--wait, cluster UID, tags",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 130,
+     "end_line": 139
+    }
+   ]
+  },
+  {
+   "id": "migrate",
+   "lane": "host",
+   "col": 4,
+   "type": "database",
+   "label": "Run migration Job",
+   "sublabel": "from suspended CronJob",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 141,
+     "end_line": 145
+    }
+   ]
+  },
+  {
+   "id": "token",
+   "lane": "host",
+   "col": 5,
+   "type": "security",
+   "label": "Fill collector token",
+   "sublabel": "then wait for it in the pod",
+   "tag": "ready",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 147,
+     "end_line": 166
+    }
+   ]
+  },
+  {
+   "id": "demo",
+   "lane": "cluster",
+   "col": 1,
+   "type": "external",
+   "label": "Namespaces + demo",
+   "sublabel": "vyom, demo, demo.yaml",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 81,
+     "end_line": 84
+    }
+   ]
+  },
+  {
+   "id": "release",
+   "lane": "cluster",
+   "col": 3,
+   "type": "cloud",
+   "label": "Release objects",
+   "sublabel": "API, UI, MCP, Postgres, RBAC",
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/postgres.yaml",
+     "line": 19,
+     "end_line": 60
+    }
+   ]
+  },
+  {
+   "id": "job",
+   "lane": "cluster",
+   "col": 4,
+   "type": "database",
+   "label": "vyom-migrate-run",
+   "sublabel": "python -m vyom.inventory.migrate",
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/postgres.yaml",
+     "line": 86,
+     "end_line": 120
+    },
+    {
+     "path": "backend/src/vyom/inventory/migrate.py",
+     "line": 138,
+     "end_line": 143
+    }
+   ]
+  },
+  {
+   "id": "refuse",
+   "lane": "stop",
+   "col": 0,
+   "type": "security",
+   "label": "Refuse",
+   "sublabel": "non-kind context, missing CRDs",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 20,
+     "end_line": 20
+    },
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 49,
+     "end_line": 52
+    }
+   ]
+  },
+  {
+   "id": "timeout",
+   "lane": "stop",
+   "col": 5,
+   "type": "security",
+   "label": "Fail",
+   "sublabel": "token not projected in time",
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 160,
+     "end_line": 163
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "id": "m1",
+   "from": "pre",
+   "to": "build",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m2",
+   "from": "build",
+   "to": "secrets",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m3",
+   "from": "secrets",
+   "to": "helm",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m4",
+   "from": "helm",
+   "to": "migrate",
+   "label": "Postgres ready",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m5",
+   "from": "migrate",
+   "to": "token",
+   "label": "Job complete",
+   "variant": "emphasis"
+  },
+  {
+   "id": "b1",
+   "from": "build",
+   "to": "demo",
+   "label": "apply",
+   "role": "branch"
+  },
+  {
+   "id": "b2",
+   "from": "helm",
+   "to": "release",
+   "label": "install",
+   "role": "branch"
+  },
+  {
+   "id": "b3",
+   "from": "migrate",
+   "to": "job",
+   "label": "create",
+   "role": "branch"
+  },
+  {
+   "id": "x1",
+   "from": "pre",
+   "to": "refuse",
+   "label": "fails",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x2",
+   "from": "token",
+   "to": "timeout",
+   "label": "not in 180 s",
+   "role": "error",
+   "variant": "security"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Secrets never in values",
+   "items": [
+    "MCP TLS cert generated once into .local/mcp-tls (90 days)",
+    "Model key from OPENROUTER_API_KEY or .local/model-api-key",
+    "Postgres password generated once into .local/postgres-password; Secret holds password and url"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Migrations are controlled",
+   "items": [
+    "Never on API startup: a Job from the suspended vyom-migrate CronJob",
+    "Advisory lock, one transaction per file, checksum refuses edited migrations"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Profiles",
+   "items": [
+    "VYOM_TELEMETRY none (default), metrics or full; metrics/full need Prometheus CRDs first",
+    "Re-runnable: unchanged trees reuse loaded images"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c412d69f-d5e0-4215-8f2e-4adf23975dff",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/sequence-chat-request-20261101-004017/chat-request.html",
+  "specification": {
+    "sha256": "c0890a0a5974897657888a5cbb44c3480618bd4f65c524cb348113a5ff0e37a7",
+    "bytes": 6800
+  },
+  "artifact": {
+    "sha256": "524e8864ebc69903962909b33753f8477610028a2635419054aaeda11baa8aba",
+    "bytes": 823867
+  }
+}

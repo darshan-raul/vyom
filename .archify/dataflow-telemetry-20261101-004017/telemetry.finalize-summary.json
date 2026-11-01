@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "dataflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/candidate.json",
+    "sha256": "ed925b598f5aaef5885f287cb94a6839f4a0b4b2cb0db07f7db29d5675f7ee32",
+    "bytes": 7734
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/telemetry.html",
+    "sha256": "1d2242f0a752aaaba1c995e4ed8c2cb287963f1c662edf8b3e010a3c17ec73c6",
+    "bytes": 825227
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/telemetry.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/telemetry.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/telemetry.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-31T19:10:52.703Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-31T19:10:52.703Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3908
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d1cf0da7-63e4-41dd-8df8-6689b2d594dc",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/home/darshan/projects/vyom/.archify/workflow-record-collection-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/workflow-record-collection-20261101-004017/record-collection.html",
+  "specification": {
+    "sha256": "a17bb20869148fdaffc9c2a5dae0f3b10b53c7452f708781b5eebbf2be558a11",
+    "bytes": 6616
+  },
+  "artifact": {
+    "sha256": "0d88354a0fa08b4dcacef52bb0a1b5f7f93c02acac74273b5b777aa87705d696",
+    "bytes": 826686
+  }
+}

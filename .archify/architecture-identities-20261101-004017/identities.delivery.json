@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0ad08c44-2328-4a13-8eae-894399ed1cb2",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/darshan/projects/vyom/.archify/architecture-identities-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/architecture-identities-20261101-004017/identities.html",
+  "specification": {
+    "sha256": "317726cfbc9ca1d18315859236b61379d2c7024f18c378b8bf6c5c4ce553dc91",
+    "bytes": 6050
+  },
+  "artifact": {
+    "sha256": "b4281b2481c39ebfcf9a3e17eea9dc67b83f73e02c399b665598885ee72168c8",
+    "bytes": 824739
+  }
+}

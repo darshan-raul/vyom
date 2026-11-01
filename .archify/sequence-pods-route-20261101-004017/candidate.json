@@ -1,0 +1,255 @@
+{
+ "schema_version": 1,
+ "diagram_type": "sequence",
+ "meta": {
+  "title": "GET /api/kubernetes/pods: live read, then persisted",
+  "output": ".archify/sequence-pods-route-20261101-004017/pods-route.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "participants": [
+  {
+   "id": "browser",
+   "type": "frontend",
+   "label": "Browser",
+   "sublabel": "Kubernetes page",
+   "sources": [
+    {
+     "path": "frontend/src/lib/pods.ts",
+     "line": 20,
+     "end_line": 28,
+     "label": "usePods, every 15 s"
+    }
+   ]
+  },
+  {
+   "id": "ui",
+   "type": "frontend",
+   "label": "vyom-ui nginx",
+   "sublabel": "/api/ \u2192 vyom-api:8000",
+   "sources": [
+    {
+     "path": "frontend/nginx.conf",
+     "line": 4,
+     "end_line": 12
+    }
+   ]
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "FastAPI",
+   "sublabel": "kubernetes_pods()",
+   "sources": [
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 240,
+     "end_line": 270
+    }
+   ]
+  },
+  {
+   "id": "collector",
+   "type": "backend",
+   "label": "PodCollector",
+   "sublabel": "POD projection",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 236,
+     "end_line": 286
+    },
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 347,
+     "end_line": 353
+    }
+   ]
+  },
+  {
+   "id": "k8s",
+   "type": "cloud",
+   "label": "Kubernetes API",
+   "sublabel": "vyom-collector SA",
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 55,
+     "end_line": 75
+    }
+   ]
+  },
+  {
+   "id": "store",
+   "type": "database",
+   "label": "InventoryStore",
+   "sublabel": "vyom-postgres",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 118,
+     "end_line": 191
+    }
+   ]
+  }
+ ],
+ "segments": [
+  {
+   "from": 155,
+   "to": 250,
+   "label": "Request"
+  },
+  {
+   "from": 265,
+   "to": 482,
+   "label": "Live read"
+  },
+  {
+   "from": 490,
+   "to": 680,
+   "label": "Persist"
+  },
+  {
+   "from": 690,
+   "to": 790,
+   "label": "Reply"
+  }
+ ],
+ "messages": [
+  {
+   "id": "get",
+   "from": "browser",
+   "to": "ui",
+   "y": 170,
+   "label": "GET /api/kubernetes/pods",
+   "variant": "emphasis",
+   "note": "Every 15 s while the page is open"
+  },
+  {
+   "id": "fwd",
+   "from": "ui",
+   "to": "api",
+   "y": 230,
+   "label": "proxy (90 s read timeout)",
+   "variant": "emphasis"
+  },
+  {
+   "id": "collect",
+   "from": "api",
+   "to": "collector",
+   "y": 280,
+   "label": "collect(resolver.resolve())",
+   "variant": "emphasis",
+   "note": "Fixed operator context; no kubernetes block \u2192 200 configured=false"
+  },
+  {
+   "id": "list",
+   "from": "collector",
+   "to": "k8s",
+   "y": 350,
+   "label": "GET pods as Table, metadata only",
+   "variant": "security",
+   "note": "limit 100 per page, continue tokens, \u2264 20 pages"
+  },
+  {
+   "id": "table",
+   "from": "k8s",
+   "to": "collector",
+   "y": 425,
+   "label": "Table pages",
+   "variant": "return"
+  },
+  {
+   "id": "ev",
+   "from": "collector",
+   "to": "api",
+   "y": 470,
+   "label": "Evidence (never raises)",
+   "variant": "return"
+  },
+  {
+   "id": "record",
+   "from": "api",
+   "to": "store",
+   "y": 500,
+   "label": "record_collection(evidence, Pod)",
+   "variant": "emphasis",
+   "note": "Same transaction as the sweep: run, resources, owner edges, observations, absence"
+  },
+  {
+   "id": "ok",
+   "from": "store",
+   "to": "api",
+   "y": 580,
+   "label": "ok \u2192 persisted true",
+   "variant": "return",
+   "note": "psycopg / credential / OS / timeout error \u2192 persisted false, read still served"
+  },
+  {
+   "id": "reply",
+   "from": "api",
+   "to": "ui",
+   "y": 720,
+   "label": "200 {configured, evidence, persisted}",
+   "variant": "return"
+  },
+  {
+   "id": "reply2",
+   "from": "ui",
+   "to": "browser",
+   "y": 760,
+   "label": "200",
+   "variant": "return"
+  }
+ ],
+ "activations": [
+  {
+   "participant": "api",
+   "from": 230,
+   "to": 720,
+   "type": "backend"
+  },
+  {
+   "participant": "collector",
+   "from": 280,
+   "to": 470,
+   "type": "backend"
+  },
+  {
+   "participant": "store",
+   "from": 500,
+   "to": 580,
+   "type": "database"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Today vs R3.3",
+   "items": [
+    "This route still collects per request, so each open browser adds a live list",
+    "R3.3 switches it to stored reads; the sweep already keeps Postgres current"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Postgres down",
+   "items": [
+    "The pod table still renders from the live read",
+    "persisted: false, and inventory operation record_collection counts database_unavailable"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Independent of AI",
+   "items": [
+    "No model and no MCP on this path"
+   ]
+  }
+ ]
+}

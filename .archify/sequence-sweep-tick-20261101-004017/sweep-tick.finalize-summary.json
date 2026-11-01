@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/candidate.json",
+    "sha256": "6f13b933a1a8463bed1533d919069a86049516d6552ae82ae4cd6e6e44e777a3",
+    "bytes": 6996
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/sweep-tick.html",
+    "sha256": "e3abf57bc1fe20fc056d60d0e50e367979d2b05d4830670b3b1510dc0784d18e",
+    "bytes": 823920
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/sweep-tick.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/sweep-tick.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/sweep-tick.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-31T19:10:52.703Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-31T19:10:52.703Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5249
+}

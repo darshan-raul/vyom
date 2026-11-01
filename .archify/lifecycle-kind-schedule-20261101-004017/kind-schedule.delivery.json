@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0b144d38-7f04-4230-9ada-e1b79e0a3353",
+  "status": "current",
+  "command": "deliver",
+  "type": "lifecycle",
+  "input": "/home/darshan/projects/vyom/.archify/lifecycle-kind-schedule-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/lifecycle-kind-schedule-20261101-004017/kind-schedule.html",
+  "specification": {
+    "sha256": "fa079508d99646e00f1d8927c0087e2ccf5538eeaf50a56138494f9b024d5255",
+    "bytes": 4722
+  },
+  "artifact": {
+    "sha256": "b27e134fae31646523412a1035673325ee94b94a2768fdb7de76a8b35ae912e7",
+    "bytes": 821122
+  }
+}

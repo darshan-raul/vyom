@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "5e37773f-ce22-4d72-ab0a-3787457b3f13",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/kind-deployment.html",
+  "specification": {
+    "sha256": "06e094155d9539fe4837de85274f51a4b3f4a7b40b6148aa52da5e442e13f448",
+    "bytes": 6624
+  },
+  "artifact": {
+    "sha256": "4876c7bb399aca2d29e206651827f226c3afb228214286fc1d15adb0ca10cca8",
+    "bytes": 832419
+  }
+}

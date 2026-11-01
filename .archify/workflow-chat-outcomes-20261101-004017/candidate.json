@@ -1,0 +1,372 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "Chat graph: every way a question ends",
+  "output": ".archify/workflow-chat-outcomes-20261101-004017/chat-outcomes.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "lanes": [
+  {
+   "id": "main",
+   "label": "propose \u2192 collect \u2192 answer"
+  },
+  {
+   "id": "stopA",
+   "label": "Stops with a limitation",
+   "variant": "exception"
+  },
+  {
+   "id": "stopB",
+   "label": "Provider and deadline",
+   "variant": "exception"
+  }
+ ],
+ "mainPath": [
+  "q",
+  "propose",
+  "collect",
+  "answer",
+  "check",
+  "ok"
+ ],
+ "nodes": [
+  {
+   "id": "q",
+   "lane": "main",
+   "col": 0,
+   "type": "frontend",
+   "label": "Question",
+   "sublabel": "+ trusted context",
+   "sources": [
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 320,
+     "end_line": 328
+    }
+   ]
+  },
+  {
+   "id": "propose",
+   "lane": "main",
+   "col": 1,
+   "type": "external",
+   "label": "propose",
+   "sublabel": "model picks a tool",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 242,
+     "end_line": 264
+    }
+   ]
+  },
+  {
+   "id": "collect",
+   "lane": "main",
+   "col": 2,
+   "type": "security",
+   "label": "collect",
+   "sublabel": "one call via McpHost",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 267,
+     "end_line": 295
+    }
+   ]
+  },
+  {
+   "id": "answer",
+   "lane": "main",
+   "col": 3,
+   "type": "external",
+   "label": "answer",
+   "sublabel": "model writes from evidence",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 337,
+     "end_line": 346
+    }
+   ]
+  },
+  {
+   "id": "check",
+   "lane": "main",
+   "col": 4,
+   "type": "security",
+   "label": "Check answer",
+   "sublabel": "length, finish, [n] citations",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 347,
+     "end_line": 356
+    }
+   ]
+  },
+  {
+   "id": "ok",
+   "lane": "main",
+   "col": 5,
+   "type": "backend",
+   "label": "answered",
+   "sublabel": "text + citations + evidence",
+   "tag": "200",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 357,
+     "end_line": 366
+    }
+   ]
+  },
+  {
+   "id": "nc",
+   "lane": "stopA",
+   "col": 0,
+   "type": "external",
+   "label": "not_configured",
+   "sublabel": "no model or no tool",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 370,
+     "end_line": 374
+    },
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 324,
+     "end_line": 325
+    }
+   ]
+  },
+  {
+   "id": "nt",
+   "lane": "stopA",
+   "col": 1,
+   "type": "security",
+   "label": "no_tool_used",
+   "sublabel": "ungrounded text dropped",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 255,
+     "end_line": 263
+    }
+   ]
+  },
+  {
+   "id": "ne",
+   "lane": "stopA",
+   "col": 2,
+   "type": "security",
+   "label": "no_evidence",
+   "sublabel": "refused or failed call",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 285,
+     "end_line": 294
+    }
+   ]
+  },
+  {
+   "id": "trl",
+   "lane": "stopA",
+   "col": 3,
+   "type": "security",
+   "label": "tool_round_limit",
+   "sublabel": "second proposal refused",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 343,
+     "end_line": 344
+    }
+   ]
+  },
+  {
+   "id": "ia",
+   "lane": "stopA",
+   "col": 4,
+   "type": "security",
+   "label": "invalid_answer",
+   "sublabel": "empty, cut off, uncited, bad [n]",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 347,
+     "end_line": 356
+    }
+   ]
+  },
+  {
+   "id": "mu",
+   "lane": "stopB",
+   "col": 2,
+   "type": "security",
+   "label": "model_unavailable",
+   "sublabel": "fixed ModelError text",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 251,
+     "end_line": 254
+    },
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 341,
+     "end_line": 342
+    }
+   ]
+  },
+  {
+   "id": "to",
+   "lane": "stopB",
+   "col": 4,
+   "type": "security",
+   "label": "timeout",
+   "sublabel": "60 s deadline",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 217,
+     "end_line": 230
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "id": "m1",
+   "from": "q",
+   "to": "propose",
+   "label": "agent configured",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m2",
+   "from": "propose",
+   "to": "collect",
+   "label": "tool call",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m3",
+   "from": "collect",
+   "to": "answer",
+   "label": "usable evidence",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m4",
+   "from": "answer",
+   "to": "check",
+   "label": "text reply",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m5",
+   "from": "check",
+   "to": "ok",
+   "label": "all checks pass",
+   "variant": "emphasis"
+  },
+  {
+   "id": "s0",
+   "from": "q",
+   "to": "nc",
+   "label": "not configured",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s1",
+   "from": "propose",
+   "to": "nt",
+   "label": "no call",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s2",
+   "from": "collect",
+   "to": "ne",
+   "label": "nothing usable",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s3",
+   "from": "answer",
+   "to": "trl",
+   "label": "asks again",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s4",
+   "from": "check",
+   "to": "ia",
+   "label": "fails",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s5",
+   "from": "propose",
+   "to": "mu",
+   "label": "ModelError",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s6",
+   "from": "answer",
+   "to": "mu",
+   "label": "ModelError",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "s7",
+   "from": "check",
+   "to": "to",
+   "label": "deadline",
+   "role": "error",
+   "variant": "dashed"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Every outcome is a 200",
+   "items": [
+    "outcome is one of eight values; anything but answered carries fixed limitation text, never a guess"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Evidence is kept",
+   "items": [
+    "Stops after collect still return the evidence that was really collected",
+    "Tool evidence is stored in Postgres best effort"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "timeout",
+   "items": [
+    "The whole graph runs under a 60 s deadline; when it passes, the default timeout result is returned whatever step was running"
+   ]
+  }
+ ]
+}

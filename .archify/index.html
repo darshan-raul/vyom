@@ -3,53 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vyom backend flows</title>
+<title>Vyom flows</title>
 <style>
-  :root { --bg: #f7f8fa; --fg: #14171c; --muted: #5b6472; --card: #ffffff; --line: #e2e6ec; --accent: #0f8a6a; }
+  :root { --bg: #f7f8fa; --fg: #14171c; --muted: #5b6472; --card: #ffffff; --line: #e2e6ec; --accent: #0f8a6a; --new: #b4530a; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0b0e14; --fg: #e8ecf2; --muted: #9aa4b2; --card: #121722; --line: #232b3a; --accent: #3ccf9f; }
+    :root { --bg: #0b0e14; --fg: #e8ecf2; --muted: #9aa4b2; --card: #121722; --line: #232b3a; --accent: #3ccf9f; --new: #f0a050; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 48px; }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 16px 48px; }
   h1 { font-size: 24px; margin: 0 0 4px; }
-  p.lead { color: var(--muted); margin: 0 0 24px; }
-  ol { list-style: none; padding: 0; margin: 0; counter-reset: n; }
-  li { counter-increment: n; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 28px 0 10px; }
+  p.lead { color: var(--muted); margin: 0 0 8px; }
+  ol { list-style: none; padding: 0; margin: 0; }
+  li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
   li a { color: var(--fg); font-weight: 600; text-decoration: none; }
-  li a::before { content: counter(n) ". "; color: var(--accent); }
   li a:hover { text-decoration: underline; }
   .kind { font: 12px ui-monospace, monospace; color: var(--accent); margin-left: 6px; }
+  .new { font: 11px ui-monospace, monospace; color: var(--new); border: 1px solid var(--new); border-radius: 4px; padding: 0 4px; margin-left: 6px; }
   .why { color: var(--muted); margin: 4px 0 0; }
-  .guide { font-size: 13px; color: var(--muted); }
-  footer { color: var(--muted); font-size: 13px; margin-top: 24px; }
+  code { font-size: 13px; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 28px; }
+  footer a { color: var(--muted); }
 </style>
 </head>
 <body>
 <main>
-  <h1>Vyom backend flows</h1>
-  <p class="lead">Every flow in <code>backend/src/vyom</code>, drawn from the code at commit 18bfd61. Each box links to the lines it is drawn from. Read top to bottom: the overview first, then one diagram per flow.</p>
+  <h1>Vyom flows</h1>
+  <p class="lead">Every flow running today (through R3.2), drawn from the code at commit <code>f01bf5b</code>. Each box links to the source lines it is drawn from. Read top to bottom: how it is deployed, how inventory is collected and stored, then the request paths and the mechanisms they share.</p>
+
+  <h2>Deployment</h2>
   <ol>
-    <li><a href="architecture-backend-overview-20261018-000714/backend-overview.html">Components and the two read paths</a><span class="kind">architecture</span>
-      <p class="why">Every backend part, what it talks to, and the three identities. Start here.</p><span class="guide">Guides 1–3</span></li>
-    <li><a href="workflow-startup-wiring-20261018-000714/startup-wiring.html">Startup: what create_app builds</a><span class="kind">workflow</span>
-      <p class="why">How operator config turns into objects and routes, and what happens when parts are missing.</p><span class="guide">Guide 1 §4, Guide 2 §5.3</span></li>
-    <li><a href="sequence-chat-request-20261018-000714/chat-request.html">POST /api/chat, end to end</a><span class="kind">sequence</span>
-      <p class="why">One question through the model, McpHost, kube-rbac-proxy, the MCP server and back, in order.</p><span class="guide">Guide 2, Guide 1 §2.7</span></li>
-    <li><a href="workflow-chat-outcomes-20261018-000714/chat-outcomes.html">Chat graph: every way a question can end</a><span class="kind">workflow</span>
-      <p class="why">propose, collect, answer, and the seven stops that return a limitation instead of an answer.</p><span class="guide">Guide 2 §3.6, §4</span></li>
-    <li><a href="workflow-model-request-20261018-000714/model-request.html">One model request</a><span class="kind">workflow</span>
-      <p class="why">ModelClient.chat: key, capped transport, no retries, fixed error kinds, telemetry in finally.</p><span class="guide">Guide 1 §4.3</span></li>
-    <li><a href="workflow-mcp-host-call-20261018-000714/mcp-host-call.html">McpHost.call: the gates</a><span class="kind">workflow</span>
-      <p class="why">Allowlist, connection, argument binding, session, schema digest, call, projection, and where each failure lands.</p><span class="guide">Guide 1 §2.5–2.6, §4.2</span></li>
-    <li><a href="sequence-pods-direct-20261018-000714/pods-direct.html">GET /api/kubernetes/pods: the direct read</a><span class="kind">sequence</span>
-      <p class="why">PodCollector asking the Kubernetes API for a Table, page by page, with its own identity.</p><span class="guide">Guide 3</span></li>
-    <li><a href="workflow-evidence-state-20261018-000714/evidence-state.html">build_evidence: how a state is decided</a><span class="kind">workflow</span>
-      <p class="why">The shared contract of both paths: namespace guard, item limit, IDs, and the six states.</p><span class="guide">Guide 1 §2.6</span></li>
-    <li><a href="dataflow-telemetry-20261018-000714/telemetry.html">Telemetry without payloads</a><span class="kind">dataflow</span>
-      <p class="why">Logs, traces and metrics from code to Loki, Tempo and Prometheus, and what is wired on dev today.</p><span class="guide">Guide 1 §3, §4.4</span></li>
+    <li><a href="architecture-kind-deployment-20261101-004017/kind-deployment.html">Vyom on Kind: workloads, identities and data paths</a><span class="kind">architecture</span>
+      <p class="why">UI, API with the sweep, Postgres, the migration Job, the MCP pod, the token refresher and what each talks to. Start here.</p></li>
+    <li><a href="architecture-identities-20261101-004017/identities.html">Identities and credentials: who may read what</a><span class="kind">architecture</span>
+      <p class="why">The four ServiceAccounts, how the collector and MCP tokens reach the API, and what the proxy checks.</p></li>
+    <li><a href="workflow-install-migrate-20261101-004017/install-migrate.html">scripts/vyom-up.sh: install or update on Kind</a><span class="kind">workflow</span>
+      <p class="why">Preflight, content-tagged images, private Secrets, Helm, the controlled migration Job and the first collector token.</p></li>
   </ol>
-  <footer>Generated with archify into <code>.archify/</code>. Source links open local files; the source changed since this commit only by added comments.</footer>
+
+  <h2>Inventory collection (R3.1–R3.2)</h2>
+  <ol>
+    <li><a href="sequence-sweep-tick-20261101-004017/sweep-tick.html">Scheduled sweep: one tick under the connection lease</a><span class="kind">sequence</span><span class="new">R3.2</span>
+      <p class="why">Lease, what is due, Deployment → ReplicaSet → Pod, record, health, and release on shutdown. No browser involved.</p></li>
+    <li><a href="lifecycle-kind-schedule-20261101-004017/kind-schedule.html">One kind's collection schedule</a><span class="kind">lifecycle</span><span class="new">R3.2</span>
+      <p class="why">Healthy, due, backing off, lease held elsewhere, aborted tick: the <code>collection_health</code> row's life.</p></li>
+    <li><a href="workflow-table-collector-20261101-004017/table-collector.html">TableCollector.collect: metadata-only Table read</a><span class="kind">workflow</span><span class="new">R3.1</span>
+      <p class="why">Per-kind projections, paging, the controller owner reference, and how each failure becomes evidence.</p></li>
+    <li><a href="workflow-record-collection-20261101-004017/record-collection.html">record_collection: one collection, one transaction</a><span class="kind">workflow</span><span class="new">R3.1</span>
+      <p class="why">Scope check, run, resources by UID, ownership edges, observations, absence only on proof, pruning.</p></li>
+    <li><a href="erd-inventory-schema-20261101-004017/inventory-schema.html">Inventory schema (migrations 0001–0003)</a><span class="kind">erd</span>
+      <p class="why">Every table and column, workspace-scoped composite keys, and guided views for evidence, ownership and the sweep.</p></li>
+  </ol>
+
+  <h2>Request paths</h2>
+  <ol>
+    <li><a href="sequence-pods-route-20261101-004017/pods-route.html">GET /api/kubernetes/pods: live read, then persisted</a><span class="kind">sequence</span>
+      <p class="why">Browser through nginx to the collector and Postgres; what happens when Postgres is down.</p></li>
+    <li><a href="sequence-citation-route-20261101-004017/citation-route.html">GET /api/citations/…: resolve a cited item</a><span class="kind">sequence</span>
+      <p class="why">A scoped lookup in stored observations that survives restarts and restores.</p></li>
+    <li><a href="sequence-chat-request-20261101-004017/chat-request.html">POST /api/chat end to end</a><span class="kind">sequence</span>
+      <p class="why">One question through the model, McpHost, kube-rbac-proxy and the MCP server, with tool evidence stored.</p></li>
+  </ol>
+
+  <h2>Shared mechanisms</h2>
+  <ol>
+    <li><a href="workflow-chat-outcomes-20261101-004017/chat-outcomes.html">Chat graph: every way a question ends</a><span class="kind">workflow</span>
+      <p class="why">propose, collect, answer, and the stops that return a limitation instead of an answer.</p></li>
+    <li><a href="workflow-mcp-host-call-20261101-004017/mcp-host-call.html">McpHost.call: the gates</a><span class="kind">workflow</span>
+      <p class="why">Allowlist, connection, argument binding, schema digest, projection, and where each refusal lands.</p></li>
+    <li><a href="workflow-evidence-state-20261101-004017/evidence-state.html">build_evidence: how every collection gets its state</a><span class="kind">workflow</span>
+      <p class="why">The one constructor for the direct, sweep and MCP paths: namespace guard, item limit, IDs, states.</p></li>
+    <li><a href="dataflow-telemetry-20261101-004017/telemetry.html">Telemetry without payloads</a><span class="kind">dataflow</span>
+      <p class="why">Logs, traces and metrics from code to Loki, Tempo and Prometheus, by telemetry profile.</p></li>
+  </ol>
+
+  <footer>Generated with archify into <code>.archify/</code>; source links open local files at commit f01bf5b. The earlier set, drawn from 18bfd61 before Postgres and the sweep, is kept at <a href="index-20261018.html">index-20261018.html</a>.</footer>
 </main>
 </body>
 </html>

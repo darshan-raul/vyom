@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b5392280-9458-4f73-8d69-741d54b48587",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/home/darshan/projects/vyom/.archify/sequence-pods-route-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/sequence-pods-route-20261101-004017/pods-route.html",
+  "specification": {
+    "sha256": "8d05742567db87e916f385bd26db47dac696b04290000137d14b03694824c602",
+    "bytes": 4939
+  },
+  "artifact": {
+    "sha256": "e7478aea95768926f39812e409ddb420b805267354e7017e7e2eac4a8164abcf",
+    "bytes": 817454
+  }
+}

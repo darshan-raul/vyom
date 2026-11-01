@@ -1,0 +1,333 @@
+{
+ "schema_version": 1,
+ "diagram_type": "sequence",
+ "meta": {
+  "title": "POST /api/chat end to end: one question, one tool round, one cited answer",
+  "output": ".archify/sequence-chat-request-20261101-004017/chat-request.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "participants": [
+  {
+   "id": "browser",
+   "type": "frontend",
+   "label": "Browser",
+   "sublabel": "Ask Vyom",
+   "sources": [
+    {
+     "path": "frontend/src/lib/agent.ts",
+     "line": 80,
+     "end_line": 95
+    }
+   ]
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "FastAPI",
+   "sublabel": "chat()",
+   "sources": [
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 320,
+     "end_line": 334
+    }
+   ]
+  },
+  {
+   "id": "graph",
+   "type": "backend",
+   "label": "ChatAgent",
+   "sublabel": "LangGraph, 60 s",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 212,
+     "end_line": 236
+    },
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 242,
+     "end_line": 295
+    },
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 324,
+     "end_line": 366
+    }
+   ]
+  },
+  {
+   "id": "model",
+   "type": "external",
+   "label": "ModelClient",
+   "sublabel": "OpenRouter, no retries",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/model.py",
+     "line": 301,
+     "end_line": 388
+    }
+   ]
+  },
+  {
+   "id": "host",
+   "type": "security",
+   "label": "McpHost",
+   "sublabel": "allowlist + scope",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 293,
+     "end_line": 359
+    },
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 440,
+     "end_line": 494
+    }
+   ]
+  },
+  {
+   "id": "mcp",
+   "type": "cloud",
+   "label": "kubernetes-mcp",
+   "sublabel": "kube-rbac-proxy \u2192 server",
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+     "line": 59,
+     "end_line": 83
+    }
+   ]
+  },
+  {
+   "id": "store",
+   "type": "database",
+   "label": "InventoryStore",
+   "sublabel": "Postgres",
+   "sources": [
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 297,
+     "end_line": 321
+    }
+   ]
+  }
+ ],
+ "segments": [
+  {
+   "from": 155,
+   "to": 250,
+   "label": "Request"
+  },
+  {
+   "from": 260,
+   "to": 420,
+   "label": "propose"
+  },
+  {
+   "from": 430,
+   "to": 780,
+   "label": "collect"
+  },
+  {
+   "from": 790,
+   "to": 960,
+   "label": "answer"
+  },
+  {
+   "from": 970,
+   "to": 1080,
+   "label": "Reply"
+  }
+ ],
+ "messages": [
+  {
+   "id": "q",
+   "from": "browser",
+   "to": "api",
+   "y": 170,
+   "label": "POST /api/chat {question}",
+   "variant": "emphasis",
+   "note": "Body is only the question (\u2264 500 chars)"
+  },
+  {
+   "id": "ask",
+   "from": "api",
+   "to": "graph",
+   "y": 235,
+   "label": "ask(question, resolver.resolve())",
+   "variant": "emphasis"
+  },
+  {
+   "id": "p1",
+   "from": "graph",
+   "to": "model",
+   "y": 275,
+   "label": "system + question, tools declared",
+   "variant": "emphasis",
+   "note": "Namespace from the trusted context in the system prompt"
+  },
+  {
+   "id": "p2",
+   "from": "model",
+   "to": "graph",
+   "y": 345,
+   "label": "tool call proposed | none | error",
+   "variant": "return",
+   "note": "No tool call \u2192 no_tool_used; model failure \u2192 model_unavailable"
+  },
+  {
+   "id": "c1",
+   "from": "graph",
+   "to": "host",
+   "y": 445,
+   "label": "call(name, args, context)",
+   "variant": "emphasis",
+   "note": "Only the first proposed call runs; others get 'Not called'"
+  },
+  {
+   "id": "c2",
+   "from": "host",
+   "to": "mcp",
+   "y": 515,
+   "label": "tools/call over HTTPS, bearer token",
+   "variant": "security",
+   "note": "Allowlist, same connection, args bound to trusted namespace, schema digest checked first"
+  },
+  {
+   "id": "c3",
+   "from": "mcp",
+   "to": "host",
+   "y": 595,
+   "label": "text table",
+   "variant": "return",
+   "note": "Proxy checks token audience and the caller's RBAC before the server lists pods"
+  },
+  {
+   "id": "c4",
+   "from": "host",
+   "to": "graph",
+   "y": 655,
+   "label": "Evidence path mcp",
+   "variant": "return",
+   "note": "Refusals and failures are evidence with an error, never exceptions"
+  },
+  {
+   "id": "c5",
+   "from": "graph",
+   "to": "store",
+   "y": 705,
+   "label": "record_collection(evidence, Pod)",
+   "variant": "dashed",
+   "note": "Best effort: a DB error is counted and the question continues"
+  },
+  {
+   "id": "a1",
+   "from": "graph",
+   "to": "model",
+   "y": 815,
+   "label": "history + numbered evidence",
+   "variant": "emphasis",
+   "note": "At most 50 items sent; each gets a [n] reference"
+  },
+  {
+   "id": "a2",
+   "from": "model",
+   "to": "graph",
+   "y": 885,
+   "label": "answer text | second tool call",
+   "variant": "return",
+   "note": "Second round \u2192 tool_round_limit; empty, cut off, uncited or bad [n] \u2192 invalid_answer"
+  },
+  {
+   "id": "r1",
+   "from": "graph",
+   "to": "api",
+   "y": 990,
+   "label": "ChatResult(outcome, answer, citations, evidence)",
+   "variant": "return",
+   "note": "Deadline passed \u2192 timeout"
+  },
+  {
+   "id": "r2",
+   "from": "api",
+   "to": "browser",
+   "y": 1050,
+   "label": "200 + trace_id",
+   "variant": "return",
+   "note": "Every outcome is a 200 with an explicit outcome and limitation"
+  }
+ ],
+ "activations": [
+  {
+   "participant": "api",
+   "from": 170,
+   "to": 1050,
+   "type": "backend"
+  },
+  {
+   "participant": "graph",
+   "from": 235,
+   "to": 990,
+   "type": "backend"
+  },
+  {
+   "participant": "model",
+   "from": 275,
+   "to": 345,
+   "type": "external"
+  },
+  {
+   "participant": "host",
+   "from": 445,
+   "to": 655,
+   "type": "security"
+  },
+  {
+   "participant": "model",
+   "from": 815,
+   "to": 885,
+   "type": "external"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Grounding",
+   "items": [
+    "The answer must cite at least one collected item and only collected items",
+    "Uncited model text is withheld, not shown"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Untrusted inputs",
+   "items": [
+    "Question and model proposals are untrusted; scope comes from the server-side resolver",
+    "The host refuses unknown tools and other namespaces before any network call"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Limits",
+   "items": [
+    "One tool call per question, recursion limit 5, 60 s deadline",
+    "Answer \u2264 4000 chars; model replies size-capped"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Persistence",
+   "items": [
+    "MCP evidence is stored like the direct path but has no UIDs, so it never proves absence or identity"
+   ]
+  }
+ ]
+}

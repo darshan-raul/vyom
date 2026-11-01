@@ -1,0 +1,766 @@
+{
+ "schema_version": 1,
+ "diagram_type": "erd",
+ "meta": {
+  "title": "Vyom inventory schema (migrations 0001\u20130003)",
+  "output": ".archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+  "quality_profile": "standard",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  },
+  "views": [
+   {
+    "id": "tenancy",
+    "label": "Tenancy and scope",
+    "focus": [
+     "workspaces",
+     "connections",
+     "collection_runs",
+     "resources"
+    ],
+    "note": "Every row carries workspace_id and every foreign key includes it, so the database refuses cross-workspace links."
+   },
+   {
+    "id": "evidence",
+    "label": "Runs, observations, citations",
+    "focus": [
+     "collection_runs",
+     "observations",
+     "resources"
+    ],
+    "note": "A citation is (run_id, item_id) in observations; resource_id links it to the UID-backed row, NULL without a UID."
+   },
+   {
+    "id": "ownership",
+    "label": "Ownership edges",
+    "focus": [
+     "relationships",
+     "resources",
+     "collection_runs",
+     "observations"
+    ],
+    "note": "owns edges from controller to owned object; observations keep the owner each run reported (0002)."
+   },
+   {
+    "id": "schedule",
+    "label": "Sweep lease and health",
+    "focus": [
+     "collection_leases",
+     "collection_health",
+     "connections"
+    ],
+    "note": "0003: who may sweep a connection now, and when each kind is next due. Collector state only, never resource health."
+   }
+  ]
+ },
+ "layout": {
+  "mode": "grid",
+  "gapX": 72,
+  "gapY": 38
+ },
+ "entities": [
+  {
+   "id": "workspaces",
+   "label": "workspaces",
+   "sublabel": "tenancy root",
+   "tag": "tenancy",
+   "row": 0,
+   "col": 0,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "created_at",
+     "type": "timestamptz"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0001_inventory.sql",
+     "line": 7,
+     "end_line": 10
+    }
+   ]
+  },
+  {
+   "id": "connections",
+   "label": "connections",
+   "sublabel": "one Kubernetes cluster",
+   "tag": "tenancy",
+   "row": 1,
+   "col": 0,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "workspaces.id"
+    },
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "provider",
+     "type": "text"
+    },
+    {
+     "name": "cluster_uid",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "timestamptz"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0001_inventory.sql",
+     "line": 12,
+     "end_line": 21
+    }
+   ]
+  },
+  {
+   "id": "collection_runs",
+   "label": "collection_runs",
+   "sublabel": "one attempt = one evidence ID",
+   "tag": "collection",
+   "row": 0,
+   "col": 1,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "workspaces.id"
+    },
+    {
+     "name": "id",
+     "type": "text  ev_\u2026",
+     "key": "pk"
+    },
+    {
+     "name": "connection_id",
+     "type": "text",
+     "key": "fk",
+     "references": "connections.id"
+    },
+    {
+     "name": "path",
+     "type": "text  direct | mcp"
+    },
+    {
+     "name": "collector",
+     "type": "text  set iff direct"
+    },
+    {
+     "name": "mcp",
+     "type": "jsonb  provenance"
+    },
+    {
+     "name": "scope_kind",
+     "type": "text"
+    },
+    {
+     "name": "scope_namespace",
+     "type": "text"
+    },
+    {
+     "name": "collected_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "state",
+     "type": "text  5 states"
+    },
+    {
+     "name": "coverage_complete",
+     "type": "boolean"
+    },
+    {
+     "name": "returned",
+     "type": "integer"
+    },
+    {
+     "name": "truncated",
+     "type": "boolean"
+    },
+    {
+     "name": "error_kinds",
+     "type": "text[]"
+    },
+    {
+     "name": "contract_version",
+     "type": "smallint"
+    },
+    {
+     "name": "recorded_at",
+     "type": "timestamptz"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0001_inventory.sql",
+     "line": 23,
+     "end_line": 45
+    }
+   ]
+  },
+  {
+   "id": "collection_leases",
+   "label": "collection_leases",
+   "sublabel": "one sweeper per connection",
+   "tag": "collection",
+   "row": 1,
+   "col": 1,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "connections.workspace_id"
+    },
+    {
+     "name": "connection_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "connections.id"
+    },
+    {
+     "name": "holder",
+     "type": "text  host-pid-rand"
+    },
+    {
+     "name": "acquired_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamptz"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0003_collection_schedule.sql",
+     "line": 1,
+     "end_line": 15
+    }
+   ]
+  },
+  {
+   "id": "collection_health",
+   "label": "collection_health",
+   "sublabel": "collector state per kind",
+   "tag": "collection",
+   "row": 2,
+   "col": 1,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "connections.workspace_id"
+    },
+    {
+     "name": "connection_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "connections.id"
+    },
+    {
+     "name": "kind",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "namespace",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "last_attempt_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "last_state",
+     "type": "text"
+    },
+    {
+     "name": "last_error_kinds",
+     "type": "text[]"
+    },
+    {
+     "name": "last_success_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "consecutive_failures",
+     "type": "integer"
+    },
+    {
+     "name": "next_due_at",
+     "type": "timestamptz"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0003_collection_schedule.sql",
+     "line": 17,
+     "end_line": 33
+    }
+   ]
+  },
+  {
+   "id": "resources",
+   "label": "resources",
+   "sublabel": "one row per UID incarnation",
+   "tag": "inventory",
+   "row": 0,
+   "col": 2,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "workspaces.id"
+    },
+    {
+     "name": "id",
+     "type": "uuid",
+     "key": "pk"
+    },
+    {
+     "name": "connection_id",
+     "type": "text",
+     "key": [
+      "fk",
+      "uk"
+     ],
+     "references": "connections.id"
+    },
+    {
+     "name": "kind",
+     "type": "text",
+     "key": "uk"
+    },
+    {
+     "name": "namespace",
+     "type": "text"
+    },
+    {
+     "name": "name",
+     "type": "text  lookup alias"
+    },
+    {
+     "name": "native_uid",
+     "type": "text",
+     "key": "uk"
+    },
+    {
+     "name": "legacy_ref",
+     "type": "text  old item ID"
+    },
+    {
+     "name": "attributes",
+     "type": "jsonb  projection"
+    },
+    {
+     "name": "first_seen_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "first_seen_run_id",
+     "type": "text",
+     "key": "fk",
+     "references": "collection_runs.id"
+    },
+    {
+     "name": "last_seen_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "last_seen_run_id",
+     "type": "text",
+     "key": "fk",
+     "references": "collection_runs.id"
+    },
+    {
+     "name": "removed_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "removed_run_id",
+     "type": "text",
+     "key": "fk",
+     "references": "collection_runs.id"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0001_inventory.sql",
+     "line": 47,
+     "end_line": 76
+    }
+   ]
+  },
+  {
+   "id": "relationships",
+   "label": "relationships",
+   "sublabel": "owns: controller \u2192 owned",
+   "tag": "inventory",
+   "row": 1,
+   "col": 2,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "workspaces.id"
+    },
+    {
+     "name": "id",
+     "type": "uuid",
+     "key": "pk"
+    },
+    {
+     "name": "source_id",
+     "type": "uuid",
+     "key": [
+      "fk",
+      "uk"
+     ],
+     "references": "resources.id"
+    },
+    {
+     "name": "target_id",
+     "type": "uuid",
+     "key": [
+      "fk",
+      "uk"
+     ],
+     "references": "resources.id"
+    },
+    {
+     "name": "type",
+     "type": "text  owns",
+     "key": "uk"
+    },
+    {
+     "name": "first_seen_run_id",
+     "type": "text",
+     "key": "fk",
+     "references": "collection_runs.id"
+    },
+    {
+     "name": "last_verified_run_id",
+     "type": "text",
+     "key": "fk",
+     "references": "collection_runs.id"
+    },
+    {
+     "name": "last_verified_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "removed_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "removed_run_id",
+     "type": "text",
+     "key": "fk",
+     "references": "collection_runs.id"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0001_inventory.sql",
+     "line": 99,
+     "end_line": 123
+    }
+   ]
+  },
+  {
+   "id": "observations",
+   "label": "observations",
+   "sublabel": "what one run saw: citable",
+   "tag": "evidence",
+   "row": 0,
+   "col": 3,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "workspace_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "workspaces.id"
+    },
+    {
+     "name": "run_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "collection_runs.id"
+    },
+    {
+     "name": "item_id",
+     "type": "text  k8s:\u2026:pod:name",
+     "key": "pk"
+    },
+    {
+     "name": "resource_id",
+     "type": "uuid  nullable",
+     "key": "fk",
+     "references": "resources.id"
+    },
+    {
+     "name": "kind",
+     "type": "text"
+    },
+    {
+     "name": "namespace",
+     "type": "text"
+    },
+    {
+     "name": "name",
+     "type": "text"
+    },
+    {
+     "name": "native_uid",
+     "type": "text"
+    },
+    {
+     "name": "observed_at",
+     "type": "timestamptz"
+    },
+    {
+     "name": "attributes",
+     "type": "jsonb"
+    },
+    {
+     "name": "owner_kind",
+     "type": "text  0002"
+    },
+    {
+     "name": "owner_name",
+     "type": "text  0002"
+    },
+    {
+     "name": "owner_uid",
+     "type": "text  0002"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrations/0001_inventory.sql",
+     "line": 78,
+     "end_line": 97
+    },
+    {
+     "path": "backend/src/vyom/inventory/migrations/0002_observation_owner.sql",
+     "line": 1,
+     "end_line": 13
+    }
+   ]
+  },
+  {
+   "id": "schema_migrations",
+   "label": "schema_migrations",
+   "sublabel": "created by the runner",
+   "tag": "migrations",
+   "row": 1,
+   "col": 3,
+   "width": 270,
+   "attributes": [
+    {
+     "name": "version",
+     "type": "integer",
+     "key": "pk"
+    },
+    {
+     "name": "name",
+     "type": "text"
+    },
+    {
+     "name": "checksum",
+     "type": "text  sha256"
+    },
+    {
+     "name": "applied_at",
+     "type": "timestamptz"
+    }
+   ],
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/migrate.py",
+     "line": 67,
+     "end_line": 98
+    }
+   ]
+  }
+ ],
+ "relationships": [
+  {
+   "id": "conn_ws",
+   "from": "connections",
+   "to": "workspaces",
+   "label": "belongs to",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "run_conn",
+   "from": "collection_runs",
+   "to": "connections",
+   "label": "collected from",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "lease_conn",
+   "from": "collection_leases",
+   "to": "connections",
+   "label": "leases",
+   "fromCardinality": "one",
+   "toCardinality": "one",
+   "fromOptional": true
+  },
+  {
+   "id": "health_conn",
+   "from": "collection_health",
+   "to": "connections",
+   "label": "schedules",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "res_conn",
+   "from": "resources",
+   "to": "connections",
+   "label": "seen in",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "res_run",
+   "from": "resources",
+   "to": "collection_runs",
+   "label": "last seen by",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "obs_run",
+   "from": "observations",
+   "to": "collection_runs",
+   "label": "recorded by",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "obs_res",
+   "from": "observations",
+   "to": "resources",
+   "label": "identifies",
+   "fromCardinality": "many",
+   "toCardinality": "one",
+   "toOptional": true,
+   "identifying": false,
+   "variant": "dashed"
+  },
+  {
+   "id": "rel_src",
+   "from": "relationships",
+   "to": "resources",
+   "label": "source / target",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "rel_run",
+   "from": "relationships",
+   "to": "collection_runs",
+   "label": "verified by",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Composite keys",
+   "items": [
+    "Each fk shown on one column is really (workspace_id, column): a row can only reference its own workspace",
+    "resources is unique on (workspace_id, connection_id, kind, native_uid)",
+    "relationships is unique on (workspace_id, source_id, target_id, type)"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Identity and absence",
+   "items": [
+    "A recreated object has a new UID, so a new resources row with no inherited edges",
+    "removed_at is set only by a complete, untruncated, error-free scan whose items all had UIDs"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Retention",
+   "items": [
+    "Up to 500 unreferenced runs per (connection, kind, namespace) are kept; runs referenced by resources or relationships are never pruned",
+    "collection_health keeps no run IDs because runs are pruned"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Fixed values",
+   "items": [
+    "connections.provider is 'kubernetes'; cluster_uid can never change",
+    "collection_runs.state: complete, zero, partial, denied, missing",
+    "lease expires_at is computed on the database clock"
+   ]
+  }
+ ]
+}

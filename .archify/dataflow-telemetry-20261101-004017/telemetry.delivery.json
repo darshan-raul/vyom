@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0bbc1ecf-da82-4220-97e9-11eb0d2884f2",
+  "status": "current",
+  "command": "deliver",
+  "type": "dataflow",
+  "input": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/dataflow-telemetry-20261101-004017/telemetry.html",
+  "specification": {
+    "sha256": "ed925b598f5aaef5885f287cb94a6839f4a0b4b2cb0db07f7db29d5675f7ee32",
+    "bytes": 7734
+  },
+  "artifact": {
+    "sha256": "1d2242f0a752aaaba1c995e4ed8c2cb287963f1c662edf8b3e010a3c17ec73c6",
+    "bytes": 825227
+  }
+}

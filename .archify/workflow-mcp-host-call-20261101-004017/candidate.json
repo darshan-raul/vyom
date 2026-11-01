@@ -1,0 +1,315 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "McpHost.call: the gates before and after one MCP tool call",
+  "output": ".archify/workflow-mcp-host-call-20261101-004017/mcp-host-call.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "lanes": [
+  {
+   "id": "spec",
+   "label": "Reviewed tool"
+  },
+  {
+   "id": "main",
+   "label": "Gates"
+  },
+  {
+   "id": "err",
+   "label": "Refusal becomes evidence",
+   "variant": "exception"
+  }
+ ],
+ "mainPath": [
+  "in",
+  "allow",
+  "conn",
+  "bind",
+  "session",
+  "ev"
+ ],
+ "nodes": [
+  {
+   "id": "in",
+   "lane": "main",
+   "col": 0,
+   "type": "external",
+   "label": "call(tool, args, context)",
+   "sublabel": "tool + args untrusted",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 293,
+     "end_line": 309
+    }
+   ]
+  },
+  {
+   "id": "allow",
+   "lane": "main",
+   "col": 1,
+   "type": "security",
+   "label": "Allowlist",
+   "sublabel": "tool in SPECS?",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 301,
+     "end_line": 315
+    }
+   ]
+  },
+  {
+   "id": "conn",
+   "lane": "main",
+   "col": 2,
+   "type": "security",
+   "label": "Same connection",
+   "sublabel": "server.connection_id = context",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 316,
+     "end_line": 319
+    }
+   ]
+  },
+  {
+   "id": "bind",
+   "lane": "main",
+   "col": 3,
+   "type": "security",
+   "label": "Bind arguments",
+   "sublabel": "namespace from context",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 440,
+     "end_line": 459
+    }
+   ]
+  },
+  {
+   "id": "session",
+   "lane": "main",
+   "col": 4,
+   "type": "cloud",
+   "label": "Session + call",
+   "sublabel": "digest check, tools/call",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 365,
+     "end_line": 398
+    },
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 463,
+     "end_line": 484
+    }
+   ]
+  },
+  {
+   "id": "ev",
+   "lane": "main",
+   "col": 5,
+   "type": "database",
+   "label": "build_evidence",
+   "sublabel": "path mcp + provenance",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 327,
+     "end_line": 359
+    }
+   ]
+  },
+  {
+   "id": "spec",
+   "lane": "spec",
+   "col": 3,
+   "type": "external",
+   "label": "ToolSpec",
+   "sublabel": "pods_list_in_namespace",
+   "tag": "reviewed",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/kubernetes.py",
+     "line": 81,
+     "end_line": 98
+    }
+   ]
+  },
+  {
+   "id": "proj",
+   "lane": "spec",
+   "col": 4,
+   "type": "backend",
+   "label": "Project text table",
+   "sublabel": "Pod rows, no UIDs",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/kubernetes.py",
+     "line": 40,
+     "end_line": 72
+    }
+   ]
+  },
+  {
+   "id": "cls",
+   "lane": "err",
+   "col": 3,
+   "type": "security",
+   "label": "Classify",
+   "sublabel": "fixed ErrorKind, class name only",
+   "sources": [
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 121,
+     "end_line": 156
+    },
+    {
+     "path": "backend/src/vyom/mcp_client/host.py",
+     "line": 323,
+     "end_line": 325
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "id": "m1",
+   "from": "in",
+   "to": "allow",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m2",
+   "from": "allow",
+   "to": "conn",
+   "label": "listed",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m3",
+   "from": "conn",
+   "to": "bind",
+   "label": "match",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m4",
+   "from": "bind",
+   "to": "session",
+   "label": "valid",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m5",
+   "from": "session",
+   "to": "ev",
+   "label": "projected rows",
+   "variant": "emphasis"
+  },
+  {
+   "id": "b1",
+   "from": "spec",
+   "to": "bind",
+   "label": "schema + scope args",
+   "role": "branch"
+  },
+  {
+   "id": "b2",
+   "from": "session",
+   "to": "proj",
+   "label": "text reply",
+   "role": "branch"
+  },
+  {
+   "id": "b3",
+   "from": "proj",
+   "to": "ev",
+   "role": "branch"
+  },
+  {
+   "id": "x1",
+   "from": "allow",
+   "to": "cls",
+   "label": "tool_not_allowed",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x2",
+   "from": "conn",
+   "to": "cls",
+   "label": "scope_violation",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x3",
+   "from": "bind",
+   "to": "cls",
+   "label": "other namespace / bad args",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x4",
+   "from": "session",
+   "to": "cls",
+   "label": "auth \u00b7 timeout \u00b7 schema \u00b7 oversized",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "x5",
+   "from": "cls",
+   "to": "ev",
+   "label": "no items",
+   "role": "error",
+   "variant": "security"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Before the network",
+   "items": [
+    "Unknown tool, other connection, other namespace or invalid arguments are refused with no traffic"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "On the session",
+   "items": [
+    "Fresh token per session; one deadline for connect + call",
+    "Advertised input schema must match the reviewed SHA-256 before the call",
+    "Response bytes capped; 401/403 from the proxy \u2192 auth"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Upstream errors",
+   "items": [
+    "'is forbidden' text \u2192 forbidden; any other tool error \u2192 upstream_error",
+    "Unexpected text shape \u2192 invalid_output"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Why no UIDs",
+   "items": [
+    "The upstream text table has none, so MCP evidence never proves identity or absence in the store"
+   ]
+  }
+ ]
+}

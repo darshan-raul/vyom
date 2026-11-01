@@ -1,0 +1,323 @@
+{
+ "schema_version": 1,
+ "diagram_type": "sequence",
+ "meta": {
+  "title": "Scheduled inventory sweep: one tick under the connection lease (R3.2)",
+  "output": ".archify/sequence-sweep-tick-20261101-004017/sweep-tick.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "participants": [
+  {
+   "id": "life",
+   "type": "backend",
+   "label": "API lifespan",
+   "sublabel": "create_app",
+   "sources": [
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 160,
+     "end_line": 181,
+     "label": "build + start/stop"
+    }
+   ]
+  },
+  {
+   "id": "sweeper",
+   "type": "backend",
+   "label": "Sweeper",
+   "sublabel": "one tick",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 68,
+     "end_line": 105,
+     "label": "sweep_once, _sweep"
+    },
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 107,
+     "end_line": 122,
+     "label": "release, run"
+    }
+   ]
+  },
+  {
+   "id": "store",
+   "type": "database",
+   "label": "InventoryStore",
+   "sublabel": "Postgres",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 496,
+     "end_line": 526,
+     "label": "lease"
+    },
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 540,
+     "end_line": 591,
+     "label": "record_health"
+    },
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 118,
+     "end_line": 191,
+     "label": "record_collection"
+    }
+   ]
+  },
+  {
+   "id": "collector",
+   "type": "backend",
+   "label": "TableCollector",
+   "sublabel": "one per kind",
+   "sources": [
+    {
+     "path": "backend/src/vyom/collectors/kubernetes.py",
+     "line": 221,
+     "end_line": 288
+    }
+   ]
+  },
+  {
+   "id": "k8s",
+   "type": "cloud",
+   "label": "Kubernetes API",
+   "sublabel": "vyom-collector SA",
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 55,
+     "end_line": 75
+    }
+   ]
+  }
+ ],
+ "segments": [
+  {
+   "from": 155,
+   "to": 350,
+   "label": "Start and lease"
+  },
+  {
+   "from": 365,
+   "to": 455,
+   "label": "What is due"
+  },
+  {
+   "from": 490,
+   "to": 1000,
+   "label": "For each due kind, in SWEEP order"
+  },
+  {
+   "from": 1010,
+   "to": 1060,
+   "label": "Outcome"
+  },
+  {
+   "from": 1100,
+   "to": 1220,
+   "label": "Shutdown"
+  }
+ ],
+ "messages": [
+  {
+   "id": "start",
+   "from": "life",
+   "to": "sweeper",
+   "y": 170,
+   "label": "create_task(run())",
+   "variant": "emphasis",
+   "note": "Only when the operator file has an inventory block; every interval_seconds (60 s) until cancelled"
+  },
+  {
+   "id": "lease",
+   "from": "sweeper",
+   "to": "store",
+   "y": 250,
+   "label": "acquire_lease(holder, 120 s)",
+   "variant": "security",
+   "note": "Insert or take over only if the lease is mine or expired, on the database clock"
+  },
+  {
+   "id": "lease-r",
+   "from": "store",
+   "to": "sweeper",
+   "y": 320,
+   "label": "true | false \u2192 lease_held",
+   "variant": "return",
+   "note": "False: another worker sweeps this connection; skip the whole tick"
+  },
+  {
+   "id": "due",
+   "from": "sweeper",
+   "to": "store",
+   "y": 380,
+   "label": "collection_health(context)"
+  },
+  {
+   "id": "due-r",
+   "from": "store",
+   "to": "sweeper",
+   "y": 425,
+   "label": "next_due_at per kind",
+   "variant": "return",
+   "note": "A kind not yet due (backing off or just collected) is skipped"
+  },
+  {
+   "id": "renew",
+   "from": "sweeper",
+   "to": "store",
+   "y": 510,
+   "label": "acquire_lease (renew)",
+   "variant": "security",
+   "note": "False \u2192 lease_lost: stop, another worker may have taken over"
+  },
+  {
+   "id": "collect",
+   "from": "sweeper",
+   "to": "collector",
+   "y": 580,
+   "label": "collect(context)",
+   "variant": "emphasis"
+  },
+  {
+   "id": "list",
+   "from": "collector",
+   "to": "k8s",
+   "y": 625,
+   "label": "GET list ?limit=100 as Table",
+   "variant": "security",
+   "note": "Deployments, then ReplicaSets, then Pods: owners first"
+  },
+  {
+   "id": "table",
+   "from": "k8s",
+   "to": "collector",
+   "y": 695,
+   "label": "Table pages + metadata",
+   "variant": "return"
+  },
+  {
+   "id": "ev",
+   "from": "collector",
+   "to": "sweeper",
+   "y": 745,
+   "label": "Evidence (never raises)",
+   "variant": "return",
+   "note": "Failures arrive as denied or missing evidence, not exceptions"
+  },
+  {
+   "id": "record",
+   "from": "sweeper",
+   "to": "store",
+   "y": 815,
+   "label": "record_collection(evidence, kind)",
+   "variant": "emphasis",
+   "note": "One transaction: run, resources, owns edges, observations, absence, pruning"
+  },
+  {
+   "id": "health",
+   "from": "sweeper",
+   "to": "store",
+   "y": 895,
+   "label": "record_health(evidence, kind)",
+   "note": "Worked: failures 0, due +interval. Failed: failures+1, due +min(interval\u00b72^n, 900 s)"
+  },
+  {
+   "id": "health-r",
+   "from": "store",
+   "to": "sweeper",
+   "y": 975,
+   "label": "CollectionHealth",
+   "variant": "return"
+  },
+  {
+   "id": "out",
+   "from": "sweeper",
+   "to": "life",
+   "y": 1020,
+   "label": "swept \u00b7 lease_held \u00b7 lease_lost \u00b7 database_unavailable",
+   "variant": "return",
+   "note": "Counted as inventory operation 'sweep'; the loop sleeps one interval and repeats"
+  },
+  {
+   "id": "stop",
+   "from": "life",
+   "to": "sweeper",
+   "y": 1120,
+   "label": "shutdown: cancel, release()",
+   "variant": "dashed"
+  },
+  {
+   "id": "release",
+   "from": "sweeper",
+   "to": "store",
+   "y": 1170,
+   "label": "release_lease: DELETE where holder = me",
+   "variant": "security",
+   "note": "Best effort; an unreleased lease expires after lease_seconds anyway"
+  }
+ ],
+ "activations": [
+  {
+   "participant": "sweeper",
+   "from": 250,
+   "to": 1020,
+   "type": "backend"
+  },
+  {
+   "participant": "collector",
+   "from": 580,
+   "to": 745,
+   "type": "backend"
+  },
+  {
+   "participant": "store",
+   "from": 815,
+   "to": 975,
+   "type": "database"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Why a lease",
+   "items": [
+    "Every API replica runs the loop; only the lease holder collects",
+    "The store's out-of-order rules keep even an overlapping late write safe"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Backoff is per kind",
+   "items": [
+    "A denied Deployment list backs off; ReplicaSets and Pods keep their schedule",
+    "A truncated read is not a failure: it hit Vyom's own item limit"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Database down",
+   "items": [
+    "Any psycopg, credential, OS or timeout error ends the tick as database_unavailable",
+    "Nothing is collected without somewhere to store it"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Not in this path",
+   "items": [
+    "No browser, model or MCP: the sweep runs with all three absent",
+    "GET /api/kubernetes/pods still collects per request until R3.3"
+   ]
+  }
+ ]
+}

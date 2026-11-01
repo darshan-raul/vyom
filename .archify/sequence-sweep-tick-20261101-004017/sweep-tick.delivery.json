@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c8627376-2664-4334-b004-c76ef635ce49",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/candidate.json",
+  "output": "/home/darshan/projects/vyom/.archify/sequence-sweep-tick-20261101-004017/sweep-tick.html",
+  "specification": {
+    "sha256": "6f13b933a1a8463bed1533d919069a86049516d6552ae82ae4cd6e6e44e777a3",
+    "bytes": 6996
+  },
+  "artifact": {
+    "sha256": "e3abf57bc1fe20fc056d60d0e50e367979d2b05d4830670b3b1510dc0784d18e",
+    "bytes": 823920
+  }
+}

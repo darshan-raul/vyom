@@ -1,0 +1,342 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Identities and credentials: who may read what",
+  "output": ".archify/architecture-identities-20261101-004017/identities.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "components": [
+  {
+   "id": "tokenapi",
+   "type": "cloud",
+   "label": "TokenRequest API",
+   "sublabel": "serviceaccounts/token",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 123,
+     "end_line": 137
+    }
+   ]
+  },
+  {
+   "id": "refresher",
+   "type": "security",
+   "label": "Token refresher",
+   "sublabel": "SA vyom-token-refresher",
+   "pos": [
+    40,
+    200
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/collector-token.yaml",
+     "line": 1,
+     "end_line": 35
+    },
+    {
+     "path": "backend/src/vyom/token_refresher.py",
+     "line": 1,
+     "end_line": 71
+    }
+   ],
+   "tag": "*/30 min"
+  },
+  {
+   "id": "secret",
+   "type": "security",
+   "label": "Secret",
+   "sublabel": "vyom-collector-token",
+   "pos": [
+    300,
+    200
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 107,
+     "end_line": 110
+    },
+    {
+     "path": "deploy/chart/vyom/templates/api.yaml",
+     "line": 83,
+     "end_line": 84
+    }
+   ]
+  },
+  {
+   "id": "projected",
+   "type": "security",
+   "label": "Projected token",
+   "sublabel": "aud vyom-mcp, 1 h",
+   "pos": [
+    40,
+    360
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/api.yaml",
+     "line": 79,
+     "end_line": 82
+    }
+   ]
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "vyom-api pod",
+   "sublabel": "SA vyom-api",
+   "pos": [
+    300,
+    360
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/api.yaml",
+     "line": 20,
+     "end_line": 67
+    },
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 10,
+     "end_line": 16
+    }
+   ]
+  },
+  {
+   "id": "proxy",
+   "type": "security",
+   "label": "kube-rbac-proxy",
+   "sublabel": "HTTPS :8443",
+   "pos": [
+    560,
+    360
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+     "line": 72,
+     "end_line": 83
+    },
+    {
+     "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+     "line": 14,
+     "end_line": 27
+    }
+   ]
+  },
+  {
+   "id": "reviews",
+   "type": "cloud",
+   "label": "Token + access review",
+   "sublabel": "TokenReview, SAR",
+   "pos": [
+    560,
+    200
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 79,
+     "end_line": 101
+    },
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 103,
+     "end_line": 121
+    }
+   ]
+  },
+  {
+   "id": "server",
+   "type": "backend",
+   "label": "MCP server",
+   "sublabel": "SA kubernetes-mcp",
+   "pos": [
+    820,
+    360
+   ],
+   "size": [
+    160,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+     "line": 59,
+     "end_line": 71
+    },
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 36,
+     "end_line": 53
+    }
+   ]
+  },
+  {
+   "id": "demo",
+   "type": "external",
+   "label": "namespace demo",
+   "sublabel": "Pods, Deployments, RS",
+   "pos": [
+    1080,
+    360
+   ],
+   "size": [
+    160,
+    80
+   ],
+   "sources": [
+    {
+     "path": "deploy/kind/demo.yaml",
+     "line": 1,
+     "end_line": 44
+    },
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 55,
+     "end_line": 77
+    }
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "security-group",
+   "label": "kubernetes-mcp pod",
+   "wraps": [
+    "proxy",
+    "server"
+   ],
+   "pad": 12
+  }
+ ],
+ "connections": [
+  {
+   "from": "refresher",
+   "to": "tokenapi",
+   "label": "create, 1 h",
+   "variant": "security"
+  },
+  {
+   "from": "refresher",
+   "to": "secret",
+   "label": "patch only this",
+   "variant": "security"
+  },
+  {
+   "from": "secret",
+   "to": "api",
+   "label": "mounted file"
+  },
+  {
+   "from": "projected",
+   "to": "api",
+   "label": "kubelet-renewed"
+  },
+  {
+   "from": "api",
+   "to": "proxy",
+   "label": "Bearer (vyom-api)",
+   "variant": "security"
+  },
+  {
+   "from": "proxy",
+   "to": "reviews",
+   "label": "audience + RBAC",
+   "variant": "security"
+  },
+  {
+   "from": "proxy",
+   "to": "server",
+   "label": "127.0.0.1:8080",
+   "variant": "emphasis"
+  },
+  {
+   "from": "server",
+   "to": "demo",
+   "label": "list pods",
+   "variant": "security"
+  },
+  {
+   "from": "api",
+   "to": "demo",
+   "label": "list pods, deploy, rs as vyom-collector",
+   "variant": "security",
+   "fromSide": "bottom",
+   "toSide": "bottom"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "vyom-collector (via Secret)",
+   "items": [
+    "list pods, deployments, replicasets in demo only",
+    "no get, watch, logs, exec, Secrets, other namespaces or nodes",
+    "1 h token, replaced every 30 min by the refresher"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "vyom-api (projected token)",
+   "items": [
+    "Only right: get/create/delete on mcpendpoints/kubernetes, a name that grants nothing in the Kubernetes API",
+    "The proxy checks audience vyom-mcp and that RBAC before forwarding"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "kubernetes-mcp",
+   "items": [
+    "list pods in demo; may create TokenReview and SubjectAccessReview to check callers"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "vyom-token-refresher",
+   "items": [
+    "create serviceaccounts/token for vyom-collector only; patch the one Secret; reads nothing"
+   ]
+  }
+ ]
+}

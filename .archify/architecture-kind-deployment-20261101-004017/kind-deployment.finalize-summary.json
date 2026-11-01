@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/candidate.json",
+    "sha256": "06e094155d9539fe4837de85274f51a4b3f4a7b40b6148aa52da5e442e13f448",
+    "bytes": 6624
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/kind-deployment.html",
+    "sha256": "4876c7bb399aca2d29e206651827f226c3afb228214286fc1d15adb0ca10cca8",
+    "bytes": 832419
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/kind-deployment.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/kind-deployment.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/architecture-kind-deployment-20261101-004017/kind-deployment.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-31T19:10:52.703Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-31T19:10:52.703Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4869
+}

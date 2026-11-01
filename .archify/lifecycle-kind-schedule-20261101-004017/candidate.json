@@ -1,0 +1,233 @@
+{
+ "schema_version": 3,
+ "diagram_type": "lifecycle",
+ "meta": {
+  "title": "One kind's collection schedule (collection_health, R3.2)",
+  "output": ".archify/lifecycle-kind-schedule-20261101-004017/kind-schedule.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "mainPath": [
+  "never",
+  "collecting",
+  "healthy",
+  "due"
+ ],
+ "states": [
+  {
+   "id": "never",
+   "type": "start",
+   "label": "Never collected",
+   "sublabel": "no health row",
+   "tag": "initial",
+   "step": "01",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 91,
+     "end_line": 97
+    }
+   ]
+  },
+  {
+   "id": "collecting",
+   "type": "active",
+   "label": "Collecting",
+   "sublabel": "lease held, list + record",
+   "tag": "running",
+   "step": "02",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 98,
+     "end_line": 104
+    }
+   ]
+  },
+  {
+   "id": "healthy",
+   "type": "success",
+   "label": "Healthy",
+   "sublabel": "failures 0",
+   "tag": "waiting",
+   "step": "03",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 99,
+     "end_line": 102
+    },
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 561,
+     "end_line": 562
+    }
+   ]
+  },
+  {
+   "id": "due",
+   "type": "waiting",
+   "label": "Due",
+   "sublabel": "next_due_at \u2264 now",
+   "tag": "next tick",
+   "step": "04",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 96,
+     "end_line": 97
+    }
+   ]
+  },
+  {
+   "id": "backoff",
+   "type": "failure",
+   "label": "Backing off",
+   "sublabel": "failures n \u2265 1",
+   "tag": "recoverable",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 561,
+     "end_line": 562
+    }
+   ]
+  },
+  {
+   "id": "elsewhere",
+   "type": "neutral",
+   "label": "Lease held elsewhere",
+   "sublabel": "another worker",
+   "tag": "skip tick",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 89,
+     "end_line": 90
+    }
+   ]
+  },
+  {
+   "id": "aborted",
+   "type": "neutral",
+   "label": "Tick aborted",
+   "sublabel": "no health written",
+   "tag": "retry",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 72,
+     "end_line": 75
+    },
+    {
+     "path": "backend/src/vyom/inventory/sweep.py",
+     "line": 98,
+     "end_line": 99
+    }
+   ]
+  }
+ ],
+ "transitions": [
+  {
+   "id": "never-collecting",
+   "from": "never",
+   "to": "collecting",
+   "label": "first tick with lease"
+  },
+  {
+   "id": "collecting-healthy",
+   "from": "collecting",
+   "to": "healthy",
+   "label": "worked (incl. truncated)"
+  },
+  {
+   "id": "healthy-due",
+   "from": "healthy",
+   "to": "due",
+   "label": "+interval (60 s)"
+  },
+  {
+   "id": "due-collecting",
+   "from": "due",
+   "to": "collecting",
+   "label": "tick holds lease"
+  },
+  {
+   "id": "collecting-backoff",
+   "from": "collecting",
+   "to": "backoff",
+   "label": "denied / missing / error",
+   "variant": "security"
+  },
+  {
+   "id": "backoff-due",
+   "from": "backoff",
+   "to": "due",
+   "label": "+min(60 s\u00b72^n, 900 s)",
+   "variant": "dashed"
+  },
+  {
+   "id": "due-elsewhere",
+   "from": "due",
+   "to": "elsewhere",
+   "label": "lease not mine"
+  },
+  {
+   "id": "elsewhere-healthy",
+   "from": "elsewhere",
+   "to": "healthy",
+   "label": "other worker recorded it"
+  },
+  {
+   "id": "collecting-aborted",
+   "from": "collecting",
+   "to": "aborted",
+   "label": "DB error / lease lost",
+   "variant": "security"
+  },
+  {
+   "id": "aborted-due",
+   "from": "aborted",
+   "to": "due",
+   "label": "next tick"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "What 'worked' means",
+   "items": [
+    "No error other than truncated: complete, zero, or a read cut at Vyom's own item limit",
+    "Worked resets consecutive_failures to 0 and stamps last_success_at"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Backoff",
+   "items": [
+    "After n failures in a row the kind waits 60 s\u00b72^n, capped at 900 s",
+    "last_success_at keeps the last good time; resources are neither refreshed nor removed"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Per kind, not per sweep",
+   "items": [
+    "Deployment, ReplicaSet and Pod each have their own row and schedule",
+    "One kind backing off does not delay the others"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Not resource health",
+   "items": [
+    "This describes the collector only; a pod in CrashLoopBackOff can sit under a Healthy schedule"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,352 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "build_evidence: how every collection gets its state",
+  "output": ".archify/workflow-evidence-state-20261101-004017/evidence-state.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "lanes": [
+  {
+   "id": "steps",
+   "label": "Normalize (direct, sweep and MCP)"
+  },
+  {
+   "id": "usable",
+   "label": "Usable"
+  },
+  {
+   "id": "unusable",
+   "label": "No usable data",
+   "variant": "exception"
+  },
+  {
+   "id": "adjust",
+   "label": "Adjustments"
+  }
+ ],
+ "mainPath": [
+  "inputs",
+  "guard",
+  "limit",
+  "ids",
+  "decide",
+  "complete"
+ ],
+ "nodes": [
+  {
+   "id": "drop",
+   "lane": "adjust",
+   "col": 1,
+   "type": "security",
+   "label": "Drop all items",
+   "sublabel": "+ scope_violation",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 215,
+     "end_line": 218
+    }
+   ]
+  },
+  {
+   "id": "cut",
+   "lane": "adjust",
+   "col": 2,
+   "type": "backend",
+   "label": "Cut at max_items",
+   "sublabel": "+ truncated",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 220,
+     "end_line": 223
+    }
+   ]
+  },
+  {
+   "id": "inputs",
+   "lane": "steps",
+   "col": 0,
+   "type": "external",
+   "label": "Inputs",
+   "sublabel": "drafts, errors",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 195,
+     "end_line": 211
+    }
+   ]
+  },
+  {
+   "id": "guard",
+   "lane": "steps",
+   "col": 1,
+   "type": "security",
+   "label": "Namespace guard",
+   "sublabel": "every item in scope?",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 215,
+     "end_line": 218
+    }
+   ]
+  },
+  {
+   "id": "limit",
+   "lane": "steps",
+   "col": 2,
+   "type": "backend",
+   "label": "Item limit",
+   "sublabel": "over max_items?",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 220,
+     "end_line": 223
+    }
+   ]
+  },
+  {
+   "id": "ids",
+   "lane": "steps",
+   "col": 3,
+   "type": "backend",
+   "label": "Assign item IDs",
+   "sublabel": "k8s:cluster:ns:kind:name",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 227,
+     "end_line": 233
+    }
+   ]
+  },
+  {
+   "id": "decide",
+   "lane": "steps",
+   "col": 4,
+   "type": "security",
+   "label": "Decide state",
+   "sublabel": "first match wins",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 236,
+     "end_line": 248
+    }
+   ]
+  },
+  {
+   "id": "complete",
+   "lane": "steps",
+   "col": 5,
+   "type": "database",
+   "label": "complete",
+   "sublabel": "\u2265 1 item",
+   "tag": "usable",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 245,
+     "end_line": 246
+    }
+   ]
+  },
+  {
+   "id": "partial",
+   "lane": "usable",
+   "col": 4,
+   "type": "database",
+   "label": "partial",
+   "sublabel": "incomplete answer",
+   "tag": "usable",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 243,
+     "end_line": 244
+    }
+   ]
+  },
+  {
+   "id": "zero",
+   "lane": "usable",
+   "col": 5,
+   "type": "database",
+   "label": "zero",
+   "sublabel": "nothing matches",
+   "tag": "usable",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 247,
+     "end_line": 248
+    }
+   ]
+  },
+  {
+   "id": "missing",
+   "lane": "unusable",
+   "col": 4,
+   "type": "security",
+   "label": "missing",
+   "sublabel": "no observation",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 240,
+     "end_line": 242
+    }
+   ]
+  },
+  {
+   "id": "denied",
+   "lane": "unusable",
+   "col": 5,
+   "type": "security",
+   "label": "denied",
+   "sublabel": "refused",
+   "sources": [
+    {
+     "path": "backend/src/vyom/evidence.py",
+     "line": 240,
+     "end_line": 242
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "id": "m1",
+   "from": "inputs",
+   "to": "guard",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m2",
+   "from": "guard",
+   "to": "limit",
+   "label": "all in scope",
+   "variant": "emphasis"
+  },
+  {
+   "id": "b1",
+   "from": "guard",
+   "to": "drop",
+   "label": "any outside",
+   "role": "branch",
+   "variant": "security"
+  },
+  {
+   "id": "b2",
+   "from": "drop",
+   "to": "limit",
+   "role": "branch",
+   "toSide": "bottom"
+  },
+  {
+   "id": "m3",
+   "from": "limit",
+   "to": "ids",
+   "label": "within limit",
+   "variant": "emphasis"
+  },
+  {
+   "id": "b3",
+   "from": "limit",
+   "to": "cut",
+   "label": "over",
+   "role": "branch"
+  },
+  {
+   "id": "b4",
+   "from": "cut",
+   "to": "ids",
+   "role": "branch",
+   "toSide": "bottom"
+  },
+  {
+   "id": "m4",
+   "from": "ids",
+   "to": "decide",
+   "variant": "emphasis"
+  },
+  {
+   "id": "m5",
+   "from": "decide",
+   "to": "complete",
+   "label": "complete",
+   "variant": "emphasis"
+  },
+  {
+   "id": "o1",
+   "from": "decide",
+   "to": "partial",
+   "label": "not complete",
+   "role": "branch"
+  },
+  {
+   "id": "o2",
+   "from": "decide",
+   "to": "zero",
+   "label": "complete, none",
+   "role": "branch"
+  },
+  {
+   "id": "o3",
+   "from": "decide",
+   "to": "missing",
+   "label": "no items",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "o4",
+   "from": "decide",
+   "to": "denied",
+   "label": "refused, no items",
+   "role": "error",
+   "variant": "security"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "One constructor",
+   "items": [
+    "The direct collectors, the sweep and the MCP host all call build_evidence, so states mean the same thing on every path"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Truncation is not blocking",
+   "items": [
+    "A cut list is partial but still usable; any other error with no items is denied or missing"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "denied vs missing",
+   "items": [
+    "denied: tool_not_allowed, scope_violation, auth or forbidden; says nothing about the resources",
+    "missing: no observation (unavailable, timeout, protocol, schema, oversized, invalid output)"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "stale",
+   "items": [
+    "A sixth state, stale, is computed by readers with state_at(now, max_age); it is never stored"
+   ]
+  }
+ ]
+}

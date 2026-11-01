@@ -1,0 +1,462 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "erd",
+  "quality": "standard",
+  "startedAt": "2026-10-31T19:11:05.907Z",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/candidate.json",
+    "sha256": "dae7dc23ea4c298929adefe45752aae4c9ce22cb7e7e05e045db2a0b2247cc6d",
+    "bytes": 14669
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+    "sha256": "290b79facf359992506b5b7719bc79caa1bd7615ae0547711b515736e92330dd",
+    "bytes": 879406
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "erd",
+        "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/candidate.json",
+        "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+        "--quality",
+        "standard",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "dae7dc23ea4c298929adefe45752aae4c9ce22cb7e7e05e045db2a0b2247cc6d",
+          "bytes": 14669
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "standard",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 1,
+          "compositionIssues": [
+            {
+              "severity": "warning",
+              "code": "composition/desktop-readability",
+              "nodeId": "workspaces",
+              "owner": {
+                "kind": "node",
+                "id": "workspaces"
+              },
+              "viewportWidth": 1440,
+              "viewportHeight": 900,
+              "availableDiagramWidth": 930,
+              "budgetBasis": "legacy-930",
+              "readerContract": "declared-wide-v1",
+              "requestedTargetPx": 7.5,
+              "requestedTargetMet": false,
+              "budgetLimit": "legacy",
+              "viewBoxWidth": 1506,
+              "scale": 0.6175298804780877,
+              "text": "PK",
+              "detail": "context",
+              "sourceFontPx": 9,
+              "projectedFontPx": 5.557768924302789,
+              "minimumProjectedFontPx": 6
+            }
+          ]
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 829,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "erd",
+        "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/candidate.json",
+        "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+        "--quality",
+        "standard",
+        "--repo-root",
+        "/home/darshan/projects/vyom",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "22923720-98bf-4bc0-b882-3a3626893f80",
+        "ok": true,
+        "command": "deliver",
+        "type": "erd",
+        "input": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/candidate.json",
+        "output": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+        "specification": {
+          "sha256": "dae7dc23ea4c298929adefe45752aae4c9ce22cb7e7e05e045db2a0b2247cc6d",
+          "bytes": 14669
+        },
+        "artifact": {
+          "sha256": "290b79facf359992506b5b7719bc79caa1bd7615ae0547711b515736e92330dd",
+          "bytes": 879406
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "standard",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 1,
+          "compositionIssues": [
+            {
+              "severity": "warning",
+              "code": "composition/desktop-readability",
+              "nodeId": "workspaces",
+              "owner": {
+                "kind": "node",
+                "id": "workspaces"
+              },
+              "viewportWidth": 1440,
+              "viewportHeight": 900,
+              "availableDiagramWidth": 930,
+              "budgetBasis": "legacy-930",
+              "readerContract": "declared-wide-v1",
+              "requestedTargetPx": 7.5,
+              "requestedTargetMet": false,
+              "budgetLimit": "legacy",
+              "viewBoxWidth": 1506,
+              "scale": 0.6175298804780877,
+              "text": "PK",
+              "detail": "context",
+              "sourceFontPx": 9,
+              "projectedFontPx": 5.557768924302789,
+              "minimumProjectedFontPx": 6
+            }
+          ]
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:darshan-raul/vyom",
+          "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881",
+          "references": 10,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 216,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+        "artifact": {
+          "sha256": "290b79facf359992506b5b7719bc79caa1bd7615ae0547711b515736e92330dd",
+          "bytes": 879406
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "standard",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 1
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 10,
+            "desktopReadabilityIssues": 1,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 5.557768924302789,
+            "maxBends": 4,
+            "routesOverSuggestedBends": 1,
+            "maxStretch": 1.629,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 16,
+            "minInteriorSegmentPx": 32,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "obs_run",
+                  "from": "observations",
+                  "to": "collection_runs",
+                  "label": "recorded by",
+                  "collectionIndex": 6,
+                  "artifactIndex": 7
+                },
+                "bends": 4,
+                "stretch": 1.629
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": false,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "workspaces"
+            },
+            "minimumSourceTextPx": 9,
+            "minimumProjectedTextPx": 5.557768924302789,
+            "semanticTextCount": 225
+          },
+          "issues": [
+            {
+              "severity": "warning",
+              "code": "composition/desktop-readability",
+              "nodeId": "workspaces",
+              "owner": {
+                "kind": "node",
+                "id": "workspaces"
+              },
+              "viewportWidth": 1440,
+              "viewportHeight": 900,
+              "availableDiagramWidth": 930,
+              "budgetBasis": "legacy-930",
+              "readerContract": "declared-wide-v1",
+              "requestedTargetPx": 7.5,
+              "requestedTargetMet": false,
+              "budgetLimit": "legacy",
+              "viewBoxWidth": 1506,
+              "scale": 0.6175298804780877,
+              "text": "PK",
+              "detail": "context",
+              "sourceFontPx": 9,
+              "projectedFontPx": 5.557768924302789,
+              "minimumProjectedFontPx": 6
+            }
+          ]
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "22923720-98bf-4bc0-b882-3a3626893f80"
+      }
+    },
+    "browser-check": {
+      "status": "skipped",
+      "exitCode": 2,
+      "durationMs": 73,
+      "command": [
+        "/home/darshan/.local/share/mise/installs/node/26.1.0/bin/node",
+        "/home/darshan/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "skipped",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "22923720-98bf-4bc0-b882-3a3626893f80",
+        "artifact": {
+          "path": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+          "sha256": "290b79facf359992506b5b7719bc79caa1bd7615ae0547711b515736e92330dd",
+          "bytes": 879406
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "unavailable",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/chrome-unavailable",
+            "severity": "warning",
+            "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+            "subject": {
+              "artifact": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html"
+            },
+            "evidence": {
+              "executable": null
+            },
+            "supportedFixes": [
+              "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "skipped",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "readability": {
+          "status": "skipped",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "inventory-schema.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-31T19:11:07.204Z",
+  "durationMs": 1296,
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-31T19:10:52.703Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-31T19:10:52.703Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  }
+}

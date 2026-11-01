@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "erd",
+  "quality": "standard",
+  "specification": {
+    "path": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/candidate.json",
+    "sha256": "dae7dc23ea4c298929adefe45752aae4c9ce22cb7e7e05e045db2a0b2247cc6d",
+    "bytes": 14669
+  },
+  "artifact": {
+    "path": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/inventory-schema.html",
+    "sha256": "290b79facf359992506b5b7719bc79caa1bd7615ae0547711b515736e92330dd",
+    "bytes": 879406
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/review-1/inventory-schema.finalize.json",
+    "summaryReceipt": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/review-1/inventory-schema.finalize-summary.json",
+    "browserCheckReceipt": "/home/darshan/projects/vyom/.archify/erd-inventory-schema-20261101-004017/review-1/inventory-schema.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-31T19:10:52.703Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.1.0 → 3.2.0. A previous check at 2026-10-31T19:10:52.703Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6155,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "obs_run",
+            "from": "observations",
+            "to": "collection_runs",
+            "label": "recorded by",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "bends": 4,
+          "stretch": 1.629
+        }
+      ],
+      "truncated": false
+    },
+    "repair": "Advisory only: this mode places or routes these relationships itself. Report them; do not remove relationships or meaning to reduce crossings."
+  }
+}

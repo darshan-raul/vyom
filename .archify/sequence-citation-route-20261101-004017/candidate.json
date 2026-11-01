@@ -1,0 +1,152 @@
+{
+ "schema_version": 1,
+ "diagram_type": "sequence",
+ "meta": {
+  "title": "GET /api/citations/{evidence_id}/{item_id}: resolve a cited item from Postgres",
+  "output": ".archify/sequence-citation-route-20261101-004017/citation-route.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "participants": [
+  {
+   "id": "caller",
+   "type": "external",
+   "label": "API caller",
+   "sublabel": "vyom-check.sh, curl",
+   "sources": [
+    {
+     "path": "scripts/vyom-check.sh",
+     "line": 204,
+     "end_line": 225
+    }
+   ]
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "FastAPI",
+   "sublabel": "get_citation()",
+   "sources": [
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 272,
+     "end_line": 317
+    }
+   ]
+  },
+  {
+   "id": "store",
+   "type": "database",
+   "label": "InventoryStore",
+   "sublabel": "resolve_citation()",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 399,
+     "end_line": 427
+    }
+   ]
+  }
+ ],
+ "segments": [
+  {
+   "from": 155,
+   "to": 250,
+   "label": "Guards"
+  },
+  {
+   "from": 265,
+   "to": 420,
+   "label": "Scoped lookup"
+  },
+  {
+   "from": 430,
+   "to": 540,
+   "label": "Reply"
+  }
+ ],
+ "messages": [
+  {
+   "id": "get",
+   "from": "caller",
+   "to": "api",
+   "y": 170,
+   "label": "GET /api/citations/ev_\u2026/k8s:\u2026:pod:name",
+   "variant": "emphasis",
+   "note": "No resolver \u2192 503 service not configured; no database \u2192 503 database not configured"
+  },
+  {
+   "id": "resolve",
+   "from": "api",
+   "to": "store",
+   "y": 280,
+   "label": "resolve_citation(context, evidence_id, item_id)",
+   "variant": "emphasis",
+   "note": "WHERE workspace_id and connection_id come from the trusted context, never the URL"
+  },
+  {
+   "id": "row",
+   "from": "store",
+   "to": "api",
+   "y": 360,
+   "label": "observation + run + resource removed_at + owner",
+   "variant": "return",
+   "note": "Absent and out-of-scope look the same: no existence probing"
+  },
+  {
+   "id": "ok",
+   "from": "api",
+   "to": "caller",
+   "y": 450,
+   "label": "200 CitationView | 404 | 503",
+   "variant": "return",
+   "note": "404 not found; DB error \u2192 503 database unavailable"
+  }
+ ],
+ "activations": [
+  {
+   "participant": "api",
+   "from": 170,
+   "to": 450,
+   "type": "backend"
+  },
+  {
+   "participant": "store",
+   "from": 280,
+   "to": 360,
+   "type": "database"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "What resolves",
+   "items": [
+    "Any observation of any stored run: direct, sweep or chat tool evidence",
+    "Old name-based item IDs resolve unchanged: they are the observation's item_id",
+    "Survives API restarts and a Postgres dump/restore"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "What it returns",
+   "items": [
+    "The item as that run saw it, the run's state and time",
+    "resource_id and whether that resource has since been removed",
+    "The controller that observation reported (R3.1)"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Not used by the UI yet",
+   "items": [
+    "Answers render citations from the chat response's own evidence; this route serves checks and later views"
+   ]
+  }
+ ]
+}

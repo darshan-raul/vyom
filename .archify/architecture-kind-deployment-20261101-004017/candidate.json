@@ -1,0 +1,398 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Vyom on Kind: workloads, identities and data paths (R3.2)",
+  "output": ".archify/architecture-kind-deployment-20261101-004017/kind-deployment.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "components": [
+  {
+   "id": "operator",
+   "type": "external",
+   "label": "Operator browser",
+   "sublabel": "localhost port-forward",
+   "pos": [
+    40,
+    260
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "scripts/vyom-forward.sh",
+     "line": 1,
+     "end_line": 9
+    }
+   ]
+  },
+  {
+   "id": "openrouter",
+   "type": "external",
+   "label": "OpenRouter",
+   "sublabel": "chat model, optional",
+   "pos": [
+    40,
+    80
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/values.yaml",
+     "line": 35,
+     "end_line": 40
+    }
+   ]
+  },
+  {
+   "id": "ui",
+   "type": "frontend",
+   "label": "vyom-ui",
+   "sublabel": "nginx :8080",
+   "pos": [
+    290,
+    260
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/ui.yaml",
+     "line": 1,
+     "end_line": 45
+    },
+    {
+     "path": "frontend/nginx.conf",
+     "line": 4,
+     "end_line": 12
+    }
+   ]
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "vyom-api",
+   "sublabel": "FastAPI :8000 + sweep",
+   "pos": [
+    540,
+    250
+   ],
+   "size": [
+    150,
+    84
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/api.yaml",
+     "line": 20,
+     "end_line": 67
+    },
+    {
+     "path": "backend/src/vyom/api/app.py",
+     "line": 160,
+     "end_line": 184
+    }
+   ]
+  },
+  {
+   "id": "postgres",
+   "type": "database",
+   "label": "vyom-postgres",
+   "sublabel": "StatefulSet :5432, 1 GiB",
+   "pos": [
+    540,
+    440
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/postgres.yaml",
+     "line": 1,
+     "end_line": 84
+    }
+   ]
+  },
+  {
+   "id": "migrate",
+   "type": "backend",
+   "label": "vyom-migrate",
+   "sublabel": "Job from suspended CronJob",
+   "pos": [
+    540,
+    600
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/postgres.yaml",
+     "line": 86,
+     "end_line": 133
+    }
+   ]
+  },
+  {
+   "id": "mcp",
+   "type": "security",
+   "label": "kubernetes-mcp",
+   "sublabel": "rbac-proxy :8443 \u2192 server",
+   "pos": [
+    790,
+    80
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/kubernetes-mcp.yaml",
+     "line": 44,
+     "end_line": 103
+    }
+   ]
+  },
+  {
+   "id": "secret",
+   "type": "security",
+   "label": "vyom-collector-token",
+   "sublabel": "Secret, 1 h token",
+   "pos": [
+    790,
+    440
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "scripts/vyom-up.sh",
+     "line": 107,
+     "end_line": 110
+    }
+   ]
+  },
+  {
+   "id": "refresher",
+   "type": "security",
+   "label": "Token refresher",
+   "sublabel": "CronJob every 30 min",
+   "pos": [
+    790,
+    600
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/collector-token.yaml",
+     "line": 1,
+     "end_line": 35
+    },
+    {
+     "path": "backend/src/vyom/token_refresher.py",
+     "line": 1,
+     "end_line": 71
+    }
+   ]
+  },
+  {
+   "id": "k8s",
+   "type": "cloud",
+   "label": "Kubernetes API",
+   "sublabel": "RBAC per ServiceAccount",
+   "pos": [
+    1040,
+    260
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/identities.yaml",
+     "line": 1,
+     "end_line": 144
+    }
+   ]
+  },
+  {
+   "id": "demo",
+   "type": "external",
+   "label": "namespace demo",
+   "sublabel": "Deployments, RS, Pods",
+   "pos": [
+    1040,
+    80
+   ],
+   "size": [
+    150,
+    64
+   ],
+   "sources": [
+    {
+     "path": "deploy/kind/demo.yaml",
+     "line": 1,
+     "end_line": 44
+    }
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "kind-vyom cluster",
+   "wraps": [
+    "ui",
+    "api",
+    "postgres",
+    "migrate",
+    "mcp",
+    "secret",
+    "refresher",
+    "k8s",
+    "demo"
+   ],
+   "pad": 20
+  },
+  {
+   "kind": "security-group",
+   "label": "namespace vyom (ClusterIP only)",
+   "wraps": [
+    "ui",
+    "api",
+    "postgres",
+    "migrate",
+    "mcp",
+    "secret",
+    "refresher"
+   ],
+   "pad": 12
+  }
+ ],
+ "connections": [
+  {
+   "from": "operator",
+   "to": "ui",
+   "label": "port-forward",
+   "variant": "emphasis"
+  },
+  {
+   "from": "ui",
+   "to": "api",
+   "label": "/api/ proxy",
+   "variant": "emphasis"
+  },
+  {
+   "from": "api",
+   "to": "k8s",
+   "label": "list as Table (collector SA)",
+   "variant": "security"
+  },
+  {
+   "from": "api",
+   "to": "mcp",
+   "label": "MCP HTTPS + SA token",
+   "variant": "security"
+  },
+  {
+   "from": "mcp",
+   "to": "k8s",
+   "label": "list pods (mcp SA)",
+   "variant": "security"
+  },
+  {
+   "from": "api",
+   "to": "postgres",
+   "label": "SQL :5432"
+  },
+  {
+   "from": "migrate",
+   "to": "postgres",
+   "label": "schema migrations"
+  },
+  {
+   "from": "api",
+   "to": "openrouter",
+   "label": "HTTPS chat"
+  },
+  {
+   "from": "refresher",
+   "to": "k8s",
+   "label": "TokenRequest",
+   "variant": "security"
+  },
+  {
+   "from": "refresher",
+   "to": "secret",
+   "label": "patch token",
+   "variant": "security"
+  },
+  {
+   "from": "secret",
+   "to": "api",
+   "label": "mounted file"
+  },
+  {
+   "from": "k8s",
+   "to": "demo",
+   "label": "objects in demo",
+   "variant": "dashed"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Three read identities",
+   "items": [
+    "vyom-collector: lists Pods, Deployments, ReplicaSets in demo (sweep + pods view)",
+    "kubernetes-mcp: lists Pods in demo for the agent",
+    "vyom-api SA: may only call the MCP endpoint; no Kubernetes reads"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Nothing exposed",
+   "items": [
+    "Every Service is ClusterIP; no Ingress",
+    "The UI is reached only through scripts/vyom-forward.sh on 127.0.0.1"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Credentials as files",
+   "items": [
+    "Model key, database URL, MCP and collector tokens are mounted files, never env values or chart values"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Optional",
+   "items": [
+    "Prometheus scrape (ServiceMonitor) and OTLP to Alloy/Tempo with VYOM_TELEMETRY=metrics or full"
+   ]
+  }
+ ]
+}

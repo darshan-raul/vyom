@@ -1,0 +1,344 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "InventoryStore.record_collection: one collection, one transaction",
+  "output": ".archify/workflow-record-collection-20261101-004017/record-collection.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  }
+ },
+ "lanes": [
+  {
+   "id": "errors",
+   "label": "Refused, nothing written",
+   "variant": "exception"
+  },
+  {
+   "id": "tx",
+   "label": "Transaction"
+  },
+  {
+   "id": "item",
+   "label": "Item with a UID"
+  },
+  {
+   "id": "close",
+   "label": "Complete scan only"
+  }
+ ],
+ "mainPath": [
+  "inputs",
+  "scope",
+  "ensure",
+  "run",
+  "obs",
+  "prune"
+ ],
+ "nodes": [
+  {
+   "id": "scope_err",
+   "lane": "errors",
+   "col": 1,
+   "type": "security",
+   "label": "Refuse",
+   "sublabel": "ScopeMismatch / ValueError",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 123,
+     "end_line": 131
+    }
+   ]
+  },
+  {
+   "id": "conn_err",
+   "lane": "errors",
+   "col": 2,
+   "type": "security",
+   "label": "Refuse",
+   "sublabel": "ConnectionConflict",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 218,
+     "end_line": 220
+    }
+   ]
+  },
+  {
+   "id": "inputs",
+   "lane": "tx",
+   "col": 0,
+   "type": "external",
+   "label": "Evidence + kind",
+   "sublabel": "from sweep, pods route or chat",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 118,
+     "end_line": 121
+    }
+   ]
+  },
+  {
+   "id": "scope",
+   "lane": "tx",
+   "col": 1,
+   "type": "security",
+   "label": "Scope check",
+   "sublabel": "source = context? one kind?",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 122,
+     "end_line": 131
+    }
+   ]
+  },
+  {
+   "id": "ensure",
+   "lane": "tx",
+   "col": 2,
+   "type": "database",
+   "label": "Ensure connection",
+   "sublabel": "workspace + cluster_uid pinned",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 204,
+     "end_line": 220
+    }
+   ]
+  },
+  {
+   "id": "run",
+   "lane": "tx",
+   "col": 3,
+   "type": "database",
+   "label": "Insert run",
+   "sublabel": "collection_runs row = evidence ID",
+   "tag": "transaction",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 133,
+     "end_line": 158
+    }
+   ]
+  },
+  {
+   "id": "obs",
+   "lane": "tx",
+   "col": 4,
+   "type": "database",
+   "label": "Insert observation",
+   "sublabel": "+ owner columns; dup ignored",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 165,
+     "end_line": 188
+    }
+   ]
+  },
+  {
+   "id": "prune",
+   "lane": "tx",
+   "col": 5,
+   "type": "database",
+   "label": "Prune old runs",
+   "sublabel": "keep 500 unreferenced",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 191,
+     "end_line": 191
+    },
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 335,
+     "end_line": 386
+    }
+   ]
+  },
+  {
+   "id": "upsert",
+   "lane": "item",
+   "col": 3,
+   "type": "database",
+   "label": "Upsert resource",
+   "sublabel": "item with UID, by (kind, uid)",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 159,
+     "end_line": 164
+    },
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 222,
+     "end_line": 258
+    }
+   ]
+  },
+  {
+   "id": "owner",
+   "lane": "item",
+   "col": 4,
+   "type": "backend",
+   "label": "Reconcile owner",
+   "sublabel": "link present controller; supersede others",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 260,
+     "end_line": 307
+    }
+   ]
+  },
+  {
+   "id": "absent",
+   "lane": "close",
+   "col": 5,
+   "type": "database",
+   "label": "Mark unseen absent",
+   "sublabel": "removed_at + retire their edges",
+   "sources": [
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 189,
+     "end_line": 202
+    },
+    {
+     "path": "backend/src/vyom/inventory/store.py",
+     "line": 309,
+     "end_line": 333
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "id": "e1",
+   "from": "inputs",
+   "to": "scope",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e2",
+   "from": "scope",
+   "to": "ensure",
+   "label": "matches",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e2x",
+   "from": "scope",
+   "to": "scope_err",
+   "label": "mismatch",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "e3",
+   "from": "ensure",
+   "to": "run",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e3x",
+   "from": "ensure",
+   "to": "conn_err",
+   "label": "other cluster",
+   "role": "error",
+   "variant": "security"
+  },
+  {
+   "id": "e4",
+   "from": "run",
+   "to": "obs",
+   "label": "each item",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e4a",
+   "from": "run",
+   "to": "upsert",
+   "label": "has UID",
+   "role": "branch"
+  },
+  {
+   "id": "e4b",
+   "from": "upsert",
+   "to": "owner",
+   "label": "run is newest",
+   "role": "branch"
+  },
+  {
+   "id": "e4c",
+   "from": "owner",
+   "to": "obs",
+   "role": "branch"
+  },
+  {
+   "id": "e5",
+   "from": "obs",
+   "to": "prune",
+   "label": "partial / failed: no removals",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e5a",
+   "from": "obs",
+   "to": "absent",
+   "label": "proves absence",
+   "role": "branch",
+   "variant": "security"
+  },
+  {
+   "id": "e5b",
+   "from": "absent",
+   "to": "prune",
+   "role": "branch"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Out-of-order safe",
+   "items": [
+    "A resource or edge updates only when this run is at least as new as stored state and newer than any removal",
+    "An older run's observation is still stored, but it changes no edge"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Ownership (KINV02)",
+   "items": [
+    "Edge owner \u2192 owned only if the controller is stored and not removed before this run",
+    "Any other current owner of the object is superseded",
+    "Controller not stored yet: no edge until a later sweep"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Absence needs proof",
+   "items": [
+    "Only a complete, untruncated, error-free scan whose items all have UIDs marks the unseen absent",
+    "Within the scan's own kind and namespace; failed or partial scans remove nothing"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Atomic",
+   "items": [
+    "Run, resources, edges, observations, removals and pruning commit together or not at all"
+   ]
+  }
+ ]
+}

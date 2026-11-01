@@ -1,0 +1,398 @@
+{
+ "schema_version": 1,
+ "diagram_type": "dataflow",
+ "meta": {
+  "title": "Telemetry: logs, traces and metrics without payloads",
+  "output": ".archify/dataflow-telemetry-20261101-004017/telemetry.html",
+  "quality_profile": "showcase",
+  "locale": "en",
+  "repository": {
+   "url": "git@github.com:darshan-raul/vyom.git",
+   "link_mode": "local-only",
+   "revision": "f01bf5b03bf8fb6d15faed8de11225d72653b881"
+  },
+  "legend": {
+   "entries": {
+    "dashed": {
+     "label": "Only when deployed or configured"
+    },
+    "security": {
+     "label": "Filtering or scrubbing"
+    }
+   }
+  }
+ },
+ "stages": [
+  {
+   "label": "Emitted in code"
+  },
+  {
+   "label": "Guarded in process"
+  },
+  {
+   "label": "Leaves the process"
+  },
+  {
+   "label": "Collected"
+  },
+  {
+   "label": "Stored"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "logcalls",
+   "type": "backend",
+   "label": "Log calls",
+   "sublabel": "middleware, record_*, sweep",
+   "stage": 0,
+   "row": 0,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 167,
+     "end_line": 193,
+     "label": "_observe_request"
+    },
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 368,
+     "end_line": 389,
+     "label": "record_collector_run"
+    },
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 406,
+     "end_line": 432,
+     "label": "record_inventory_operation"
+    }
+   ]
+  },
+  {
+   "id": "fmt",
+   "type": "security",
+   "label": "JsonFormatter",
+   "sublabel": "allowlisted fields",
+   "tag": "libraries silenced",
+   "stage": 1,
+   "row": 0,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 44,
+     "end_line": 91,
+     "label": "LOG_FIELDS, filters"
+    },
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 94,
+     "end_line": 119
+    }
+   ]
+  },
+  {
+   "id": "stdout",
+   "type": "messagebus",
+   "label": "stdout",
+   "sublabel": "one JSON line",
+   "stage": 2,
+   "row": 0,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 123,
+     "end_line": 135
+    }
+   ]
+  },
+  {
+   "id": "alloylogs",
+   "type": "security",
+   "label": "Alloy logs",
+   "sublabel": "ns vyom, observability",
+   "tag": "redacts tokens",
+   "stage": 3,
+   "row": 0,
+   "sources": [
+    {
+     "path": "deploy/observability/config.alloy",
+     "line": 13,
+     "end_line": 25
+    },
+    {
+     "path": "deploy/observability/config.alloy",
+     "line": 69,
+     "end_line": 89
+    }
+   ]
+  },
+  {
+   "id": "loki",
+   "type": "database",
+   "label": "Loki",
+   "sublabel": "few labels",
+   "stage": 4,
+   "row": 0,
+   "sources": [
+    {
+     "path": "deploy/observability/config.alloy",
+     "line": 91,
+     "end_line": 101
+    }
+   ]
+  },
+  {
+   "id": "spans",
+   "type": "backend",
+   "label": "Spans",
+   "sublabel": "request, graph, mcp, model",
+   "stage": 0,
+   "row": 1,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 547,
+     "end_line": 557,
+     "label": "FastAPI instrumentation"
+    },
+    {
+     "path": "backend/src/vyom/agent/graph.py",
+     "line": 163,
+     "end_line": 169,
+     "label": "graph step spans"
+    }
+   ]
+  },
+  {
+   "id": "scrub",
+   "type": "security",
+   "label": "ScrubbingExporter",
+   "sublabel": "no query, headers, text",
+   "stage": 1,
+   "row": 1,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 450,
+     "end_line": 505
+    }
+   ]
+  },
+  {
+   "id": "batch",
+   "type": "messagebus",
+   "label": "OTLP over HTTP",
+   "sublabel": "batched, queue 512",
+   "stage": 2,
+   "row": 1,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 508,
+     "end_line": 539
+    }
+   ]
+  },
+  {
+   "id": "alloyotlp",
+   "type": "security",
+   "label": "Alloy OTLP",
+   "sublabel": "limit, scrub, batch",
+   "stage": 3,
+   "row": 1,
+   "sources": [
+    {
+     "path": "deploy/observability/config.alloy",
+     "line": 105,
+     "end_line": 158
+    }
+   ]
+  },
+  {
+   "id": "tempo",
+   "type": "database",
+   "label": "Tempo",
+   "sublabel": "traces by trace_id",
+   "stage": 4,
+   "row": 1,
+   "sources": [
+    {
+     "path": "deploy/observability/config.alloy",
+     "line": 160,
+     "end_line": 170
+    }
+   ]
+  },
+  {
+   "id": "metrics",
+   "type": "backend",
+   "label": "Metric series",
+   "sublabel": "bounded labels",
+   "stage": 0,
+   "row": 2,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 146,
+     "end_line": 153
+    },
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 352,
+     "end_line": 363,
+     "label": "collector runs"
+    },
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 392,
+     "end_line": 404,
+     "label": "inventory ops incl. sweep"
+    }
+   ]
+  },
+  {
+   "id": "endpoint",
+   "type": "backend",
+   "label": "GET /metrics",
+   "sublabel": "Prometheus text",
+   "stage": 2,
+   "row": 2,
+   "sources": [
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 435,
+     "end_line": 437
+    },
+    {
+     "path": "backend/src/vyom/telemetry.py",
+     "line": 551,
+     "end_line": 551
+    }
+   ]
+  },
+  {
+   "id": "prom",
+   "type": "database",
+   "label": "Prometheus",
+   "sublabel": "metrics / full profile",
+   "stage": 4,
+   "row": 2,
+   "sources": [
+    {
+     "path": "deploy/chart/vyom/templates/api.yaml",
+     "line": 93,
+     "end_line": 106,
+     "label": "ServiceMonitor"
+    }
+   ]
+  }
+ ],
+ "flows": [
+  {
+   "id": "f-log1",
+   "from": "logcalls",
+   "to": "fmt",
+   "label": "LogRecord",
+   "variant": "emphasis"
+  },
+  {
+   "id": "f-log2",
+   "from": "fmt",
+   "to": "stdout",
+   "label": "JSON + trace_id",
+   "variant": "security"
+  },
+  {
+   "id": "f-log3",
+   "from": "stdout",
+   "to": "alloylogs",
+   "label": "pod log file",
+   "variant": "dashed"
+  },
+  {
+   "id": "f-log4",
+   "from": "alloylogs",
+   "to": "loki",
+   "label": "push"
+  },
+  {
+   "id": "f-tr1",
+   "from": "spans",
+   "to": "scrub",
+   "label": "finished spans",
+   "variant": "emphasis"
+  },
+  {
+   "id": "f-tr2",
+   "from": "scrub",
+   "to": "batch",
+   "label": "cleaned copy",
+   "variant": "security"
+  },
+  {
+   "id": "f-tr3",
+   "from": "batch",
+   "to": "alloyotlp",
+   "label": "OTLP :4318",
+   "variant": "dashed"
+  },
+  {
+   "id": "f-tr4",
+   "from": "alloyotlp",
+   "to": "tempo",
+   "label": "OTLP :4317"
+  },
+  {
+   "id": "f-m1",
+   "from": "metrics",
+   "to": "endpoint",
+   "label": "in-memory series",
+   "variant": "emphasis"
+  },
+  {
+   "id": "f-m2",
+   "from": "endpoint",
+   "to": "prom",
+   "label": "scrape",
+   "variant": "dashed"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "rose",
+   "title": "Never recorded",
+   "items": [
+    "Questions, answers, prompts, tool bodies",
+    "Headers, URL queries, exception messages (type only)",
+    "Free text from mcp, httpx, openai, langchain, langgraph loggers"
+   ]
+  },
+  {
+   "dot": "cyan",
+   "title": "One trace_id joins them",
+   "items": [
+    "Log lines carry trace_id and span_id of the current span",
+    "POST /api/chat returns trace_id so a question can be found in Loki and Tempo"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Bounded on purpose",
+   "items": [
+    "Metric labels: route templates, configured server/tool/model IDs, fixed outcomes",
+    "A tool name the model made up is labelled unlisted",
+    "Span queue of 512, dropped when full: an outage never slows a request",
+    "Inventory operations (record_collection, resolve_citation, sweep) carry no resource names or IDs"
+   ]
+  },
+  {
+   "dot": "slate",
+   "title": "Profiles",
+   "items": [
+    "none (default): /metrics exists, nothing scrapes it, no spans exported",
+    "metrics: ServiceMonitor, Prometheus scrapes every 30 s",
+    "full: also OTLP to Alloy \u2192 Tempo and pod logs to Loki"
+   ]
+  }
+ ]
+}
